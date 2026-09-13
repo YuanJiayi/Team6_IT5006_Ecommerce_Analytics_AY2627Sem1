@@ -40,22 +40,144 @@ from dashboard_data import (
     load_reviews,
 )
 
-DATA_PATH = Path("data/smartcommerce_consolidated.csv")
-CUSTOMERS_PATH = Path("data/olist_customers_dataset.csv")
-REVIEWS_PATH = Path("data/olist_order_reviews_dataset.csv")
-ORDERS_PATH = Path("data/olist_orders_dataset.csv")
-SELLERS_PATH = Path("data/olist_sellers_dataset.csv")
-GEOLOCATION_PATH = Path("data/olist_geolocation_dataset.csv")
-PAYMENTS_PATH = Path("data/olist_order_payments_dataset.csv")
-ORDER_ITEMS_PATH = Path("data/olist_order_items_dataset.csv")
-MAP_PATH = Path("brazil_order_density_map.html")
+BASE_DIR = Path(__file__).resolve().parent
+DATA_PATH = BASE_DIR / "data/smartcommerce_consolidated.csv"
+CUSTOMERS_PATH = BASE_DIR / "data/olist_customers_dataset.csv"
+REVIEWS_PATH = BASE_DIR / "data/olist_order_reviews_dataset.csv"
+ORDERS_PATH = BASE_DIR / "data/olist_orders_dataset.csv"
+SELLERS_PATH = BASE_DIR / "data/olist_sellers_dataset.csv"
+GEOLOCATION_PATH = BASE_DIR / "data/olist_geolocation_dataset.csv"
+PAYMENTS_PATH = BASE_DIR / "data/olist_order_payments_dataset.csv"
+ORDER_ITEMS_PATH = BASE_DIR / "data/olist_order_items_dataset.csv"
+MAP_PATH = BASE_DIR / "brazil_order_density_map.html"
 BLUE = "#003D7C"
 ORANGE = "#EF7C00"
 
 
-def figure_heading(number: int, title: str) -> None:
-    """Give every chart a stable reference number."""
-    st.markdown(f"### Figure {number}. {title}")
+FIGURE_GUIDE = [{'Figure': 1,
+  'Title': 'Order and product-sales growth over time',
+  'Tab': 'Overview',
+  'Setting': 'Month'},
+ {'Figure': 2, 'Title': 'Commercial performance over time', 'Tab': 'Overview', 'Setting': 'Month'},
+ {'Figure': 3,
+  'Title': 'Top 10 customer states by orders',
+  'Tab': 'Overview',
+  'Setting': 'Default'},
+ {'Figure': 4,
+  'Title': 'Top 10 product categories',
+  'Tab': 'Overview',
+  'Setting': 'Items sold or Product sales'},
+ {'Figure': 5,
+  'Title': 'Cumulative product sales by seller share',
+  'Tab': 'Overview',
+  'Setting': 'Default'},
+ {'Figure': 6,
+  'Title': 'Customer purchase-frequency distribution',
+  'Tab': 'Overview',
+  'Setting': 'Default'},
+ {'Figure': 7, 'Title': 'Review-score distribution', 'Tab': 'Overview', 'Setting': 'Default'},
+ {'Figure': 8,
+  'Title': 'Late-delivery and low-rating rates over time',
+  'Tab': 'Overview',
+  'Setting': 'Default'},
+ {'Figure': 9,
+  'Title': 'Low-rating rate by delivery timing',
+  'Tab': 'Overview',
+  'Setting': 'Default'},
+ {'Figure': 10,
+  'Title': 'Delivery time by stage',
+  'Tab': 'Delivery correlations',
+  'Setting': 'Mean for the shipping-stage share'},
+ {'Figure': 11,
+  'Title': 'Seller order volume and late-delivery rate',
+  'Tab': 'Delivery correlations',
+  'Setting': 'Default'},
+ {'Figure': 12,
+  'Title': 'Weekly order volume and delivery time',
+  'Tab': 'Operational Capacity',
+  'Setting': 'Median'},
+ {'Figure': 13,
+  'Title': 'Outstanding orders within the selected delivery cohort',
+  'Tab': 'Operational Capacity',
+  'Setting': 'Default'},
+ {'Figure': 14,
+  'Title': 'Association between weekly volume and delivery time',
+  'Tab': 'Operational Capacity',
+  'Setting': 'Median'},
+ {'Figure': 15,
+  'Title': 'Freight-to-price ratio and late-delivery rate',
+  'Tab': 'Operational Capacity',
+  'Setting': 'Default'},
+ {'Figure': 16,
+  'Title': 'Promised and actual delivery windows over time',
+  'Tab': 'Operational Capacity',
+  'Setting': 'Choose the secondary axis named in the report'},
+ {'Figure': 17,
+  'Title': 'Delivery-stage durations over time',
+  'Tab': 'Operational Capacity',
+  'Setting': 'Mean'},
+ {'Figure': 18,
+  'Title': 'Delivery time and late-rate by customer–seller distance',
+  'Tab': 'Candidate 1',
+  'Setting': 'Default'},
+ {'Figure': 19,
+  'Title': 'Mean delivery time by day of week purchased',
+  'Tab': 'Candidate 1',
+  'Setting': 'Default'},
+ {'Figure': 20,
+  'Title': 'Delivery-stage duration by purchase weekday',
+  'Tab': 'Candidate 1',
+  'Setting': 'Default'},
+ {'Figure': 21,
+  'Title': 'Delivery time by payment method',
+  'Tab': 'Candidate 1',
+  'Setting': 'Default'},
+ {'Figure': 22,
+  'Title': 'Lead-time breakdown by payment method',
+  'Tab': 'Candidate 1',
+  'Setting': 'Default'},
+ {'Figure': 23,
+  'Title': 'Delivery time by order complexity',
+  'Tab': 'Candidate 1',
+  'Setting': 'Default'},
+ {'Figure': 24,
+  'Title': 'Delivery time by order weight',
+  'Tab': 'Candidate 1',
+  'Setting': 'Default'},
+ {'Figure': 25,
+  'Title': 'Low-rating rate by delivery timing',
+  'Tab': 'Candidate 2',
+  'Setting': 'Default'},
+ {'Figure': 26,
+  'Title': 'Low-rating rate by order complexity',
+  'Tab': 'Candidate 2',
+  'Setting': 'Default'},
+ {'Figure': 27,
+  'Title': 'Pearson correlations with mean review score',
+  'Tab': 'Candidate 2',
+  'Setting': 'Default'}]
+FIGURE_TITLES = {row["Figure"]: row["Title"] for row in FIGURE_GUIDE}
+
+
+def figure_heading(number: int) -> None:
+    """Use the same stable ID and title in the chart and figure directory."""
+    st.markdown(f"### Figure {number}. {FIGURE_TITLES[number]}")
+
+
+def render_chart(chart, **kwargs) -> None:
+    """Keep complete axis labels and legends visible in the dashboard."""
+    chart = chart.configure_axis(
+        labelLimit=0,
+        titleLimit=0,
+    ).configure_legend(
+        orient="bottom",
+        columns=1,
+        labelLimit=0,
+        titleLimit=0,
+        labelOverlap=False,
+        rowPadding=6,
+    )
+    st.altair_chart(chart, **kwargs)
 
 
 def line_chart(
@@ -82,7 +204,32 @@ def line_chart(
     )
 
 st.set_page_config(page_title="IT5006 Olist Dashboard", layout="wide")
+# Stack chart columns before their axes and legends become cramped.
+# Metric-only rows retain Streamlit's normal responsive layout.
+st.markdown(
+    """
+    <style>
+    @media (max-width: 1100px) {
+        [data-testid="stHorizontalBlock"]:has(> [data-testid="stColumn"] [data-testid="stVegaLiteChart"]) {
+            flex-wrap: wrap;
+        }
+        [data-testid="stHorizontalBlock"]:has(> [data-testid="stColumn"] [data-testid="stVegaLiteChart"]) > [data-testid="stColumn"] {
+            flex: 1 1 100%;
+            width: 100%;
+            min-width: 100%;
+        }
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 st.title("Olist E-Commerce Dashboard")
+
+st.caption("Start with the overview, explore supporting relationships, capacity trends and the map, then compare the two candidate problems. Figure numbers are stable references for the report.")
+
+with st.expander("Find a report figure"):
+    st.write("Open the tab listed below and find the matching numbered heading. Report references use Dashboard Figure N.")
+    st.dataframe(pd.DataFrame(FIGURE_GUIDE), hide_index=True, use_container_width=True, height=420)
 
 overview_tab, delivery_correlations_tab, capacity_tab, map_tab, problem1_tab, ratings_tab = st.tabs(
     ["Overview", "Delivery correlations", "Operational Capacity", "Mapped orders and sellers", "Candidate 1", "Candidate 2"]
@@ -146,12 +293,12 @@ with overview_tab:
     eligible_delivery_orders = eligible_deliveries(order_data)
     st.caption(
         f"Purchase-date coverage: {purchase_time.min():%d %b %Y}–"
-        f"{purchase_time.max():%d %b %Y}. Each transaction row represents one order item; "
+        f"{purchase_time.max():%d %b %Y}. Counts cover orders with recorded items. Each transaction row represents one order item; "
         "product sales exclude freight."
     )
     headline_columns = st.columns(5)
     headline_columns[0].metric("Product sales", f"R$ {product_revenue:,.0f}")
-    headline_columns[1].metric("Orders", f"{order_count:,}")
+    headline_columns[1].metric("Orders with items", f"{order_count:,}")
     headline_columns[2].metric("Items sold", f"{items_sold:,}")
     headline_columns[3].metric("Unique customers", f"{customer_count:,}")
     headline_columns[4].metric("Sellers", f"{seller_count:,}")
@@ -170,7 +317,7 @@ with overview_tab:
         key="overview_granularity",
     )
 
-    figure_heading(1, "Order and product-sales growth over time")
+    figure_heading(1)
     growth_series = build_growth_series(line_items, granularity)
     orders_growth_chart = line_chart(
         growth_series, "orders", "Orders", ",.0f", BLUE, granularity != "Day"
@@ -186,16 +333,16 @@ with overview_tab:
     orders_growth_column, sales_growth_column = st.columns(2)
     with orders_growth_column:
         st.markdown("#### Total orders")
-        st.altair_chart(orders_growth_chart, use_container_width=True)
+        render_chart(orders_growth_chart, use_container_width=True)
     with sales_growth_column:
         st.markdown("#### Product sales")
-        st.altair_chart(sales_growth_chart, use_container_width=True)
-    figure_heading(2, "Commercial performance over time")
+        render_chart(sales_growth_chart, use_container_width=True)
+    figure_heading(2)
     commercial_series = build_commercial_series(line_items, granularity)
     commercial_aov_column, commercial_items_column = st.columns(2)
     with commercial_aov_column:
         st.markdown("#### Average order value")
-        st.altair_chart(
+        render_chart(
             line_chart(
                 commercial_series,
                 "average_order_value",
@@ -208,7 +355,7 @@ with overview_tab:
         )
     with commercial_items_column:
         st.markdown("#### Items per order")
-        st.altair_chart(
+        render_chart(
             line_chart(
                 commercial_series,
                 "items_per_order",
@@ -226,7 +373,7 @@ with overview_tab:
     geography_column, category_column = st.columns(2)
     with geography_column:
         st.metric("São Paulo share of orders", f"{sao_paulo_share:.1f}%")
-        figure_heading(3, "Top 10 customer states by orders")
+        figure_heading(3)
         top_states = state_summary.head(10)
         geography_chart = (
             alt.Chart(top_states)
@@ -242,10 +389,10 @@ with overview_tab:
             )
             .properties(height=350)
         )
-        st.altair_chart(geography_chart, use_container_width=True)
+        render_chart(geography_chart, use_container_width=True)
 
     with category_column:
-        figure_heading(4, "Top 10 product categories")
+        figure_heading(4)
         category_metric = st.radio(
             "Category metric",
             ["Items sold", "Product sales"],
@@ -303,14 +450,14 @@ with overview_tab:
             )
             .properties(height=350)
         )
-        st.altair_chart(category_chart, use_container_width=True)
+        render_chart(category_chart, use_container_width=True)
         st.caption(
             "Missing or untranslated categories are retained as Unknown."
         )
 
     st.divider()
     st.header("Seller and customer structure")
-    figure_heading(5, "Cumulative product sales by seller share")
+    figure_heading(5)
     seller_pareto = seller_summary.reset_index(drop=True).copy()
     seller_pareto["seller_rank"] = seller_pareto.index + 1
     seller_pareto["seller_share"] = (
@@ -389,7 +536,7 @@ with overview_tab:
         .mark_point(color=ORANGE, filled=True, size=110)
         .encode(x="seller_share:Q", y="cumulative_sales_share:Q")
     )
-    st.altair_chart(
+    render_chart(
         (equality_line + pareto_line + top_decile_rule + top_decile_point).properties(
             height=380
         ),
@@ -401,7 +548,7 @@ with overview_tab:
         f"{top_decile_share:.1f}% of product sales."
     )
 
-    figure_heading(6, "Customer purchase-frequency distribution")
+    figure_heading(6)
     customer_frequency = (
         order_data.groupby("customer_unique_id")["order_id"]
         .nunique()
@@ -452,7 +599,7 @@ with overview_tab:
     frequency_labels = frequency_bars.mark_text(dy=-9, color="#31333F").encode(
         text="Share label:N"
     )
-    st.altair_chart(frequency_bars + frequency_labels, use_container_width=True)
+    render_chart(frequency_bars + frequency_labels, use_container_width=True)
     st.caption("Purchase frequency covers the full dataset period.")
 
     st.divider()
@@ -461,7 +608,7 @@ with overview_tab:
     experience_columns[0].metric("Average review score", f"{average_score:.2f} / 5")
     experience_columns[1].metric("Five-star reviews", f"{five_star_rate:.1%}")
     experience_columns[2].metric("Low ratings", f"{low_rating_rate:.1%}")
-    figure_heading(7, "Review-score distribution")
+    figure_heading(7)
     review_distribution = order_reviews.groupby("review_score", as_index=False).agg(
         reviews=("order_id", "size")
     )
@@ -482,12 +629,12 @@ with overview_tab:
         )
         .properties(height=330)
     )
-    st.altair_chart(review_chart, use_container_width=True)
+    render_chart(review_chart, use_container_width=True)
     st.caption("One latest review per consolidated order; low rating means 1–2 stars.")
 
     st.divider()
     st.header("Delivery performance and customer ratings")
-    figure_heading(8, "Late-delivery and low-rating rates over time")
+    figure_heading(8)
     delivery_experience = build_delivery_experience_series(order_data, reviews)
     delivery_experience_long = delivery_experience.melt(
         id_vars="period",
@@ -517,13 +664,13 @@ with overview_tab:
         )
         .properties(height=350)
     )
-    st.altair_chart(delivery_trend, use_container_width=True)
+    render_chart(delivery_trend, use_container_width=True)
     st.caption(
         "Late-delivery and low-rating rates increased together during the main peaks. "
         "Results cover January 2017–August 2018 and orders with the required delivery and review data."
     )
 
-    figure_heading(9, "Low-rating rate by delivery timing")
+    figure_heading(9)
     comparison, _, risk_ratio = build_delivery_review_analysis(order_data, reviews)
     reviewed_delivery_counts = (
         eligible_delivery_orders[[
@@ -579,7 +726,7 @@ with overview_tab:
     comparison_labels = comparison_chart.mark_text(dy=-10, color="#31333F").encode(
         text="low_rating_label:N"
     )
-    st.altair_chart(comparison_chart + comparison_labels, use_container_width=True)
+    render_chart(comparison_chart + comparison_labels, use_container_width=True)
     st.metric("Late-order low-rating risk ratio", f"{risk_ratio:.2f}×")
     st.caption(
         "Delivered orders with an estimated date and latest review. The comparison shows "
@@ -668,7 +815,7 @@ with delivery_correlations_tab:
 
     with row1_left:
         with st.container(border=True):
-            boxed_label("Decomposition")
+            figure_heading(10)
             stat_choice = st.radio(
                 "Value used for the breakdown",
                 ["Mean", "Median"],
@@ -707,7 +854,7 @@ with delivery_correlations_tab:
             stage_pie_labels = stage_base.mark_text(
                 radius=112, fontSize=12, fontWeight="bold"
             ).encode(text="slice_label:N", color=alt.value("#31333F"))
-            st.altair_chart(
+            render_chart(
                 (stage_pie + stage_pie_labels).properties(height=340),
                 use_container_width=True,
             )
@@ -749,7 +896,7 @@ with delivery_correlations_tab:
                     alt.Tooltip("orders:Q", title="Orders", format=","),
                 ],
             )
-            st.altair_chart(
+            render_chart(
                 shipping_line.properties(height=340), use_container_width=True
             )
             st.caption(
@@ -777,7 +924,7 @@ with delivery_correlations_tab:
                     alt.Tooltip("orders:Q", title="Orders", format=","),
                 ],
             )
-            st.altair_chart(dist_days.properties(height=300), use_container_width=True)
+            render_chart(dist_days.properties(height=300), use_container_width=True)
         with dist_right:
             st.markdown("###### Mean review score & late-rate by distance")
             base = alt.Chart(distance_buckets).encode(
@@ -804,7 +951,7 @@ with delivery_correlations_tab:
             late_line = base.mark_line(
                 point=True, color="#003D7C", strokeDash=[4, 3]
             ).encode(y=alt.Y("late_rate:Q", title="Late rate (%)"))
-            st.altair_chart(
+            render_chart(
                 alt.layer(score_line, late_line)
                 .resolve_scale(y="independent")
                 .properties(height=300),
@@ -841,7 +988,7 @@ with delivery_correlations_tab:
                     alt.Tooltip("orders:Q", title="Orders", format=","),
                 ],
             )
-            st.altair_chart(cat_days.properties(height=380), use_container_width=True)
+            render_chart(cat_days.properties(height=380), use_container_width=True)
         with cat_right:
             st.markdown("###### Mean review score")
             cat_score = alt.Chart(top_categories).mark_bar(color="#EF7C00").encode(
@@ -866,7 +1013,7 @@ with delivery_correlations_tab:
                     alt.Tooltip("late_rate:Q", title="Late rate (%)", format=".1f"),
                 ],
             )
-            st.altair_chart(cat_score.properties(height=380), use_container_width=True)
+            render_chart(cat_score.properties(height=380), use_container_width=True)
         st.caption(
             "Categories with ≥100 delivered orders, top 13 by mean delivery time. Same "
             "row order in both charts. Late rate = share delivered after the estimated "
@@ -874,7 +1021,7 @@ with delivery_correlations_tab:
         )
 
     with st.container(border=True):
-        boxed_label("Seller volume size")
+        figure_heading(11)
         seller_scatter = alt.Chart(seller_cuts).mark_circle(opacity=0.55).encode(
             x=alt.X(
                 "orders:Q", title="Delivered orders", scale=alt.Scale(type="log")
@@ -901,7 +1048,7 @@ with delivery_correlations_tab:
                 ),
             ],
         )
-        st.altair_chart(
+        render_chart(
             seller_scatter.properties(height=340), use_container_width=True
         )
         st.caption(
@@ -926,7 +1073,7 @@ with delivery_correlations_tab:
                     alt.Tooltip("orders:Q", title="Orders", format=","),
                 ],
             )
-            st.altair_chart(pay_days.properties(height=300), use_container_width=True)
+            render_chart(pay_days.properties(height=300), use_container_width=True)
         with pay_right:
             st.markdown("###### Mean review score & late-rate by payment method")
             pay_base = alt.Chart(payment_cuts).encode(
@@ -943,7 +1090,7 @@ with delivery_correlations_tab:
             pay_late_line = pay_base.mark_line(point=True, color="#003D7C", strokeDash=[4, 3]).encode(
                 y=alt.Y("late_rate:Q", title="Late rate (%)"),
             )
-            st.altair_chart(
+            render_chart(
                 alt.layer(pay_score_line, pay_late_line).resolve_scale(y="independent").properties(height=300),
                 use_container_width=True,
             )
@@ -964,7 +1111,7 @@ with delivery_correlations_tab:
                 title=None,
                 sort=stage_order,
                 scale=alt.Scale(domain=stage_order, range=STAGE_COLORS),
-                legend=alt.Legend(orient="bottom", columns=3),
+                legend=alt.Legend(orient="bottom", columns=1),
             ),
             order=alt.Order("stage_order:Q"),
             tooltip=[
@@ -974,7 +1121,7 @@ with delivery_correlations_tab:
                 alt.Tooltip("orders:Q", title="Orders", format=","),
             ],
         )
-        st.altair_chart(stage_bar.properties(height=260), use_container_width=True)
+        render_chart(stage_bar.properties(height=260), use_container_width=True)
         st.caption(
             "Same processing/handling/shipping stages slicing as the "
             "Decomposition chart above, grouped by payment type instead of collapsed "
@@ -997,7 +1144,7 @@ with capacity_tab:
     capacity_line_items = load_data(DATA_PATH)
     capacity_orders = capacity_line_items.drop_duplicates("order_id")
 
-    st.subheader("Capacity strain: weekly order volume vs. delivery time")
+    figure_heading(12)
     capacity_stat_choice = st.radio(
         "Value used for delivery time",
         ["Median", "Mean"],
@@ -1020,17 +1167,39 @@ with capacity_tab:
     lead_time_line = capacity_base.mark_line(color="#EF7C00", point=True).encode(
         y=alt.Y(f"{capacity_value_column}:Q", title=f"{capacity_stat_choice} delivery days")
     )
-    st.altair_chart(
+    render_chart(
         alt.layer(volume_bars, lead_time_line).resolve_scale(y="independent").properties(height=320),
         use_container_width=True,
     )
     st.caption(
         f"Weekly order volume (bars, left axis) vs. {capacity_stat_choice.lower()} delivery "
-        "time (orange line, right axis). If lead time rises alongside volume spikes, delay "
-        "is partly a capacity/throughput problem, not just a per-order attribute."
+        "time (orange line, right axis). These descriptive trends do not by themselves "
+        "identify the cause of longer deliveries or establish a capacity bottleneck."
     )
 
-    st.subheader("Does weekly volume actually predict delivery time?")
+    figure_heading(13)
+    backlog_series = build_backlog_series(capacity_orders)
+    backlog_chart = alt.Chart(backlog_series).mark_area(
+        color="#EF7C00", opacity=0.6, line={"color": "#EF7C00"}
+    ).encode(
+        x=alt.X("period:T", title=None),
+        y=alt.Y("backlog:Q", title="Outstanding cohort orders"),
+        tooltip=[
+            alt.Tooltip("period:T", title="Week of"),
+            alt.Tooltip("placed:Q", title="Orders placed", format=","),
+            alt.Tooltip("completed:Q", title="Orders delivered", format=","),
+            alt.Tooltip("backlog:Q", title="Outstanding cohort orders", format=","),
+        ],
+    )
+    render_chart(backlog_chart.properties(height=300), use_container_width=True)
+    st.caption(
+        "Cumulative orders placed minus orders delivered within the selected cohort of "
+        "eventually delivered orders purchased from January 2017 to August 2018. "
+        "This retrospective count excludes orders outside the cohort and does not "
+        "reconstruct the marketplace's complete live backlog."
+    )
+
+    figure_heading(14)
     volume_corr = capacity_series["orders"].corr(capacity_series[capacity_value_column])
     volume_scatter = alt.Chart(capacity_series).mark_circle(color=BLUE, size=90, opacity=0.75).encode(
         x=alt.X("orders:Q", title="Weekly order volume"),
@@ -1044,80 +1213,80 @@ with capacity_tab:
     volume_trend = volume_scatter.transform_regression("orders", capacity_value_column).mark_line(
         color="#EF7C00", strokeDash=[5, 3], strokeWidth=2.5
     )
-    st.altair_chart(
+    render_chart(
         (volume_scatter + volume_trend).properties(height=340),
         use_container_width=True,
     )
     st.caption(
         f"Each point is one week (n={len(capacity_series)}). Pearson r = {volume_corr:.2f} between "
-        "weekly order volume and that week's delivery time, a weak relationship. Points spread across "
-        "almost the full range of delivery times at nearly every volume level, so a busy week alone does "
-        "not reliably predict a slow week; delay is better explained by other factors such as accumulated "
-        "backlog (see below) than by concurrent volume."
+        "weekly order volume and delivery time for that purchase week. This is a "
+        "concurrent association across weeks, not an evaluation of predictive accuracy. "
+        "Comparing backlog and other explanations requires further analysis."
     )
 
-    st.subheader("Purchase timing: day-of-week × hour heatmap")
-    heatmap_metric_choice = st.radio(
-        "Colour by",
-        ["Mean delivery days", "Order volume"],
-        horizontal=True,
-        key="heatmap_metric",
-    )
-    heatmap_metric_column = {"Mean delivery days": "mean_delivery_days", "Order volume": "orders"}[
-        heatmap_metric_choice
-    ]
-    heatmap_data = build_hour_dow_heatmap(capacity_orders)
-    heatmap_chart = alt.Chart(heatmap_data).mark_rect().encode(
-        x=alt.X("purchase_hour:O", title="Purchase hour"),
-        y=alt.Y("day_of_week:N", title=None, sort=DAY_OF_WEEK_ORDER),
-        color=alt.Color(
-            f"{heatmap_metric_column}:Q",
-            title=heatmap_metric_choice,
-            scale=alt.Scale(scheme="blues"),
-        ),
-        tooltip=[
-            alt.Tooltip("day_of_week:N", title="Day"),
-            alt.Tooltip("purchase_hour:O", title="Hour"),
-            alt.Tooltip("mean_delivery_days:Q", title="Mean delivery days", format=".1f"),
-            alt.Tooltip("orders:Q", title="Orders", format=","),
-        ],
-    )
-    st.altair_chart(heatmap_chart.properties(height=320), use_container_width=True)
-    st.caption(
-        "Colour toggle switches between mean delivery days and order volume by the "
-        "day-of-week and hour of the purchase timestamp. Purchase timing is known at "
-        "order time, making it a zero-cost candidate feature."
-    )
+    with st.expander("More detail on purchase timing"):
+        st.subheader("Purchase timing: day-of-week × hour heatmap")
+        heatmap_metric_choice = st.radio(
+            "Colour by",
+            ["Mean delivery days", "Order volume"],
+            horizontal=True,
+            key="heatmap_metric",
+        )
+        heatmap_metric_column = {"Mean delivery days": "mean_delivery_days", "Order volume": "orders"}[
+            heatmap_metric_choice
+        ]
+        heatmap_data = build_hour_dow_heatmap(capacity_orders)
+        heatmap_chart = alt.Chart(heatmap_data).mark_rect().encode(
+            x=alt.X("purchase_hour:O", title="Purchase hour"),
+            y=alt.Y("day_of_week:N", title=None, sort=DAY_OF_WEEK_ORDER),
+            color=alt.Color(
+                f"{heatmap_metric_column}:Q",
+                title=heatmap_metric_choice,
+                scale=alt.Scale(scheme="blues"),
+            ),
+            tooltip=[
+                alt.Tooltip("day_of_week:N", title="Day"),
+                alt.Tooltip("purchase_hour:O", title="Hour"),
+                alt.Tooltip("mean_delivery_days:Q", title="Mean delivery days", format=".1f"),
+                alt.Tooltip("orders:Q", title="Orders", format=","),
+            ],
+        )
+        render_chart(heatmap_chart.properties(height=320), use_container_width=True)
+        st.caption(
+            "Colour toggle switches between mean delivery days and order volume by the "
+            "day-of-week and hour of the purchase timestamp. Purchase timing is known at "
+            "order time, making it a zero-cost candidate feature."
+        )
 
-    st.subheader("Which stage slows down for weekend purchases?")
-    weekday_stage = build_stage_duration_by_weekday(ORDERS_PATH)
-    stage_key_order = ["processing_time", "handling_time", "shipping_time"]
-    stage_key_colors = dict(zip(stage_key_order, ["#EF7C00", "#003D7C", "#7FA9D0"]))
-    stage_key_labels = dict(zip(stage_key_order, weekday_stage.drop_duplicates("stage_key").set_index("stage_key")["stage"]))
-    weekday_cols = st.columns(3)
-    for col, stage_key in zip(weekday_cols, stage_key_order):
-        stage_data = weekday_stage.loc[weekday_stage["stage_key"] == stage_key]
-        with col:
-            st.markdown(f"###### {stage_key_labels[stage_key]}")
-            stage_bar = alt.Chart(stage_data).mark_bar(color=stage_key_colors[stage_key]).encode(
-                x=alt.X("day_of_week:N", title=None, sort=DAY_OF_WEEK_ORDER, axis=alt.Axis(labelAngle=-45)),
-                y=alt.Y("mean_days:Q", title="Mean days"),
-                tooltip=[
-                    alt.Tooltip("day_of_week:N", title="Purchase day"),
-                    alt.Tooltip("mean_days:Q", title="Mean days", format=".2f"),
-                ],
-            )
-            st.altair_chart(stage_bar.properties(height=260), use_container_width=True)
-    st.caption(
-        "Mean duration of each fulfilment stage by the day-of-week the order was "
-        "purchased (each stage has its own y-axis, since shipping is ~20x longer than "
-        "processing). Tests whether the day-of-week effect seen above sits specifically "
-        "in one stage (e.g. weekend purchases queuing before approval) rather than "
-        "being spread evenly across the pipeline. Negative-duration and incomplete-"
-        "timestamp rows excluded, same as the stage-duration chart below."
-    )
+        st.subheader("Which stage slows down for weekend purchases?")
+        weekday_stage = build_stage_duration_by_weekday(ORDERS_PATH)
+        stage_key_order = ["processing_time", "handling_time", "shipping_time"]
+        stage_key_colors = dict(zip(stage_key_order, ["#EF7C00", "#003D7C", "#7FA9D0"]))
+        stage_key_labels = dict(zip(stage_key_order, weekday_stage.drop_duplicates("stage_key").set_index("stage_key")["stage"]))
+        weekday_cols = st.columns(3)
+        for col, stage_key in zip(weekday_cols, stage_key_order):
+            stage_data = weekday_stage.loc[weekday_stage["stage_key"] == stage_key]
+            with col:
+                st.markdown(f"###### {stage_key_labels[stage_key]}")
+                stage_bar = alt.Chart(stage_data).mark_bar(color=stage_key_colors[stage_key]).encode(
+                    x=alt.X("day_of_week:N", title=None, sort=DAY_OF_WEEK_ORDER, axis=alt.Axis(labelAngle=-45, labelOverlap=False)),
+                    y=alt.Y("mean_days:Q", title="Mean days"),
+                    tooltip=[
+                        alt.Tooltip("day_of_week:N", title="Purchase day"),
+                        alt.Tooltip("mean_days:Q", title="Mean days", format=".2f"),
+                    ],
+                )
+                render_chart(stage_bar.properties(height=260), use_container_width=True)
+        st.caption(
+            "Mean duration of each fulfilment stage by the day-of-week the order was "
+            "purchased (each stage has its own y-axis, since shipping is ~20x longer than "
+            "processing). Tests whether the day-of-week effect seen above sits specifically "
+            "in one stage (e.g. weekend purchases queuing before approval) rather than "
+            "being spread evenly across the pipeline. Negative-duration and incomplete-"
+            "timestamp rows excluded, same as the stage-duration chart below."
+        )
 
-    st.subheader("Freight cost efficiency: freight-to-price ratio vs. late-rate")
+    figure_heading(15)
     freight_buckets = build_freight_ratio_buckets(capacity_line_items)
     freight_base = alt.Chart(freight_buckets).encode(
         x=alt.X("ratio_label:N", title="Freight ÷ price", sort=freight_buckets["ratio_label"].tolist())
@@ -1130,7 +1299,7 @@ with capacity_tab:
             alt.Tooltip("orders:Q", title="Orders", format=","),
         ],
     )
-    st.altair_chart(freight_bars.properties(height=300), use_container_width=True)
+    render_chart(freight_bars.properties(height=300), use_container_width=True)
     st.caption(
         "Orders bucketed into sextiles of (order-level freight value ÷ price). Late-rate "
         "stays roughly flat across buckets (about 7.8-8.4%), so despite bundling "
@@ -1138,29 +1307,7 @@ with capacity_tab:
         "strong standalone predictor of lateness."
     )
 
-    st.subheader("Backlog: orders placed vs. delivered over time")
-    backlog_series = build_backlog_series(capacity_orders)
-    backlog_chart = alt.Chart(backlog_series).mark_area(
-        color="#EF7C00", opacity=0.6, line={"color": "#EF7C00"}
-    ).encode(
-        x=alt.X("period:T", title=None),
-        y=alt.Y("backlog:Q", title="Cumulative backlog (orders)"),
-        tooltip=[
-            alt.Tooltip("period:T", title="Week of"),
-            alt.Tooltip("placed:Q", title="Orders placed", format=","),
-            alt.Tooltip("completed:Q", title="Orders delivered", format=","),
-            alt.Tooltip("backlog:Q", title="Cumulative backlog", format=","),
-        ],
-    )
-    st.altair_chart(backlog_chart.properties(height=300), use_container_width=True)
-    st.caption(
-        "Cumulative (orders placed − orders delivered) by week. Caveat: the final few "
-        "weeks are inflated by right-censoring, since recently placed orders haven't had "
-        "time to be delivered yet as of the data snapshot. That's not the same as a real "
-        "operational backlog."
-    )
-
-    st.subheader("Does Olist's own delivery promise react to capacity strain?")
+    figure_heading(16)
     promise_secondary_choice = st.radio(
         "Secondary axis",
         ["Late-delivery rate", "Backlog"],
@@ -1187,8 +1334,8 @@ with capacity_tab:
             "series:N",
             title=None,
             scale=alt.Scale(
-                domain=["Promised (estimated delivery date)", "Actual"],
-                range=["#7FA9D0", "#EF7C00"],
+                domain=["Promised (estimated delivery date)", "Actual", promise_secondary_choice],
+                range=["#7FA9D0", "#EF7C00", "#003D7C"],
             ),
             legend=alt.Legend(orient="bottom"),
         ),
@@ -1216,7 +1363,7 @@ with capacity_tab:
             alt.Tooltip(f"{promise_secondary_column}:Q", title=promise_secondary_title, format=".1f"),
         ],
     )
-    st.altair_chart(
+    render_chart(
         alt.layer(promise_lines, secondary_line).resolve_scale(y="independent").properties(height=340),
         use_container_width=True,
     )
@@ -1227,14 +1374,14 @@ with capacity_tab:
         "a lag after volume spikes (it barely moves during the Nov 2017 peak week itself, "
         "but keeps climbing for weeks afterward). It correlates more with a several-week "
         "trailing average of actual delivery performance (r≈0.45 at 8-12 weeks) than "
-        "with current-week backlog (r=-0.26), suggesting a slow-reacting historical "
-        "baseline rather than a live capacity signal. Watch whether late-rate falls as "
+        "with the current-week cohort outstanding count (r=-0.26). These associations "
+        "do not establish how Olist sets its estimates. Watch whether late-rate falls as "
         "the promise widens: since the late/on-time label is defined relative to this "
         "promise, a wider promise can lower the late-rate even if actual delivery isn't "
         "getting faster."
     )
 
-    st.subheader("Where does the delay accumulate? Stage duration over time")
+    figure_heading(17)
     stage_series_stat_choice = st.radio(
         "Value used for stage duration",
         ["Mean", "Median"],
@@ -1264,12 +1411,12 @@ with capacity_tab:
             alt.Tooltip(f"{stage_series_value_column}:Q", title=f"{stage_series_stat_choice} days", format=".2f"),
         ],
     )
-    st.altair_chart(stage_area.properties(height=340), use_container_width=True)
+    render_chart(stage_area.properties(height=340), use_container_width=True)
     st.caption(
         f"Weekly {stage_series_stat_choice.lower()} duration of each fulfilment stage, "
-        "stacked. Shows whether backlog during high-volume periods concentrates in a "
-        "specific stage (e.g. warehouse hand-off vs. carrier transit) rather than "
-        "spreading evenly. Negative-duration and incomplete-timestamp rows excluded."
+        "stacked. The chart shows where elapsed delivery time is spent; it does not "
+        "identify capacity constraints. Negative-duration and incomplete-timestamp rows "
+        "are excluded. Sums of stage medians need not equal median total delivery time."
     )
 
 with ratings_tab:
@@ -1295,7 +1442,7 @@ with ratings_tab:
         DATA_PATH, CUSTOMERS_PATH, SELLERS_PATH, GEOLOCATION_PATH, REVIEWS_PATH
     )
 
-    figure_heading(10, "Low-rating rate by delivery timing")
+    figure_heading(25)
     timing_order = timing_summary.sort_values("timing_order")[
         "delivery_timing"
     ].astype(str).tolist()
@@ -1304,7 +1451,12 @@ with ratings_tab:
             "delivery_timing:N",
             title="Performance against estimated delivery date",
             sort=timing_order,
-            axis=alt.Axis(labelAngle=-20),
+            axis=alt.Axis(
+                labelAngle=0,
+                labelExpr="split(replace(replace(datum.label, ' days ', ' days|'), 'More than ', 'More than|'), '|')",
+                labelLineHeight=14,
+                labelOverlap=False,
+            ),
         ),
         tooltip=[
             alt.Tooltip("delivery_timing:N", title="Delivery timing"),
@@ -1333,7 +1485,7 @@ with ratings_tab:
             scale=alt.Scale(domain=[0, 85]),
         )
     )
-    st.altair_chart(
+    render_chart(
         (timing_intervals + timing_line).properties(height=360),
         use_container_width=True,
     )
@@ -1343,7 +1495,6 @@ with ratings_tab:
     )
 
     st.divider()
-    figure_columns = st.columns(2)
     complexity_order = [
         "Single item",
         "Multiple items",
@@ -1358,7 +1509,7 @@ with ratings_tab:
             "display_group:N",
             title=None,
             sort=["Single", "Multiple"],
-            axis=alt.Axis(labelAngle=0, labelLimit=110),
+            axis=alt.Axis(labelAngle=0, labelOverlap=False),
         ),
         tooltip=[
             alt.Tooltip("group:N", title="Order group"),
@@ -1418,15 +1569,7 @@ with ratings_tab:
         complexity_lower_caps,
         complexity_upper_caps,
         complexity_points,
-    ).facet(
-        column=alt.Column(
-            "dimension:N",
-            title=None,
-            sort=["Number of items", "Number of sellers"],
-            header=alt.Header(labelFontSize=14, labelFontWeight="bold"),
-        ),
-        spacing=45,
-    ).resolve_scale(x="independent")
+    ).properties(height=280)
 
     correlation_base = alt.Chart(score_correlations).encode(
         y=alt.Y("feature:N", title=None, sort=score_correlations["feature"].tolist()),
@@ -1445,25 +1588,44 @@ with ratings_tab:
     correlation_zero = alt.Chart(pd.DataFrame({"zero": [0]})).mark_rule(
         color="#31333F", strokeWidth=1
     ).encode(x="zero:Q")
-    with figure_columns[0]:
-        figure_heading(11, "Low-rating rate by order complexity")
-        st.altair_chart(complexity_chart, use_container_width=True)
+    with st.container():
+        figure_heading(26)
+        for dimension, column in zip(
+            ["Number of items", "Number of sellers"], st.columns(2)
+        ):
+            with column:
+                st.markdown(f"#### {dimension}")
+                render_chart(
+                    complexity_chart.transform_filter(alt.datum.dimension == dimension),
+                    use_container_width=True,
+                )
         st.markdown(
             "<div style='min-height:48px'>"
             "<small>Multi-item and multi-seller orders have higher low-rating rates. "
             "Lines show 95% Wilson confidence intervals.</small></div>",
             unsafe_allow_html=True,
         )
-    with figure_columns[1]:
-        figure_heading(12, "Feature correlations with review score")
-        st.altair_chart(
-            (correlation_bars + correlation_zero).properties(height=430),
+        coverage = complexity_summary.loc[
+            complexity_summary["group"].isin(["Multiple items", "Multiple sellers"])
+        ].set_index("group")
+        st.caption(
+            f"Share of all low-rated orders: multiple items "
+            f"{coverage.loc['Multiple items', 'low_rating_capture']:.1f}%; "
+            f"multiple sellers {coverage.loc['Multiple sellers', 'low_rating_capture']:.1f}%. "
+            "Groups overlap and should not be added."
+        )
+    with st.container():
+        figure_heading(27)
+        render_chart(
+            (correlation_bars + correlation_zero).properties(height=320),
             use_container_width=True,
         )
         st.markdown(
             "<div style='min-height:48px'>"
-            "<small>Correlations use reviewed orders with item records. Bars show "
-            "negative associations, not causal effects.</small></div>",
+            "<small>Pearson correlations use the mean of recorded review scores per order, "
+            "rather than the binary latest-review target in Figures 25–26. Distance uses "
+            "city/state mean coordinates and the first recorded seller. Sample sizes "
+            "appear in tooltips. These are descriptive associations.</small></div>",
             unsafe_allow_html=True,
         )
 
@@ -1483,7 +1645,7 @@ with problem1_tab:
     weight_buckets = build_weight_buckets(capacity_line_items)
     p1_stage_colors = ["#EF7C00", "#003D7C", "#7FA9D0"]
 
-    st.subheader("Delivery time and late-rate by customer–seller distance")
+    figure_heading(18)
     dist_base = alt.Chart(distance_buckets).encode(
         x=alt.X(
             "distance_label:N",
@@ -1503,7 +1665,7 @@ with problem1_tab:
         y=alt.Y("late_rate:Q", title="Late rate (%)"),
         tooltip=[alt.Tooltip("late_rate:Q", title="Late rate (%)", format=".1f")],
     )
-    st.altair_chart(
+    render_chart(
         alt.layer(dist_bars, dist_late_line).resolve_scale(y="independent").properties(height=320),
         use_container_width=True,
     )
@@ -1544,7 +1706,7 @@ with problem1_tab:
             alt.Tooltip("orders:Q", title="Orders", format=","),
         ],
     )
-    st.altair_chart(p1_heatmap_chart.properties(height=320), use_container_width=True)
+    render_chart(p1_heatmap_chart.properties(height=320), use_container_width=True)
     st.caption(
         "Purchase day and hour are observed at order placement and therefore carry "
         "no lookahead risk as model inputs. The heatmap indicates that mean "
@@ -1553,7 +1715,7 @@ with problem1_tab:
         "lead-time model."
     )
 
-    st.subheader("Mean delivery time by day of week purchased")
+    figure_heading(19)
     weekday_chart = alt.Chart(weekday_summary).mark_bar(color="#003D7C").encode(
         x=alt.X("day_of_week:N", title=None, sort=DAY_OF_WEEK_ORDER),
         y=alt.Y("mean_delivery_days:Q", title="Mean delivery days"),
@@ -1564,7 +1726,7 @@ with problem1_tab:
             alt.Tooltip("orders:Q", title="Orders", format=","),
         ],
     ).properties(height=300)
-    st.altair_chart(weekday_chart, use_container_width=True)
+    render_chart(weekday_chart, use_container_width=True)
     st.caption(
         "Mean delivery time varies by purchase day, ranging from 11.47 days for "
         "Sunday purchases to 13.12 days for Friday purchases, a difference of "
@@ -1572,7 +1734,7 @@ with problem1_tab:
         "predictive signal independent of distance or payment method."
     )
 
-    st.subheader("Which stage slows down for weekend purchases?")
+    figure_heading(20)
     p1_weekday_stage = build_stage_duration_by_weekday(ORDERS_PATH)
     p1_stage_key_order = ["processing_time", "handling_time", "shipping_time"]
     p1_stage_key_colors = dict(zip(p1_stage_key_order, p1_stage_colors))
@@ -1585,14 +1747,14 @@ with problem1_tab:
         with col:
             st.markdown(f"###### {p1_stage_key_labels[stage_key]}")
             stage_bar = alt.Chart(stage_data).mark_bar(color=p1_stage_key_colors[stage_key]).encode(
-                x=alt.X("day_of_week:N", title=None, sort=DAY_OF_WEEK_ORDER, axis=alt.Axis(labelAngle=-45)),
+                x=alt.X("day_of_week:N", title=None, sort=DAY_OF_WEEK_ORDER, axis=alt.Axis(labelAngle=-45, labelOverlap=False)),
                 y=alt.Y("mean_days:Q", title="Mean days"),
                 tooltip=[
                     alt.Tooltip("day_of_week:N", title="Purchase day"),
                     alt.Tooltip("mean_days:Q", title="Mean days", format=".2f"),
                 ],
             )
-            st.altair_chart(stage_bar.properties(height=240), use_container_width=True)
+            render_chart(stage_bar.properties(height=240), use_container_width=True)
     st.caption(
         "Decomposing total lead time into its three constituent stages localises "
         "the day-of-week effect observed above to the order-handling stage "
@@ -1602,7 +1764,7 @@ with problem1_tab:
         "in carrier transit, a distinction relevant to feature attribution."
     )
 
-    st.subheader("Delivery time by payment method")
+    figure_heading(21)
     p1_pay_days = alt.Chart(payment_cuts).mark_bar(color="#003D7C").encode(
         x=alt.X("payment_type:N", title=None, sort=payment_order),
         y=alt.Y("mean_delivery_days:Q", title="Mean delivery days"),
@@ -1613,7 +1775,7 @@ with problem1_tab:
             alt.Tooltip("orders:Q", title="Orders", format=","),
         ],
     )
-    st.altair_chart(p1_pay_days.properties(height=300), use_container_width=True)
+    render_chart(p1_pay_days.properties(height=300), use_container_width=True)
     st.caption(
         "Mean delivery time differs by payment method: Boleto orders average 13.04 "
         "days versus 11.88 for credit card. This is consistent with Boleto's "
@@ -1621,7 +1783,7 @@ with problem1_tab:
         "to fulfilment."
     )
 
-    st.subheader("Lead-time breakdown by payment method")
+    figure_heading(22)
     p1_stage_bar = alt.Chart(payment_stages).mark_bar().encode(
         y=alt.Y("payment_type:N", title=None, sort=payment_order),
         x=alt.X("days:Q", title="Mean days", stack="zero"),
@@ -1630,7 +1792,7 @@ with problem1_tab:
             title=None,
             sort=stage_order,
             scale=alt.Scale(domain=stage_order, range=STAGE_COLORS),
-            legend=alt.Legend(orient="bottom", columns=3),
+            legend=alt.Legend(orient="bottom", columns=1),
         ),
         order=alt.Order("stage_order:Q"),
         tooltip=[
@@ -1640,7 +1802,7 @@ with problem1_tab:
             alt.Tooltip("orders:Q", title="Orders", format=","),
         ],
     )
-    st.altair_chart(p1_stage_bar.properties(height=300), use_container_width=True)
+    render_chart(p1_stage_bar.properties(height=300), use_container_width=True)
     st.caption(
         "The same stage decomposition, grouped by payment method, confirms that "
         "Boleto's additional lead time is concentrated in the processing stage "
@@ -1648,10 +1810,13 @@ with problem1_tab:
         "requirement, rather than being distributed across handling or shipping."
     )
 
-    st.subheader("Delivery time by order complexity")
+    figure_heading(23)
     complexity_order = ["Single item", "Multiple items", "Single seller", "Multiple sellers"]
     complexity_delivery_chart = alt.Chart(complexity_delivery).mark_bar(color="#003D7C").encode(
-        x=alt.X("group:N", title=None, sort=complexity_order),
+        x=alt.X(
+            "group:N", title=None, sort=complexity_order,
+            axis=alt.Axis(labelAngle=0, labelExpr="split(datum.label, ' ')", labelLineHeight=14, labelOverlap=False),
+        ),
         y=alt.Y("mean_delivery_days:Q", title="Mean delivery days"),
         tooltip=[
             alt.Tooltip("group:N", title="Order group"),
@@ -1659,7 +1824,7 @@ with problem1_tab:
             alt.Tooltip("orders:Q", title="Orders", format=","),
         ],
     ).properties(height=300)
-    st.altair_chart(complexity_delivery_chart, use_container_width=True)
+    render_chart(complexity_delivery_chart, use_container_width=True)
     st.caption(
         "Order complexity shows a counter-intuitive relationship with delivery "
         "time: multi-seller orders arrive faster on average than single-seller "
@@ -1670,7 +1835,7 @@ with problem1_tab:
         "caution pending further investigation of the underlying mechanism."
     )
 
-    st.subheader("Delivery time by order weight")
+    figure_heading(24)
     p1_weight_base = alt.Chart(weight_buckets).encode(
         x=alt.X(
             "weight_label:N",
@@ -1690,7 +1855,7 @@ with problem1_tab:
         y=alt.Y("late_rate:Q", title="Late rate (%)"),
         tooltip=[alt.Tooltip("late_rate:Q", title="Late rate (%)", format=".1f")],
     )
-    st.altair_chart(
+    render_chart(
         alt.layer(p1_weight_bars, p1_weight_line).resolve_scale(y="independent").properties(height=320),
         use_container_width=True,
     )
