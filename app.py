@@ -288,6 +288,14 @@ st.set_page_config(page_title="IT5006 Olist Dashboard", layout="wide")
 st.markdown(
     """
     <style>
+    [data-testid="stExpander"] [data-testid="stTable"] th.blank,
+    [data-testid="stExpander"] [data-testid="stTable"] th[scope="row"] {
+        display: none;
+    }
+    [data-testid="stExpander"] [data-testid="stTable"] th.col0 p,
+    [data-testid="stExpander"] [data-testid="stTable"] td:first-of-type p {
+        white-space: nowrap;
+    }
     @media (max-width: 1100px) {
         [data-testid="stHorizontalBlock"]:has(> [data-testid="stColumn"] [data-testid="stVegaLiteChart"]) {
             flex-wrap: wrap;
@@ -308,7 +316,7 @@ st.caption("Start with the overview, explore supporting relationships, capacity 
 
 with st.expander("Find a report figure"):
     st.write("Open the listed tab and find the numbered heading. Cite Dashboard Figure N, or a panel such as Dashboard Figure 15a. Repeated views keep the same reference; figures inside an expander are included.")
-    st.table(pd.DataFrame(FIGURE_GUIDE).set_index("Figure"))
+    st.table(pd.DataFrame(FIGURE_GUIDE).assign(Figure=lambda frame: "Figure " + frame["Figure"].astype(str)))
 
 overview_tab, delivery_correlations_tab, capacity_tab, map_tab, problem1_tab, ratings_tab = st.tabs(
     ["Overview", "Delivery correlations", "Operational Capacity", "Mapped orders and sellers", "Candidate 1", "Candidate 2"]
