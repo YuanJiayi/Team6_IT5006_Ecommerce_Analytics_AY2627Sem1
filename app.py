@@ -1903,8 +1903,9 @@ with problem1_tab:
     render_chart(complexity_delivery_chart, use_container_width=True)
     st.caption(
         "Order complexity shows a counter-intuitive relationship with delivery "
-        "time: multi-seller orders arrive faster on average than single-seller "
-        "orders (8.66 versus 12.14 days), and multi-item orders arrive modestly "
+        "time: among multi-item orders, multi-seller orders arrive faster on "
+        "average than single-seller orders (8.66 versus 11.78 days), and "
+        "multi-item orders arrive modestly "
         "faster than single-item orders (11.36 versus 12.17 days). The "
         "multi-seller group is comparatively small (n = 1,275; order counts are "
         "available on hover), so this estimate should be treated with some "

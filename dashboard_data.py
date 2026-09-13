@@ -981,8 +981,8 @@ def build_complexity_delivery_summary(line_items: pd.DataFrame) -> pd.DataFrame:
     groups = {
         "Single item": merged["item_count"].eq(1),
         "Multiple items": merged["item_count"].gt(1),
-        "Single seller": merged["seller_count"].eq(1),
-        "Multiple sellers": merged["seller_count"].gt(1),
+        "Single seller": merged["item_count"].gt(1) & merged["seller_count"].eq(1),
+        "Multiple sellers": merged["item_count"].gt(1) & merged["seller_count"].gt(1),
     }
     rows = [
         {"group": label, "mean_delivery_days": merged.loc[mask, "delivery_days"].mean(), "orders": int(mask.sum())}
