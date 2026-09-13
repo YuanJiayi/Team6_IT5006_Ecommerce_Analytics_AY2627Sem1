@@ -164,6 +164,22 @@ def figure_heading(number: int) -> None:
     st.markdown(f"### Figure {number}. {FIGURE_TITLES[number]}")
 
 
+def render_chart(chart, **kwargs) -> None:
+    """Keep complete axis labels and legends visible in the dashboard."""
+    chart = chart.configure_axis(
+        labelLimit=0,
+        titleLimit=0,
+    ).configure_legend(
+        orient="bottom",
+        columns=1,
+        labelLimit=0,
+        titleLimit=0,
+        labelOverlap=False,
+        rowPadding=6,
+    )
+    st.altair_chart(chart, **kwargs)
+
+
 def line_chart(
     data: pd.DataFrame,
     column: str,
@@ -188,6 +204,25 @@ def line_chart(
     )
 
 st.set_page_config(page_title="IT5006 Olist Dashboard", layout="wide")
+# Stack chart columns before their axes and legends become cramped.
+# Metric-only rows retain Streamlit's normal responsive layout.
+st.markdown(
+    """
+    <style>
+    @media (max-width: 1100px) {
+        [data-testid="stHorizontalBlock"]:has(> [data-testid="stColumn"] [data-testid="stVegaLiteChart"]) {
+            flex-wrap: wrap;
+        }
+        [data-testid="stHorizontalBlock"]:has(> [data-testid="stColumn"] [data-testid="stVegaLiteChart"]) > [data-testid="stColumn"] {
+            flex: 1 1 100%;
+            width: 100%;
+            min-width: 100%;
+        }
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 st.title("Olist E-Commerce Dashboard")
 
 st.caption("Start with the overview, explore supporting relationships, capacity trends and the map, then compare the two candidate problems. Figure numbers are stable references for the report.")
@@ -298,16 +333,16 @@ with overview_tab:
     orders_growth_column, sales_growth_column = st.columns(2)
     with orders_growth_column:
         st.markdown("#### Total orders")
-        st.altair_chart(orders_growth_chart, use_container_width=True)
+        render_chart(orders_growth_chart, use_container_width=True)
     with sales_growth_column:
         st.markdown("#### Product sales")
-        st.altair_chart(sales_growth_chart, use_container_width=True)
+        render_chart(sales_growth_chart, use_container_width=True)
     figure_heading(2)
     commercial_series = build_commercial_series(line_items, granularity)
     commercial_aov_column, commercial_items_column = st.columns(2)
     with commercial_aov_column:
         st.markdown("#### Average order value")
-        st.altair_chart(
+        render_chart(
             line_chart(
                 commercial_series,
                 "average_order_value",
@@ -320,7 +355,7 @@ with overview_tab:
         )
     with commercial_items_column:
         st.markdown("#### Items per order")
-        st.altair_chart(
+        render_chart(
             line_chart(
                 commercial_series,
                 "items_per_order",
@@ -354,7 +389,7 @@ with overview_tab:
             )
             .properties(height=350)
         )
-        st.altair_chart(geography_chart, use_container_width=True)
+        render_chart(geography_chart, use_container_width=True)
 
     with category_column:
         figure_heading(4)
@@ -415,7 +450,7 @@ with overview_tab:
             )
             .properties(height=350)
         )
-        st.altair_chart(category_chart, use_container_width=True)
+        render_chart(category_chart, use_container_width=True)
         st.caption(
             "Missing or untranslated categories are retained as Unknown."
         )
@@ -501,7 +536,7 @@ with overview_tab:
         .mark_point(color=ORANGE, filled=True, size=110)
         .encode(x="seller_share:Q", y="cumulative_sales_share:Q")
     )
-    st.altair_chart(
+    render_chart(
         (equality_line + pareto_line + top_decile_rule + top_decile_point).properties(
             height=380
         ),
@@ -564,7 +599,7 @@ with overview_tab:
     frequency_labels = frequency_bars.mark_text(dy=-9, color="#31333F").encode(
         text="Share label:N"
     )
-    st.altair_chart(frequency_bars + frequency_labels, use_container_width=True)
+    render_chart(frequency_bars + frequency_labels, use_container_width=True)
     st.caption("Purchase frequency covers the full dataset period.")
 
     st.divider()
@@ -594,7 +629,7 @@ with overview_tab:
         )
         .properties(height=330)
     )
-    st.altair_chart(review_chart, use_container_width=True)
+    render_chart(review_chart, use_container_width=True)
     st.caption("One latest review per consolidated order; low rating means 1–2 stars.")
 
     st.divider()
@@ -629,7 +664,7 @@ with overview_tab:
         )
         .properties(height=350)
     )
-    st.altair_chart(delivery_trend, use_container_width=True)
+    render_chart(delivery_trend, use_container_width=True)
     st.caption(
         "Late-delivery and low-rating rates increased together during the main peaks. "
         "Results cover January 2017–August 2018 and orders with the required delivery and review data."
@@ -691,7 +726,7 @@ with overview_tab:
     comparison_labels = comparison_chart.mark_text(dy=-10, color="#31333F").encode(
         text="low_rating_label:N"
     )
-    st.altair_chart(comparison_chart + comparison_labels, use_container_width=True)
+    render_chart(comparison_chart + comparison_labels, use_container_width=True)
     st.metric("Late-order low-rating risk ratio", f"{risk_ratio:.2f}×")
     st.caption(
         "Delivered orders with an estimated date and latest review. The comparison shows "
@@ -819,7 +854,7 @@ with delivery_correlations_tab:
             stage_pie_labels = stage_base.mark_text(
                 radius=112, fontSize=12, fontWeight="bold"
             ).encode(text="slice_label:N", color=alt.value("#31333F"))
-            st.altair_chart(
+            render_chart(
                 (stage_pie + stage_pie_labels).properties(height=340),
                 use_container_width=True,
             )
@@ -861,7 +896,7 @@ with delivery_correlations_tab:
                     alt.Tooltip("orders:Q", title="Orders", format=","),
                 ],
             )
-            st.altair_chart(
+            render_chart(
                 shipping_line.properties(height=340), use_container_width=True
             )
             st.caption(
@@ -889,7 +924,7 @@ with delivery_correlations_tab:
                     alt.Tooltip("orders:Q", title="Orders", format=","),
                 ],
             )
-            st.altair_chart(dist_days.properties(height=300), use_container_width=True)
+            render_chart(dist_days.properties(height=300), use_container_width=True)
         with dist_right:
             st.markdown("###### Mean review score & late-rate by distance")
             base = alt.Chart(distance_buckets).encode(
@@ -916,7 +951,7 @@ with delivery_correlations_tab:
             late_line = base.mark_line(
                 point=True, color="#003D7C", strokeDash=[4, 3]
             ).encode(y=alt.Y("late_rate:Q", title="Late rate (%)"))
-            st.altair_chart(
+            render_chart(
                 alt.layer(score_line, late_line)
                 .resolve_scale(y="independent")
                 .properties(height=300),
@@ -953,7 +988,7 @@ with delivery_correlations_tab:
                     alt.Tooltip("orders:Q", title="Orders", format=","),
                 ],
             )
-            st.altair_chart(cat_days.properties(height=380), use_container_width=True)
+            render_chart(cat_days.properties(height=380), use_container_width=True)
         with cat_right:
             st.markdown("###### Mean review score")
             cat_score = alt.Chart(top_categories).mark_bar(color="#EF7C00").encode(
@@ -978,7 +1013,7 @@ with delivery_correlations_tab:
                     alt.Tooltip("late_rate:Q", title="Late rate (%)", format=".1f"),
                 ],
             )
-            st.altair_chart(cat_score.properties(height=380), use_container_width=True)
+            render_chart(cat_score.properties(height=380), use_container_width=True)
         st.caption(
             "Categories with ≥100 delivered orders, top 13 by mean delivery time. Same "
             "row order in both charts. Late rate = share delivered after the estimated "
@@ -1013,7 +1048,7 @@ with delivery_correlations_tab:
                 ),
             ],
         )
-        st.altair_chart(
+        render_chart(
             seller_scatter.properties(height=340), use_container_width=True
         )
         st.caption(
@@ -1038,7 +1073,7 @@ with delivery_correlations_tab:
                     alt.Tooltip("orders:Q", title="Orders", format=","),
                 ],
             )
-            st.altair_chart(pay_days.properties(height=300), use_container_width=True)
+            render_chart(pay_days.properties(height=300), use_container_width=True)
         with pay_right:
             st.markdown("###### Mean review score & late-rate by payment method")
             pay_base = alt.Chart(payment_cuts).encode(
@@ -1055,7 +1090,7 @@ with delivery_correlations_tab:
             pay_late_line = pay_base.mark_line(point=True, color="#003D7C", strokeDash=[4, 3]).encode(
                 y=alt.Y("late_rate:Q", title="Late rate (%)"),
             )
-            st.altair_chart(
+            render_chart(
                 alt.layer(pay_score_line, pay_late_line).resolve_scale(y="independent").properties(height=300),
                 use_container_width=True,
             )
@@ -1076,7 +1111,7 @@ with delivery_correlations_tab:
                 title=None,
                 sort=stage_order,
                 scale=alt.Scale(domain=stage_order, range=STAGE_COLORS),
-                legend=alt.Legend(orient="bottom", columns=3),
+                legend=alt.Legend(orient="bottom", columns=1),
             ),
             order=alt.Order("stage_order:Q"),
             tooltip=[
@@ -1086,7 +1121,7 @@ with delivery_correlations_tab:
                 alt.Tooltip("orders:Q", title="Orders", format=","),
             ],
         )
-        st.altair_chart(stage_bar.properties(height=260), use_container_width=True)
+        render_chart(stage_bar.properties(height=260), use_container_width=True)
         st.caption(
             "Same processing/handling/shipping stages slicing as the "
             "Decomposition chart above, grouped by payment type instead of collapsed "
@@ -1132,7 +1167,7 @@ with capacity_tab:
     lead_time_line = capacity_base.mark_line(color="#EF7C00", point=True).encode(
         y=alt.Y(f"{capacity_value_column}:Q", title=f"{capacity_stat_choice} delivery days")
     )
-    st.altair_chart(
+    render_chart(
         alt.layer(volume_bars, lead_time_line).resolve_scale(y="independent").properties(height=320),
         use_container_width=True,
     )
@@ -1156,7 +1191,7 @@ with capacity_tab:
             alt.Tooltip("backlog:Q", title="Outstanding cohort orders", format=","),
         ],
     )
-    st.altair_chart(backlog_chart.properties(height=300), use_container_width=True)
+    render_chart(backlog_chart.properties(height=300), use_container_width=True)
     st.caption(
         "Cumulative orders placed minus orders delivered within the selected cohort of "
         "eventually delivered orders purchased from January 2017 to August 2018. "
@@ -1178,7 +1213,7 @@ with capacity_tab:
     volume_trend = volume_scatter.transform_regression("orders", capacity_value_column).mark_line(
         color="#EF7C00", strokeDash=[5, 3], strokeWidth=2.5
     )
-    st.altair_chart(
+    render_chart(
         (volume_scatter + volume_trend).properties(height=340),
         use_container_width=True,
     )
@@ -1216,7 +1251,7 @@ with capacity_tab:
                 alt.Tooltip("orders:Q", title="Orders", format=","),
             ],
         )
-        st.altair_chart(heatmap_chart.properties(height=320), use_container_width=True)
+        render_chart(heatmap_chart.properties(height=320), use_container_width=True)
         st.caption(
             "Colour toggle switches between mean delivery days and order volume by the "
             "day-of-week and hour of the purchase timestamp. Purchase timing is known at "
@@ -1234,14 +1269,14 @@ with capacity_tab:
             with col:
                 st.markdown(f"###### {stage_key_labels[stage_key]}")
                 stage_bar = alt.Chart(stage_data).mark_bar(color=stage_key_colors[stage_key]).encode(
-                    x=alt.X("day_of_week:N", title=None, sort=DAY_OF_WEEK_ORDER, axis=alt.Axis(labelAngle=-45)),
+                    x=alt.X("day_of_week:N", title=None, sort=DAY_OF_WEEK_ORDER, axis=alt.Axis(labelAngle=-45, labelOverlap=False)),
                     y=alt.Y("mean_days:Q", title="Mean days"),
                     tooltip=[
                         alt.Tooltip("day_of_week:N", title="Purchase day"),
                         alt.Tooltip("mean_days:Q", title="Mean days", format=".2f"),
                     ],
                 )
-                st.altair_chart(stage_bar.properties(height=260), use_container_width=True)
+                render_chart(stage_bar.properties(height=260), use_container_width=True)
         st.caption(
             "Mean duration of each fulfilment stage by the day-of-week the order was "
             "purchased (each stage has its own y-axis, since shipping is ~20x longer than "
@@ -1264,7 +1299,7 @@ with capacity_tab:
             alt.Tooltip("orders:Q", title="Orders", format=","),
         ],
     )
-    st.altair_chart(freight_bars.properties(height=300), use_container_width=True)
+    render_chart(freight_bars.properties(height=300), use_container_width=True)
     st.caption(
         "Orders bucketed into sextiles of (order-level freight value ÷ price). Late-rate "
         "stays roughly flat across buckets (about 7.8-8.4%), so despite bundling "
@@ -1299,8 +1334,8 @@ with capacity_tab:
             "series:N",
             title=None,
             scale=alt.Scale(
-                domain=["Promised (estimated delivery date)", "Actual"],
-                range=["#7FA9D0", "#EF7C00"],
+                domain=["Promised (estimated delivery date)", "Actual", promise_secondary_choice],
+                range=["#7FA9D0", "#EF7C00", "#003D7C"],
             ),
             legend=alt.Legend(orient="bottom"),
         ),
@@ -1328,7 +1363,7 @@ with capacity_tab:
             alt.Tooltip(f"{promise_secondary_column}:Q", title=promise_secondary_title, format=".1f"),
         ],
     )
-    st.altair_chart(
+    render_chart(
         alt.layer(promise_lines, secondary_line).resolve_scale(y="independent").properties(height=340),
         use_container_width=True,
     )
@@ -1376,7 +1411,7 @@ with capacity_tab:
             alt.Tooltip(f"{stage_series_value_column}:Q", title=f"{stage_series_stat_choice} days", format=".2f"),
         ],
     )
-    st.altair_chart(stage_area.properties(height=340), use_container_width=True)
+    render_chart(stage_area.properties(height=340), use_container_width=True)
     st.caption(
         f"Weekly {stage_series_stat_choice.lower()} duration of each fulfilment stage, "
         "stacked. The chart shows where elapsed delivery time is spent; it does not "
@@ -1416,7 +1451,12 @@ with ratings_tab:
             "delivery_timing:N",
             title="Performance against estimated delivery date",
             sort=timing_order,
-            axis=alt.Axis(labelAngle=-20),
+            axis=alt.Axis(
+                labelAngle=0,
+                labelExpr="split(replace(replace(datum.label, ' days ', ' days|'), 'More than ', 'More than|'), '|')",
+                labelLineHeight=14,
+                labelOverlap=False,
+            ),
         ),
         tooltip=[
             alt.Tooltip("delivery_timing:N", title="Delivery timing"),
@@ -1445,7 +1485,7 @@ with ratings_tab:
             scale=alt.Scale(domain=[0, 85]),
         )
     )
-    st.altair_chart(
+    render_chart(
         (timing_intervals + timing_line).properties(height=360),
         use_container_width=True,
     )
@@ -1469,7 +1509,7 @@ with ratings_tab:
             "display_group:N",
             title=None,
             sort=["Single", "Multiple"],
-            axis=alt.Axis(labelAngle=0, labelLimit=110),
+            axis=alt.Axis(labelAngle=0, labelOverlap=False),
         ),
         tooltip=[
             alt.Tooltip("group:N", title="Order group"),
@@ -1555,7 +1595,7 @@ with ratings_tab:
         ):
             with column:
                 st.markdown(f"#### {dimension}")
-                st.altair_chart(
+                render_chart(
                     complexity_chart.transform_filter(alt.datum.dimension == dimension),
                     use_container_width=True,
                 )
@@ -1576,7 +1616,7 @@ with ratings_tab:
         )
     with st.container():
         figure_heading(27)
-        st.altair_chart(
+        render_chart(
             (correlation_bars + correlation_zero).properties(height=320),
             use_container_width=True,
         )
@@ -1625,7 +1665,7 @@ with problem1_tab:
         y=alt.Y("late_rate:Q", title="Late rate (%)"),
         tooltip=[alt.Tooltip("late_rate:Q", title="Late rate (%)", format=".1f")],
     )
-    st.altair_chart(
+    render_chart(
         alt.layer(dist_bars, dist_late_line).resolve_scale(y="independent").properties(height=320),
         use_container_width=True,
     )
@@ -1666,7 +1706,7 @@ with problem1_tab:
             alt.Tooltip("orders:Q", title="Orders", format=","),
         ],
     )
-    st.altair_chart(p1_heatmap_chart.properties(height=320), use_container_width=True)
+    render_chart(p1_heatmap_chart.properties(height=320), use_container_width=True)
     st.caption(
         "Purchase day and hour are observed at order placement and therefore carry "
         "no lookahead risk as model inputs. The heatmap indicates that mean "
@@ -1686,7 +1726,7 @@ with problem1_tab:
             alt.Tooltip("orders:Q", title="Orders", format=","),
         ],
     ).properties(height=300)
-    st.altair_chart(weekday_chart, use_container_width=True)
+    render_chart(weekday_chart, use_container_width=True)
     st.caption(
         "Mean delivery time varies by purchase day, ranging from 11.47 days for "
         "Sunday purchases to 13.12 days for Friday purchases, a difference of "
@@ -1707,14 +1747,14 @@ with problem1_tab:
         with col:
             st.markdown(f"###### {p1_stage_key_labels[stage_key]}")
             stage_bar = alt.Chart(stage_data).mark_bar(color=p1_stage_key_colors[stage_key]).encode(
-                x=alt.X("day_of_week:N", title=None, sort=DAY_OF_WEEK_ORDER, axis=alt.Axis(labelAngle=-45)),
+                x=alt.X("day_of_week:N", title=None, sort=DAY_OF_WEEK_ORDER, axis=alt.Axis(labelAngle=-45, labelOverlap=False)),
                 y=alt.Y("mean_days:Q", title="Mean days"),
                 tooltip=[
                     alt.Tooltip("day_of_week:N", title="Purchase day"),
                     alt.Tooltip("mean_days:Q", title="Mean days", format=".2f"),
                 ],
             )
-            st.altair_chart(stage_bar.properties(height=240), use_container_width=True)
+            render_chart(stage_bar.properties(height=240), use_container_width=True)
     st.caption(
         "Decomposing total lead time into its three constituent stages localises "
         "the day-of-week effect observed above to the order-handling stage "
@@ -1735,7 +1775,7 @@ with problem1_tab:
             alt.Tooltip("orders:Q", title="Orders", format=","),
         ],
     )
-    st.altair_chart(p1_pay_days.properties(height=300), use_container_width=True)
+    render_chart(p1_pay_days.properties(height=300), use_container_width=True)
     st.caption(
         "Mean delivery time differs by payment method: Boleto orders average 13.04 "
         "days versus 11.88 for credit card. This is consistent with Boleto's "
@@ -1752,7 +1792,7 @@ with problem1_tab:
             title=None,
             sort=stage_order,
             scale=alt.Scale(domain=stage_order, range=STAGE_COLORS),
-            legend=alt.Legend(orient="bottom", columns=3),
+            legend=alt.Legend(orient="bottom", columns=1),
         ),
         order=alt.Order("stage_order:Q"),
         tooltip=[
@@ -1762,7 +1802,7 @@ with problem1_tab:
             alt.Tooltip("orders:Q", title="Orders", format=","),
         ],
     )
-    st.altair_chart(p1_stage_bar.properties(height=300), use_container_width=True)
+    render_chart(p1_stage_bar.properties(height=300), use_container_width=True)
     st.caption(
         "The same stage decomposition, grouped by payment method, confirms that "
         "Boleto's additional lead time is concentrated in the processing stage "
@@ -1773,7 +1813,10 @@ with problem1_tab:
     figure_heading(23)
     complexity_order = ["Single item", "Multiple items", "Single seller", "Multiple sellers"]
     complexity_delivery_chart = alt.Chart(complexity_delivery).mark_bar(color="#003D7C").encode(
-        x=alt.X("group:N", title=None, sort=complexity_order),
+        x=alt.X(
+            "group:N", title=None, sort=complexity_order,
+            axis=alt.Axis(labelAngle=0, labelExpr="split(datum.label, ' ')", labelLineHeight=14, labelOverlap=False),
+        ),
         y=alt.Y("mean_delivery_days:Q", title="Mean delivery days"),
         tooltip=[
             alt.Tooltip("group:N", title="Order group"),
@@ -1781,7 +1824,7 @@ with problem1_tab:
             alt.Tooltip("orders:Q", title="Orders", format=","),
         ],
     ).properties(height=300)
-    st.altair_chart(complexity_delivery_chart, use_container_width=True)
+    render_chart(complexity_delivery_chart, use_container_width=True)
     st.caption(
         "Order complexity shows a counter-intuitive relationship with delivery "
         "time: multi-seller orders arrive faster on average than single-seller "
@@ -1812,7 +1855,7 @@ with problem1_tab:
         y=alt.Y("late_rate:Q", title="Late rate (%)"),
         tooltip=[alt.Tooltip("late_rate:Q", title="Late rate (%)", format=".1f")],
     )
-    st.altair_chart(
+    render_chart(
         alt.layer(p1_weight_bars, p1_weight_line).resolve_scale(y="independent").properties(height=320),
         use_container_width=True,
     )
