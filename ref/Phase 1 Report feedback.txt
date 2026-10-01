@@ -1,0 +1,91 @@
+Feedback:
+
+
+
+Literature Review:
+a. Summary of existing works:
+
+
+- Good summarization flow with identification of specific areas of exploration.
+
+
+- i like the individual paper specific comments on dataset, sample size and findings. good.
+
+
+
+Modelling approaches:
+
+
+- Done well.
+-  compariing ensembles v/s individual models is the right approach to both close the loop and demo model selection methodology.
+
+
+
+Feature engineering:
+
+
+- leakage awareness evident in the concluding paragraph of Kup et al. paper on time series. we will not cover it in this module but it is a crucial part of data prep for TS modeling.
+
+
+
+Eval metrics
+
+
+-  MAE, PR-AUC, MCC (do report this in your final work)
+
+
+- good points - 1) "
+
+
+Any resampling or class weighting should therefore be compared against an unadjusted model using a test set that retains the natural class distribution."; and 2) on practical usage of MQE, RMSE (from Hodson).
+
+
+
+Conclusion:
+
+
+- OK
+
+
+
+
+EDA: done well.
+
+ Candidate problem exploration:
+
+
+- Focus on order’s delivery lead time.
+
+
+- stakeholders also identified - ops team
+
+
+- like the comment on pre-delivery predictive signals.
+
+
+
+ Dashboard:
+
+
+- Put the main charts at least in the appendix.
+
+
+- provide some filters, cross-filtering else it is largly a static dashboard.
+
+
+
+ How to make it better:
+
+
+- Must add an AI declaration. Required even if no AI was used.
+
+
+- Add key figures to the report (inline or appendix). Referencing nearly 32 dashboard figures by number is good analytical practice but the report must stand alone visually.
+
+
+- Bring within the 4-5 page limit. Consider moving some text to the dashboard or an appendix.
+
+
+- clarify - clarify which customer key was used and what filtering produced 95,420 unique customers (section 2.1).
+
+Prakash Chandra Sukhwal , 25 Sep at 22:02
