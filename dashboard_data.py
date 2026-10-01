@@ -623,7 +623,7 @@ def build_distance_buckets(distance_table: pd.DataFrame) -> pd.DataFrame:
     grouped["distance_label"] = grouped["distance_bucket"].apply(
         lambda interval: f"{max(interval.left, 0):,.0f}–{interval.right:,.0f}"
     )
-    return grouped
+    return grouped.drop(columns="distance_bucket")
 
 
 def _delivery_review_cut(
@@ -847,7 +847,7 @@ def build_freight_ratio_buckets(line_items: pd.DataFrame, buckets: int = 6) -> p
     grouped["ratio_label"] = grouped["ratio_bucket"].apply(
         lambda interval: f"{max(interval.left, 0):.2f}-{interval.right:.2f}"
     )
-    return grouped
+    return grouped.drop(columns="ratio_bucket")
 
 
 @st.cache_data
@@ -1021,4 +1021,4 @@ def build_weight_buckets(line_items: pd.DataFrame, buckets: int = 6) -> pd.DataF
     grouped["weight_label"] = grouped["weight_bucket"].apply(
         lambda interval: f"{max(interval.left, 0):,.0f}–{interval.right:,.0f}"
     )
-    return grouped
+    return grouped.drop(columns="weight_bucket")

@@ -1387,7 +1387,8 @@ with capacity_tab:
     render_chart(freight_bars.properties(height=300), width="stretch")
     st.caption(
         "Orders bucketed into sextiles of (order-level freight value ÷ price). Late-rate "
-        "stays roughly flat across buckets (about 7.8-8.4%), so despite bundling "
+        f"stays roughly flat across buckets ({freight_buckets['late_rate'].min():.1f}–"
+        f"{freight_buckets['late_rate'].max():.1f}%), so despite bundling "
         "distance, weight and carrier pricing into one number, this ratio alone isn't a "
         "strong standalone predictor of lateness."
     )
