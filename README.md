@@ -1,6 +1,12 @@
 # Team6_IT5006_Ecommerce_Analytics_AY2627Sem1
 Phase / Milestone 2: Analytics Implementation - Problem Definition, Model Building & Evaluation
 
+## Phase 1 data carried into Phase 2
+
+The Phase 1 notebooks and PDF contain saved results from the original submission. The dashboard and checked-in `data/smartcommerce_consolidated.csv` now count delivery on the estimated **calendar date** as on time; the old timestamp rule incorrectly marked 1,292 such orders late. Duplicate reviews now use the latest creation time, answer time, and review ID as tie-breakers. Re-run affected analyses before quoting Phase 1 lateness or review figures in the Phase 2 report.
+
+For modelling, build a fresh **one-row-per-order** table from the raw Olist CSVs. The consolidated CSV is an item-level EDA artifact: its `delivery_days` value is rounded down to whole days, it has outcome fields that would leak into purchase-time predictions, and its single `seller_id` cannot represent every seller in a multi-seller order. Use `customer_unique_id` for customer history; the Phase 1 count of 95,420 refers to distinct people among the 98,666 orders with recorded items, not every row in the customers table.
+
 Deadline: Sunday, 11 October 2026 at 23:59 (end of Week 8)
 Weight: 40%
 Report length: 6–8 pages (excludes cover page, references, appendices)

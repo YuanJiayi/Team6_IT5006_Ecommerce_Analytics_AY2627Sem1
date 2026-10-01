@@ -34,22 +34,14 @@ def load_customer_ids(path: Path) -> pd.DataFrame:
 
 @st.cache_data
 def load_reviews(path: Path) -> pd.DataFrame:
-    return pd.read_csv(path, parse_dates=["review_creation_date"])
+    return pd.read_csv(
+        path, parse_dates=["review_creation_date", "review_answer_timestamp"]
+    )
 
 
 def latest_reviews(reviews: pd.DataFrame) -> pd.DataFrame:
-    return reviews.sort_values(["order_id", "review_creation_date", "review_id"]).drop_duplicates(
-        "order_id", keep="last"
-    )
-
-
-def _latest_rating_reviews(reviews: pd.DataFrame) -> pd.DataFrame:
-    """Match the ratings notebook's deterministic duplicate-review tie-breaker."""
-    ratings = reviews.copy()
-    ratings["review_answer_timestamp"] = pd.to_datetime(
-        ratings["review_answer_timestamp"]
-    )
-    return ratings.sort_values(
+    """Select the final review consistently when an order has duplicates."""
+    return reviews.sort_values(
         ["order_id", "review_creation_date", "review_answer_timestamp", "review_id"]
     ).drop_duplicates("order_id", keep="last")
 
@@ -106,12 +98,24 @@ def build_review_series(order_data: pd.DataFrame, reviews: pd.DataFrame, granula
     return series
 
 
+def is_late_delivery(delivered: pd.Series, estimated: pd.Series) -> pd.Series:
+    """The Olist estimate is a calendar date, with no promised time of day."""
+    return delivered.dt.normalize().gt(estimated.dt.normalize())
+
+
 def eligible_deliveries(order_data: pd.DataFrame) -> pd.DataFrame:
-    return order_data.loc[
+    eligible = order_data.loc[
         order_data["order_status"].eq("delivered")
         & order_data["order_delivered_customer_date"].notna()
         & order_data["order_estimated_delivery_date"].notna()
     ].copy()
+    # Derive the label from timestamps so an older prepared CSV cannot restore
+    # the incorrect midnight comparison.
+    eligible["is_on_time"] = ~is_late_delivery(
+        eligible["order_delivered_customer_date"],
+        eligible["order_estimated_delivery_date"],
+    )
+    return eligible
 
 
 def build_delivery_series(order_data: pd.DataFrame, granularity: str) -> pd.DataFrame:
@@ -119,7 +123,7 @@ def build_delivery_series(order_data: pd.DataFrame, granularity: str) -> pd.Data
     delivered["delivery_days_exact"] = (
         delivered["order_delivered_customer_date"] - delivered["order_purchase_timestamp"]
     ).dt.total_seconds() / 86_400
-    delivered["late_delivery"] = delivered["order_delivered_customer_date"] > delivered["order_estimated_delivery_date"]
+    delivered["late_delivery"] = ~delivered["is_on_time"]
     series = add_period(delivered, "order_purchase_timestamp", granularity).groupby("period", as_index=False).agg(
         median_delivery_days=("delivery_days_exact", "median"), late_delivery_rate=("late_delivery", "mean")
     )
@@ -134,9 +138,12 @@ def reviewed_deliveries(order_data: pd.DataFrame, reviews: pd.DataFrame, trim: b
     if trim:
         data = trim_trend_window(data, "order_purchase_timestamp")
     return data.assign(
-        late_delivery=lambda frame: frame["order_delivered_customer_date"] > frame["order_estimated_delivery_date"],
+        late_delivery=lambda frame: ~frame["is_on_time"],
         low_rating=lambda frame: frame["review_score"].le(2),
-        days_late=lambda frame: (frame["order_delivered_customer_date"] - frame["order_estimated_delivery_date"]).dt.total_seconds() / 86_400,
+        days_late=lambda frame: (
+            frame["order_delivered_customer_date"].dt.normalize()
+            - frame["order_estimated_delivery_date"].dt.normalize()
+        ).dt.days,
     )
 
 
@@ -195,7 +202,7 @@ def build_rating_complexity_summary(
         seller_count=("seller_id", "nunique"),
     )
     reviewed = order_complexity.merge(
-        _latest_rating_reviews(load_reviews(reviews_path))[["order_id", "review_score"]],
+        latest_reviews(load_reviews(reviews_path))[["order_id", "review_score"]],
         on="order_id",
         how="inner",
         validate="one_to_one",
@@ -257,7 +264,7 @@ def build_rating_delivery_timing_summary(
         how="inner",
         validate="one_to_one",
     ).merge(
-        _latest_rating_reviews(load_reviews(reviews_path))[["order_id", "review_score"]],
+        latest_reviews(load_reviews(reviews_path))[["order_id", "review_score"]],
         on="order_id",
         how="inner",
         validate="one_to_one",
@@ -270,12 +277,12 @@ def build_rating_delivery_timing_summary(
     ).dt.total_seconds() / 86_400
     reviewed = reviewed.loc[reviewed["delivery_days"].ge(0)].copy()
     reviewed["days_vs_estimate"] = (
-        reviewed["order_delivered_customer_date"]
-        - reviewed["order_estimated_delivery_date"]
-    ).dt.total_seconds() / 86_400
+        reviewed["order_delivered_customer_date"].dt.normalize()
+        - reviewed["order_estimated_delivery_date"].dt.normalize()
+    ).dt.days
     timing_order = [
         "More than 7 days early",
-        "0–7 days early",
+        "0–7 days early/on date",
         "1–3 days late",
         "4–7 days late",
         "Over 7 days late",
@@ -307,7 +314,7 @@ def build_review_score_correlations(
     geo_path: Path,
     reviews_path: Path,
 ) -> pd.DataFrame:
-    """Match the route-distance notebook's Pearson feature screening."""
+    """Screen order-level Pearson relationships using the latest review."""
     line_items = pd.read_csv(
         consolidated_path,
         usecols=[
@@ -345,10 +352,7 @@ def build_review_score_correlations(
     orders = orders.merge(customers, on="customer_id", how="left").merge(
         sellers, on="seller_id", how="left"
     )
-    reviews = pd.read_csv(reviews_path, usecols=["order_id", "review_score"])
-    reviews = reviews.dropna(subset=["review_score"]).groupby(
-        "order_id", as_index=False
-    ).agg(review_score=("review_score", "mean"))
+    reviews = _order_review_scores(reviews_path)
     geo = pd.read_csv(
         geo_path,
         usecols=["geolocation_city", "geolocation_state", "geolocation_lat", "geolocation_lng"],
@@ -401,8 +405,10 @@ def build_review_score_correlations(
     ].notna().all(axis=1)
     scored["late_delivery"] = pd.Series(pd.NA, index=scored.index, dtype="boolean")
     scored.loc[delivery_dates_available, "late_delivery"] = (
-        scored.loc[delivery_dates_available, "order_delivered_customer_date"]
-        > scored.loc[delivery_dates_available, "order_estimated_delivery_date"]
+        is_late_delivery(
+            scored.loc[delivery_dates_available, "order_delivered_customer_date"],
+            scored.loc[delivery_dates_available, "order_estimated_delivery_date"],
+        )
     )
     feature_labels = {
         "route_distance_km": "Route distance",
@@ -589,9 +595,9 @@ def build_distance_table(
     located["distance_km"] = _haversine_km(
         located["cust_lat"], located["cust_lng"], located["sell_lat"], located["sell_lng"]
     )
-    located["is_late"] = (
-        located["order_delivered_customer_date"]
-        > located["order_estimated_delivery_date"]
+    located["is_late"] = is_late_delivery(
+        located["order_delivered_customer_date"],
+        located["order_estimated_delivery_date"],
     )
     located = located.merge(_order_review_scores(reviews_path), on="order_id", how="left")
     return (
@@ -686,9 +692,7 @@ def build_payment_cuts(
     orders = eligible_deliveries(load_data(consolidated_path)).drop_duplicates("order_id")
     orders = orders.merge(load_primary_payment_types(payments_path), on="order_id", how="inner")
     orders = orders.merge(_order_review_scores(reviews_path), on="order_id", how="left")
-    orders["is_late"] = (
-        orders["order_delivered_customer_date"] > orders["order_estimated_delivery_date"]
-    )
+    orders["is_late"] = ~orders["is_on_time"]
     grouped = orders.groupby("payment_type", as_index=False).agg(
         orders=("order_id", "size"),
         mean_delivery_days=("delivery_days", "mean"),
@@ -876,7 +880,7 @@ def build_promise_buffer_series(order_data: pd.DataFrame) -> pd.DataFrame:
         actual_days=lambda frame: (
             frame["order_delivered_customer_date"] - frame["order_purchase_timestamp"]
         ).dt.total_seconds() / 86_400,
-        late=lambda frame: frame["order_delivered_customer_date"] > frame["order_estimated_delivery_date"],
+        late=lambda frame: ~frame["is_on_time"],
     )
     weekly = add_week_period(delivered, "order_purchase_timestamp").groupby(
         "period", as_index=False

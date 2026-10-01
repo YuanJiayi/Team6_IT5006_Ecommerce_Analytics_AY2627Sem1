@@ -34,6 +34,7 @@ from dashboard_data import (
     build_weight_buckets,
     DAY_OF_WEEK_ORDER,
     eligible_deliveries,
+    is_late_delivery,
     latest_reviews as select_latest_reviews,
     load_customer_ids,
     load_data,
@@ -340,6 +341,7 @@ with overview_tab:
     items_sold = len(line_items)
     product_revenue = line_items["price"].sum()
     customer_count = order_data["customer_unique_id"].nunique()
+    all_customer_count = customer_ids["customer_unique_id"].nunique()
     seller_count = line_items["seller_id"].nunique()
     purchase_time = line_items["order_purchase_timestamp"]
 
@@ -387,7 +389,12 @@ with overview_tab:
     headline_columns[0].metric("Product sales", f"R$ {product_revenue:,.0f}")
     headline_columns[1].metric("Orders with items", f"{order_count:,}")
     headline_columns[2].metric("Items sold", f"{items_sold:,}")
-    headline_columns[3].metric("Unique customers", f"{customer_count:,}")
+    headline_columns[3].metric("Unique customers with items", f"{customer_count:,}")
+    st.caption(
+        "Customer count uses `customer_unique_id` after joining customers to the "
+        f"{order_count:,} orders with recorded items; the full customers table contains "
+        f"{all_customer_count:,} unique customers."
+    )
     headline_columns[4].metric("Sellers", f"{seller_count:,}")
 
     st.divider()
@@ -420,10 +427,10 @@ with overview_tab:
     orders_growth_column, sales_growth_column = st.columns(2)
     with orders_growth_column:
         panel_heading("1a")
-        render_chart(orders_growth_chart, use_container_width=True)
+        render_chart(orders_growth_chart, width="stretch")
     with sales_growth_column:
         panel_heading("1b")
-        render_chart(sales_growth_chart, use_container_width=True)
+        render_chart(sales_growth_chart, width="stretch")
     figure_heading(2)
     commercial_series = build_commercial_series(line_items, granularity)
     commercial_aov_column, commercial_items_column = st.columns(2)
@@ -438,7 +445,7 @@ with overview_tab:
                 BLUE,
                 granularity != "Day",
             ),
-            use_container_width=True,
+            width="stretch",
         )
     with commercial_items_column:
         panel_heading("2b")
@@ -451,7 +458,7 @@ with overview_tab:
                 ORANGE,
                 granularity != "Day",
             ),
-            use_container_width=True,
+            width="stretch",
         )
     st.caption("Average order value is product sales per order.")
 
@@ -476,7 +483,7 @@ with overview_tab:
             )
             .properties(height=350)
         )
-        render_chart(geography_chart, use_container_width=True)
+        render_chart(geography_chart, width="stretch")
 
     with category_column:
         figure_heading(4)
@@ -537,7 +544,7 @@ with overview_tab:
             )
             .properties(height=350)
         )
-        render_chart(category_chart, use_container_width=True)
+        render_chart(category_chart, width="stretch")
         st.caption(
             "Missing or untranslated categories are retained as Unknown."
         )
@@ -627,7 +634,7 @@ with overview_tab:
         (equality_line + pareto_line + top_decile_rule + top_decile_point).properties(
             height=380
         ),
-        use_container_width=True,
+        width="stretch",
     )
     st.caption(
         f"Sellers are ranked from highest to lowest product sales. The dashed diagonal "
@@ -686,7 +693,7 @@ with overview_tab:
     frequency_labels = frequency_bars.mark_text(dy=-9, color="#31333F").encode(
         text="Share label:N"
     )
-    render_chart(frequency_bars + frequency_labels, use_container_width=True)
+    render_chart(frequency_bars + frequency_labels, width="stretch")
     st.caption("Purchase frequency covers the full dataset period.")
 
     st.divider()
@@ -716,7 +723,7 @@ with overview_tab:
         )
         .properties(height=330)
     )
-    render_chart(review_chart, use_container_width=True)
+    render_chart(review_chart, width="stretch")
     st.caption("One latest review per consolidated order; low rating means 1–2 stars.")
 
     st.divider()
@@ -751,7 +758,7 @@ with overview_tab:
         )
         .properties(height=350)
     )
-    render_chart(delivery_trend, use_container_width=True)
+    render_chart(delivery_trend, width="stretch")
     st.caption(
         "Late-delivery and low-rating rates increased together during the main peaks. "
         "Results cover January 2017–August 2018 and orders with the required delivery and review data."
@@ -767,8 +774,10 @@ with overview_tab:
         ]]
         .merge(order_reviews, on="order_id", how="inner", validate="one_to_one")
         .assign(
-            late_delivery=lambda frame: frame["order_delivered_customer_date"]
-            > frame["order_estimated_delivery_date"]
+            late_delivery=lambda frame: is_late_delivery(
+                frame["order_delivered_customer_date"],
+                frame["order_estimated_delivery_date"],
+            )
         )
         .groupby("late_delivery", as_index=False)
         .agg(orders=("order_id", "size"))
@@ -813,7 +822,7 @@ with overview_tab:
     comparison_labels = comparison_chart.mark_text(dy=-10, color="#31333F").encode(
         text="low_rating_label:N"
     )
-    render_chart(comparison_chart + comparison_labels, use_container_width=True)
+    render_chart(comparison_chart + comparison_labels, width="stretch")
     st.metric("Late-order low-rating risk ratio", f"{risk_ratio:.2f}×")
     st.caption(
         "Delivered orders with an estimated date and latest review. The comparison shows "
@@ -932,7 +941,7 @@ with delivery_correlations_tab:
             ).encode(text="slice_label:N", color=alt.value("#31333F"))
             render_chart(
                 (stage_pie + stage_pie_labels).properties(height=340),
-                use_container_width=True,
+                width="stretch",
             )
             total_selected = stage_share["days"].sum()
             st.caption(
@@ -973,7 +982,7 @@ with delivery_correlations_tab:
                 ],
             )
             render_chart(
-                shipping_line.properties(height=340), use_container_width=True
+                shipping_line.properties(height=340), width="stretch"
             )
             st.caption(
                 f"Delivered orders with a review; negative-duration rows already excluded "
@@ -1000,7 +1009,7 @@ with delivery_correlations_tab:
                     alt.Tooltip("orders:Q", title="Orders", format=","),
                 ],
             )
-            render_chart(dist_days.properties(height=300), use_container_width=True)
+            render_chart(dist_days.properties(height=300), width="stretch")
         with dist_right:
             panel_heading("12b")
             base = alt.Chart(distance_buckets).encode(
@@ -1031,7 +1040,7 @@ with delivery_correlations_tab:
                 alt.layer(score_line, late_line)
                 .resolve_scale(y="independent")
                 .properties(height=300),
-                use_container_width=True,
+                width="stretch",
             )
         st.caption(
             "Distance is a haversine km between customer and seller zip-prefix "
@@ -1064,7 +1073,7 @@ with delivery_correlations_tab:
                     alt.Tooltip("orders:Q", title="Orders", format=","),
                 ],
             )
-            render_chart(cat_days.properties(height=380), use_container_width=True)
+            render_chart(cat_days.properties(height=380), width="stretch")
         with cat_right:
             panel_heading("13b")
             cat_score = alt.Chart(top_categories).mark_bar(color="#EF7C00", clip=True).encode(
@@ -1089,11 +1098,11 @@ with delivery_correlations_tab:
                     alt.Tooltip("late_rate:Q", title="Late rate (%)", format=".1f"),
                 ],
             )
-            render_chart(cat_score.properties(height=380), use_container_width=True)
+            render_chart(cat_score.properties(height=380), width="stretch")
         st.caption(
             "Categories with ≥100 delivered orders, top 13 by mean delivery time. Same "
             "row order in both charts. Late rate = share delivered after the estimated "
-            "date (`is_on_time` from the consolidated file). One row per (order, category)."
+            "calendar date. One row per (order, category)."
         )
 
     with st.container(border=True):
@@ -1125,13 +1134,13 @@ with delivery_correlations_tab:
             ],
         )
         render_chart(
-            seller_scatter.properties(height=340), use_container_width=True
+            seller_scatter.properties(height=340), width="stretch"
         )
         st.caption(
             f"Sellers with ≥20 delivered orders. Orange = top-decile volume "
             f"(≥{volume_threshold:.0f} orders); x-axis log-scaled. Marker size also "
-            "encodes order volume. Late rate from `is_on_time` in the consolidated "
-            "file. One row per (order, seller)."
+            "encodes order volume. Late rate compares delivery and estimated "
+            "calendar dates. One row per (order, seller)."
         )
 
     with st.container(border=True):
@@ -1149,7 +1158,7 @@ with delivery_correlations_tab:
                     alt.Tooltip("orders:Q", title="Orders", format=","),
                 ],
             )
-            render_chart(pay_days.properties(height=300), use_container_width=True)
+            render_chart(pay_days.properties(height=300), width="stretch")
         with pay_right:
             panel_heading("15b")
             pay_base = alt.Chart(payment_cuts).encode(
@@ -1168,7 +1177,7 @@ with delivery_correlations_tab:
             )
             render_chart(
                 alt.layer(pay_score_line, pay_late_line).resolve_scale(y="independent").properties(height=300),
-                use_container_width=True,
+                width="stretch",
             )
         st.caption(
             "Payment types with ≥50 matched delivered orders. Primary payment "
@@ -1197,7 +1206,7 @@ with delivery_correlations_tab:
                 alt.Tooltip("orders:Q", title="Orders", format=","),
             ],
         )
-        render_chart(stage_bar.properties(height=260), use_container_width=True)
+        render_chart(stage_bar.properties(height=260), width="stretch")
         st.caption(
             "Same processing/handling/shipping stages slicing as the "
             "Decomposition chart above, grouped by payment type instead of collapsed "
@@ -1245,7 +1254,7 @@ with capacity_tab:
     )
     render_chart(
         alt.layer(volume_bars, lead_time_line).resolve_scale(y="independent").properties(height=320),
-        use_container_width=True,
+        width="stretch",
     )
     st.caption(
         f"Weekly order volume (bars, left axis) vs. {capacity_stat_choice.lower()} delivery "
@@ -1267,7 +1276,7 @@ with capacity_tab:
             alt.Tooltip("backlog:Q", title="Outstanding cohort orders", format=","),
         ],
     )
-    render_chart(backlog_chart.properties(height=300), use_container_width=True)
+    render_chart(backlog_chart.properties(height=300), width="stretch")
     st.caption(
         "Cumulative orders placed minus orders delivered within the selected cohort of "
         "eventually delivered orders purchased from January 2017 to August 2018. "
@@ -1291,7 +1300,7 @@ with capacity_tab:
     )
     render_chart(
         (volume_scatter + volume_trend).properties(height=340),
-        use_container_width=True,
+        width="stretch",
     )
     st.caption(
         f"Each point is one week (n={len(capacity_series)}). Pearson r = {volume_corr:.2f} between "
@@ -1327,7 +1336,7 @@ with capacity_tab:
                 alt.Tooltip("orders:Q", title="Orders", format=","),
             ],
         )
-        render_chart(heatmap_chart.properties(height=320), use_container_width=True)
+        render_chart(heatmap_chart.properties(height=320), width="stretch")
         st.caption(
             "Colour toggle switches between mean delivery days and order volume by the "
             "day-of-week and hour of the purchase timestamp. Purchase timing is known at "
@@ -1352,7 +1361,7 @@ with capacity_tab:
                         alt.Tooltip("mean_days:Q", title="Mean days", format=".2f"),
                     ],
                 )
-                render_chart(stage_bar.properties(height=260), use_container_width=True)
+                render_chart(stage_bar.properties(height=260), width="stretch")
         st.caption(
             "Mean duration of each fulfilment stage by the day-of-week the order was "
             "purchased (each stage has its own y-axis, since shipping is ~20x longer than "
@@ -1375,7 +1384,7 @@ with capacity_tab:
             alt.Tooltip("orders:Q", title="Orders", format=","),
         ],
     )
-    render_chart(freight_bars.properties(height=300), use_container_width=True)
+    render_chart(freight_bars.properties(height=300), width="stretch")
     st.caption(
         "Orders bucketed into sextiles of (order-level freight value ÷ price). Late-rate "
         "stays roughly flat across buckets (about 7.8-8.4%), so despite bundling "
@@ -1441,7 +1450,7 @@ with capacity_tab:
     )
     render_chart(
         alt.layer(promise_lines, secondary_line).resolve_scale(y="independent").properties(height=340),
-        use_container_width=True,
+        width="stretch",
     )
     st.caption(
         "Mean promised (order_estimated_delivery_date minus purchase timestamp) vs. "
@@ -1487,7 +1496,7 @@ with capacity_tab:
             alt.Tooltip(f"{stage_series_value_column}:Q", title=f"{stage_series_stat_choice} days", format=".2f"),
         ],
     )
-    render_chart(stage_area.properties(height=340), use_container_width=True)
+    render_chart(stage_area.properties(height=340), width="stretch")
     st.caption(
         f"Weekly {stage_series_stat_choice.lower()} duration of each fulfilment stage, "
         "stacked. The chart shows where elapsed delivery time is spent; it does not "
@@ -1563,7 +1572,7 @@ with ratings_tab:
     )
     render_chart(
         (timing_intervals + timing_line).properties(height=360),
-        use_container_width=True,
+        width="stretch",
     )
     st.caption(
         "Low-rating rates rise as deliveries become later. Vertical lines are 95% Wilson "
@@ -1673,7 +1682,7 @@ with ratings_tab:
                 panel_heading(f"31{panel_letter}")
                 render_chart(
                     complexity_chart.transform_filter(alt.datum.dimension == dimension),
-                    use_container_width=True,
+                    width="stretch",
                 )
         st.markdown(
             "<div style='min-height:48px'>"
@@ -1694,7 +1703,7 @@ with ratings_tab:
         figure_heading(32)
         render_chart(
             (correlation_bars + correlation_zero).properties(height=320),
-            use_container_width=True,
+            width="stretch",
         )
         st.markdown(
             "<div style='min-height:48px'>"
@@ -1743,7 +1752,7 @@ with problem1_tab:
     )
     render_chart(
         alt.layer(dist_bars, dist_late_line).resolve_scale(y="independent").properties(height=320),
-        use_container_width=True,
+        width="stretch",
     )
     st.caption(
         "Bars indicate mean delivery days (left axis); the line indicates the "
@@ -1782,7 +1791,7 @@ with problem1_tab:
             alt.Tooltip("orders:Q", title="Orders", format=","),
         ],
     )
-    render_chart(p1_heatmap_chart.properties(height=320), use_container_width=True)
+    render_chart(p1_heatmap_chart.properties(height=320), width="stretch")
     st.caption(
         "Purchase day and hour are observed at order placement and therefore carry "
         "no lookahead risk as model inputs. The heatmap indicates that mean "
@@ -1802,7 +1811,7 @@ with problem1_tab:
             alt.Tooltip("orders:Q", title="Orders", format=","),
         ],
     ).properties(height=300)
-    render_chart(weekday_chart, use_container_width=True)
+    render_chart(weekday_chart, width="stretch")
     st.caption(
         "Mean delivery time varies by purchase day, ranging from 11.47 days for "
         "Sunday purchases to 13.12 days for Friday purchases, a difference of "
@@ -1830,7 +1839,7 @@ with problem1_tab:
                     alt.Tooltip("mean_days:Q", title="Mean days", format=".2f"),
                 ],
             )
-            render_chart(stage_bar.properties(height=240), use_container_width=True)
+            render_chart(stage_bar.properties(height=240), width="stretch")
     st.caption(
         "Decomposing total lead time into its three constituent stages localises "
         "the day-of-week effect observed above to the order-handling stage "
@@ -1851,7 +1860,7 @@ with problem1_tab:
             alt.Tooltip("orders:Q", title="Orders", format=","),
         ],
     )
-    render_chart(p1_pay_days.properties(height=300), use_container_width=True)
+    render_chart(p1_pay_days.properties(height=300), width="stretch")
     st.caption(
         "Mean delivery time differs by payment method: Boleto orders average 13.04 "
         "days versus 11.88 for credit card. This is consistent with Boleto's "
@@ -1878,7 +1887,7 @@ with problem1_tab:
             alt.Tooltip("orders:Q", title="Orders", format=","),
         ],
     )
-    render_chart(p1_stage_bar.properties(height=300), use_container_width=True)
+    render_chart(p1_stage_bar.properties(height=300), width="stretch")
     st.caption(
         "The same stage decomposition, grouped by payment method, confirms that "
         "Boleto's additional lead time is concentrated in the processing stage "
@@ -1900,7 +1909,7 @@ with problem1_tab:
             alt.Tooltip("orders:Q", title="Orders", format=","),
         ],
     ).properties(height=300)
-    render_chart(complexity_delivery_chart, use_container_width=True)
+    render_chart(complexity_delivery_chart, width="stretch")
     st.caption(
         "Order complexity shows a counter-intuitive relationship with delivery "
         "time: among multi-item orders, multi-seller orders arrive faster on "
@@ -1934,7 +1943,7 @@ with problem1_tab:
     )
     render_chart(
         alt.layer(p1_weight_bars, p1_weight_line).resolve_scale(y="independent").properties(height=320),
-        use_container_width=True,
+        width="stretch",
     )
     st.caption(
         "Total order weight shows only a weak association with delivery time and "
