@@ -4,7 +4,8 @@ set -e
 cd "$(dirname "$0")"
 
 if [[ ! -x it5006-proj/bin/python3 ]]; then
-  python3 -m venv it5006-proj
+  # A Python upgrade can leave an existing venv with a broken interpreter link.
+  python3 -m venv --clear it5006-proj
 fi
 
 # Some Python installs create a venv without working pip/streamlit launcher
