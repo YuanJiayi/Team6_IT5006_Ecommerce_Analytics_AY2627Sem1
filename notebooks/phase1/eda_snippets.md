@@ -1,3 +1,8 @@
+# Phase 1 EDA snippets
+
+Historical scratchpad from Phase 1. These fragments are preserved for reference and are not a standalone script.
+
+```text
 # Temporal patterns (order volume, seasonality)
 - Overall order volume trend
 - Seasonality at the monthly level
@@ -73,3 +78,4 @@ plt.ylabel('Growth Rate (%)', fontsize=12)
 plt.xticks(rotation=45, ha='right')
 plt.tight_layout()
 plt.show()
+```

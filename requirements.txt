@@ -7,3 +7,5 @@ folium
 branca
 jinja2
 ipython
+scipy
+seaborn

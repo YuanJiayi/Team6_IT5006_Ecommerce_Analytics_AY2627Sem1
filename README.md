@@ -1,6 +1,17 @@
 # Team6_IT5006_Ecommerce_Analytics_AY2627Sem1
 Phase / Milestone 2: Analytics Implementation - Problem Definition, Model Building & Evaluation
 
+## Repository layout
+
+- `app.py`, `dashboard_data.py`, `geomapper.py`, and `map_layers/`: the shared Phase 1 dashboard and map code.
+- `data/`: original Olist tables and the prepared, item-level Phase 1 dataset.
+- `notebooks/phase1/`: Phase 1 exploratory notebooks and historical EDA snippets.
+- `notebooks/phase2/`: new modelling notebooks as they are developed.
+- `ref/`: project brief, submitted Phase 1 report, and feedback.
+- `tests/`: checks for the dashboard's delivery and review rules.
+
+Run the dashboard from the repository root with `./run_dashboard.sh`. To regenerate its map, run `python geomapper.py` from the root with the dependencies in `requirements.txt` installed. Local Phase 1 notebooks can be launched from the root or from `notebooks/phase1/`; their setup cells locate the root `data/` directory. The EDA starter notebook also retains a Google Colab Drive example: set its Drive path to your own data folder when running in Colab. Its final save cell writes `smartcommerce_consolidated_rebuilt.csv` into that folder for review, leaving the checked-in dataset intact.
+
 ## Phase 1 data carried into Phase 2
 
 The Phase 1 notebooks and PDF contain saved results from the original submission. The dashboard and checked-in `data/smartcommerce_consolidated.csv` now count delivery on the estimated **calendar date** as on time; the old timestamp rule incorrectly marked 1,292 such orders late. Duplicate reviews now use the latest creation time, answer time, and review ID as tie-breakers. Re-run affected analyses before quoting Phase 1 lateness or review figures in the Phase 2 report.
