@@ -1,0 +1,28 @@
+{
+  "numeric_features": [
+    "promised_days",
+    "distance_km",
+    "same_state",
+    "purchase_hour",
+    "n_items",
+    "n_products",
+    "n_sellers",
+    "total_price",
+    "total_freight",
+    "total_weight_g",
+    "total_volume_cm3",
+    "max_installments"
+  ],
+  "categorical_features": [
+    "customer_state",
+    "seller_state",
+    "product_category",
+    "payment_type",
+    "purchase_dayofweek",
+    "purchase_month"
+  ],
+  "classification_target": "is_late",
+  "regression_target": "delivery_days",
+  "random_state": 42,
+  "n_folds": 5
+}

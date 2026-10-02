@@ -7,3 +7,4 @@ folium
 branca
 jinja2
 ipython
+scikit-learn
