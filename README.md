@@ -7,6 +7,7 @@ Phase / Milestone 2: Analytics Implementation - Problem Definition, Model Buildi
 - `data/`: original Olist tables and the prepared, item-level Phase 1 dataset.
 - `notebooks/phase1/`: Phase 1 exploratory notebooks and historical EDA snippets.
 - `notebooks/phase2/`: new modelling notebooks as they are developed.
+- `notebooks/phase2/data_prep.ipynb`: shared Phase 2 data preparation, evaluation rationale, and split definitions.
 - `ref/`: project brief, submitted Phase 1 report, and feedback.
 - `tests/`: checks for the dashboard's delivery and review rules.
 
@@ -22,7 +23,7 @@ For modelling, build a fresh **one-row-per-order** table from the raw Olist CSVs
 
 ## Phase 2 evaluation decision
 
-See [the Phase 2 evaluation protocol](milestone2/evaluation_protocol.md). The primary test holds out orders purchased on or after 2018-05-26, about the latest 20% by purchase date, to assess performance on a later period. Primary training uses earlier orders whose outcomes were known by that date, with five expanding-time validation windows. The teammate's seeded, stratified random 80/20 split is retained as a separate secondary benchmark for orders drawn from the same historical mix. Both tasks use the same partitions within each experiment. The prepared table, split metadata, and loading examples are in [the Phase 2 data preparation notebook](milestone2/data_prep.ipynb).
+The [Phase 2 data preparation notebook](notebooks/phase2/data_prep.ipynb) explains both evaluation approaches and saves their partitions. The primary test holds out orders purchased on or after 2018-05-26, about the latest 20% by purchase date, to assess performance on a later period. Primary training uses earlier orders whose outcomes were known by that date, with five expanding-time validation windows. The teammate's seeded, stratified random 80/20 split is retained as a separate secondary benchmark for orders drawn from the same historical mix. Both tasks use the same partitions within each experiment. Run the notebook from the repository root or its own folder; its setup locates the root `data/` directory.
 
 Deadline: Sunday, 11 October 2026 at 23:59 (end of Week 8)
 Weight: 40%
