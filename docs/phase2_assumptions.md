@@ -56,6 +56,12 @@ Four numeric inputs can be missing: `distance_km`, `total_weight_g`, `total_volu
 ## Open before reporting model performance
 
 1. In model notebooks, put fitted preprocessing, feature selection, calibration and threshold choice inside the appropriate training folds. The current data-preparation notebook does not fit these components.
-2. Decide whether the Phase 2 business claim remains explicitly conditional on delivery, or whether a separate non-delivery outcome is needed for an all-purchase operational score.
+2. Keep the agreed Phase 2 business claim explicitly conditional on delivery. A separate non-delivery outcome would be needed for an all-purchase operational score.
 3. Check how excluding undelivered and recently purchased orders changes the apparent late rate and delivery-time distribution.
-4. Compare models with and without `payment_type` and `max_installments` because payment-row timing cannot be established from the CSVs.
+4. Compare models with and without `payment_type` and `max_installments` because payment-row timing cannot be established from the CSVs. The classification comparison is recorded in the [Chunk 2 review](phase2_classification_review.md).
+
+## Classification implementation decisions
+
+Use one-hot encoding for both linear and tree models, fitted within each training fold, because the nominal categories have no natural ordering. Scale numeric inputs and use a sine/cosine hour pair for logistic regression; trees retain raw numeric inputs and hour. The prior and unweighted models retain the natural class distribution; compare specified weighted variants without resampling validation rows.
+
+Select candidates by mean per-fold average precision (`average_precision_score`), reported as PR-AUC (average precision). Show per-fold prevalence because the metric depends on the class mix. Choose a provisional alert threshold by maximising MCC over pooled validation predictions, with exact ties favouring fewer alerts. The same validation predictions select and describe this threshold, so its reported metrics are optimistic selection evidence; final performance requires the reserved holdout. No operational cost or alert-capacity constraint has been supplied.

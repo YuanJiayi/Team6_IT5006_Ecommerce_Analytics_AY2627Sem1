@@ -4,6 +4,16 @@ The shared `data_prep.ipynb` notebook builds the Phase 2 order table, defines bo
 
 Use the primary chronological split and expanding validation indices in [data_prep.ipynb](data_prep.ipynb) for model selection and future-order claims. The random split is a separate secondary benchmark. The checkout-timing assumptions are documented; model-specific pipeline and test-use checks remain for later chunks.
 
+## Review checkpoints
+
+1. Shared feature engineering: complete; versioned contract and raw-data checks are committed.
+2. [Classification](classification.ipynb): validation comparison, payment sensitivity, and alert threshold ready for review. See the [results interpretation](../../docs/phase2_classification_review.md).
+3. Regression: after the classification review.
+4. Voting ensembles: combine the selected linear and tree approaches after both task reviews.
+5. Final evaluation and report: primary holdout once, separate random benchmark, and report evidence.
+
+To reproduce classification from the repository root, run `python phase2_classification.py` in an environment with `requirements.txt` installed. The notebook reads the completed results and exports figures; set `RERUN_TRAINING=True` to repeat training there. It checks input and implementation hashes before displaying saved results. The helper at the repository root keeps fitting and metric code testable. Outputs are in `results/phase2/classification/`; `selection.json` records settings, versions, seed, and input hashes. Classification uses only primary training/validation rows. The later test and secondary random benchmark are reserved for the final evaluation chunk.
+
 ## Changes from the original data-preparation notebook
 
 These are the three substantive changes to discuss with the teammate who prepared the first version:

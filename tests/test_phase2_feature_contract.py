@@ -36,7 +36,7 @@ class Phase2FeatureContractTest(unittest.TestCase):
         self.assertEqual(set(table[features].columns[table[features].isna().any()]), {
             "distance_km", "total_weight_g", "total_volume_cm3", "max_installments",
         })
-        self.assertTrue(np.isfinite(table[spec["numeric_features"]].stack().to_numpy()).all())
+        self.assertTrue(np.isfinite(table[spec["numeric_features"]].stack().dropna().to_numpy()).all())
         self.assertTrue(table[spec["categorical_features"]].notna().all().all())
         self.assertTrue(table["delivery_days"].gt(0).all())
 

@@ -1,0 +1,192 @@
+{
+  "status": "validation_only_pending_review",
+  "selection_metric": "mean fold average precision",
+  "pr_auc_definition": "sklearn average_precision_score (not trapezoidal PR area)",
+  "selected_candidate": "logistic_c01",
+  "selected_threshold": 0.08003039907333498,
+  "threshold_rule": "maximise pooled validation MCC; exact ties favour fewer alerts",
+  "threshold_caveat": "selected and measured on the same validation predictions; not an unbiased final score",
+  "family_winners": {
+    "linear": "logistic_c01",
+    "tree_based": "forest_depth12_no_payment"
+  },
+  "candidates": {
+    "prior_baseline": {
+      "algorithm": "dummy",
+      "model_family": "baseline",
+      "parameters": {},
+      "include_payment": true
+    },
+    "logistic_baseline": {
+      "algorithm": "linear",
+      "model_family": "linear",
+      "parameters": {
+        "C": 1.0,
+        "class_weight": null
+      },
+      "include_payment": true
+    },
+    "logistic_c01": {
+      "algorithm": "linear",
+      "model_family": "linear",
+      "parameters": {
+        "C": 0.1,
+        "class_weight": null
+      },
+      "include_payment": true
+    },
+    "logistic_c10": {
+      "algorithm": "linear",
+      "model_family": "linear",
+      "parameters": {
+        "C": 10.0,
+        "class_weight": null
+      },
+      "include_payment": true
+    },
+    "logistic_balanced": {
+      "algorithm": "linear",
+      "model_family": "linear",
+      "parameters": {
+        "C": 1.0,
+        "class_weight": "balanced"
+      },
+      "include_payment": true
+    },
+    "tree_baseline": {
+      "algorithm": "tree",
+      "model_family": "tree_based",
+      "parameters": {
+        "max_depth": null,
+        "min_samples_leaf": 1
+      },
+      "include_payment": true
+    },
+    "tree_depth6": {
+      "algorithm": "tree",
+      "model_family": "tree_based",
+      "parameters": {
+        "max_depth": 6,
+        "min_samples_leaf": 50
+      },
+      "include_payment": true
+    },
+    "tree_depth12": {
+      "algorithm": "tree",
+      "model_family": "tree_based",
+      "parameters": {
+        "max_depth": 12,
+        "min_samples_leaf": 20
+      },
+      "include_payment": true
+    },
+    "tree_balanced": {
+      "algorithm": "tree",
+      "model_family": "tree_based",
+      "parameters": {
+        "max_depth": 12,
+        "min_samples_leaf": 20,
+        "class_weight": "balanced"
+      },
+      "include_payment": true
+    },
+    "forest_baseline": {
+      "algorithm": "forest",
+      "model_family": "tree_based",
+      "parameters": {
+        "max_depth": null,
+        "min_samples_leaf": 1
+      },
+      "include_payment": true
+    },
+    "forest_depth12": {
+      "algorithm": "forest",
+      "model_family": "tree_based",
+      "parameters": {
+        "max_depth": 12,
+        "min_samples_leaf": 20
+      },
+      "include_payment": true
+    },
+    "forest_leaf20": {
+      "algorithm": "forest",
+      "model_family": "tree_based",
+      "parameters": {
+        "max_depth": null,
+        "min_samples_leaf": 20
+      },
+      "include_payment": true
+    },
+    "forest_balanced": {
+      "algorithm": "forest",
+      "model_family": "tree_based",
+      "parameters": {
+        "max_depth": null,
+        "min_samples_leaf": 20,
+        "class_weight": "balanced_subsample"
+      },
+      "include_payment": true
+    },
+    "logistic_c01_no_payment": {
+      "algorithm": "linear",
+      "model_family": "linear",
+      "parameters": {
+        "C": 0.1,
+        "class_weight": null
+      },
+      "include_payment": false,
+      "paired_with": "logistic_c01"
+    },
+    "tree_depth12_no_payment": {
+      "algorithm": "tree",
+      "model_family": "tree_based",
+      "parameters": {
+        "max_depth": 12,
+        "min_samples_leaf": 20
+      },
+      "include_payment": false,
+      "paired_with": "tree_depth12"
+    },
+    "forest_depth12_no_payment": {
+      "algorithm": "forest",
+      "model_family": "tree_based",
+      "parameters": {
+        "max_depth": 12,
+        "min_samples_leaf": 20
+      },
+      "include_payment": false,
+      "paired_with": "forest_depth12"
+    }
+  },
+  "fixed_settings": {
+    "logistic": {
+      "solver": "lbfgs",
+      "max_iter": 3000
+    },
+    "forest": {
+      "n_estimators": 200,
+      "max_features": "sqrt",
+      "n_jobs": 4
+    },
+    "numeric_imputation": "training-fold median",
+    "categorical_encoding": "one-hot; ignore unknown",
+    "linear_numeric_scaling": "StandardScaler",
+    "linear_hour": "sine/cosine; period 24"
+  },
+  "random_state": 42,
+  "train_orders": 75099,
+  "validation_orders": 38005,
+  "primary_test_evaluated": false,
+  "final_model_fitted": false,
+  "environment": {
+    "python": "3.14.7",
+    "sklearn": "1.9.1",
+    "pandas": "3.0.6",
+    "numpy": "2.5.3"
+  },
+  "input_sha256": {
+    "phase2_order_table.csv": "d9020d44fecbca3eb87791e3a5bdc663f76a656af0a7da18209d7037c774cf70",
+    "phase2_feature_spec.json": "115e308a9ae6cb5ca810f9358ccd9c3745023e395550bbc77594a86ac8b47c19"
+  },
+  "implementation_sha256": "9cbe4ddbe790fde8c4e4446a2666f10b37c26eab5ef0a736d27857ca6eecdd30"
+}
