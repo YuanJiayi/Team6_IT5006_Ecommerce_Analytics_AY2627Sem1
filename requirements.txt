@@ -10,3 +10,4 @@ ipython
 scipy
 seaborn
 pyarrow
+scikit-learn
