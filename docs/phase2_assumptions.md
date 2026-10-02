@@ -38,6 +38,12 @@ We assume the intended prediction moment is immediately after checkout and payme
 
 No model input uses approval, carrier, actual-delivery, order-status or review fields. The delivered-status filter is a **target-population decision**, not a checkout-time input: the current models estimate outcomes conditional on eventual delivery. A model fitted on this table alone cannot be claimed to estimate the unconditional late-delivery risk of every new order.
 
+### Chunk 1 feature contract
+
+The versioned [`phase2_feature_spec.json`](../data/phase2_feature_spec.json) freezes the **candidate** feature lists, target rules, prediction point, missing-value policies, and split definitions shared by both modelling tasks. The saved table contains one row per eligible delivered order; identifiers, timestamps, targets, and split/fold columns are metadata, never predictors. The 18 candidate inputs are the starting set, not a claim that every feature will improve validation performance. Any later addition or removal must be justified using training-period evidence and recorded before final test evaluation.
+
+Four numeric inputs can be missing: `distance_km`, `total_weight_g`, `total_volume_cm3`, and `max_installments`. Fit median imputation separately within each training fold, inside the model Pipeline; use the fitted values on that fold's validation rows. Categories already use the literal `unknown` without learned statistics. Fit encoders, scalers, feature selection, and any probability calibration within training folds; choose class weights and alert thresholds without later-period test outcomes. The two payment inputs are the specified sensitivity comparison, not an automatic exclusion.
+
 ## Evaluation and use of exploratory analysis
 
 | Topic | Current decision | Report implication or check |

@@ -1,4 +1,7 @@
 {
+  "schema_version": 1,
+  "prediction_point": "after checkout and payment submission, before approval or dispatch",
+  "population": "delivered orders with actual and estimated delivery timestamps",
   "numeric_features": [
     "promised_days",
     "distance_km",
@@ -21,8 +24,16 @@
     "purchase_dayofweek",
     "purchase_month"
   ],
+  "payment_sensitivity_features": [
+    "payment_type",
+    "max_installments"
+  ],
   "classification_target": "is_late",
+  "classification_rule": "actual delivery calendar date > estimated delivery calendar date",
   "regression_target": "delivery_days",
+  "regression_rule": "elapsed days from purchase timestamp to actual delivery timestamp",
+  "numeric_missing_policy": "median imputation fitted within each training fold",
+  "categorical_missing_policy": "unknown category assigned without fitted statistics",
   "random_state": 42,
   "n_folds": 5,
   "validation_maturity_days": 60,
