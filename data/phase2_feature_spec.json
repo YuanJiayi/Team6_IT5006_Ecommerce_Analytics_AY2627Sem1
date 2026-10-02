@@ -24,5 +24,10 @@
   "classification_target": "is_late",
   "regression_target": "delivery_days",
   "random_state": 42,
-  "n_folds": 5
+  "n_folds": 5,
+  "primary_cutoff": "2018-05-26",
+  "primary_split": "split",
+  "primary_fold": "cv_fold",
+  "secondary_split": "random_split",
+  "secondary_fold": "random_cv_fold"
 }
