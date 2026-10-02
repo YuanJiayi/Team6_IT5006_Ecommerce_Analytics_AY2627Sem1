@@ -25,6 +25,7 @@
   "regression_target": "delivery_days",
   "random_state": 42,
   "n_folds": 5,
+  "validation_maturity_days": 60,
   "primary_cutoff": "2018-05-26",
   "primary_split": "split",
   "primary_fold": "cv_fold",
