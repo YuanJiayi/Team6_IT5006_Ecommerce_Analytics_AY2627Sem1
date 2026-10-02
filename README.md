@@ -25,6 +25,8 @@ For modelling, build a fresh **one-row-per-order** table from the raw Olist CSVs
 
 The [Phase 2 data preparation notebook](notebooks/phase2/data_prep.ipynb) explains both evaluation approaches and saves their partitions. The primary test holds out orders purchased on or after 2018-05-26, about the latest 20% by purchase date, to assess performance on a later period. Primary training uses earlier orders whose outcomes were known by that date, with five expanding-time validation windows. The teammate's seeded, stratified random 80/20 split is retained as a separate secondary benchmark for orders drawn from the same historical mix. Both tasks use the same partitions within each experiment. Run the notebook from the repository root or its own folder; its setup locates the root `data/` directory.
 
+Record business scope, checkout-time feature assumptions, preprocessing choices, and remaining checks in [the Phase 2 assumptions log](docs/phase2_assumptions.md) for the final report.
+
 Deadline: Sunday, 11 October 2026 at 23:59 (end of Week 8)
 Weight: 40%
 Report length: 6–8 pages (excludes cover page, references, appendices)
