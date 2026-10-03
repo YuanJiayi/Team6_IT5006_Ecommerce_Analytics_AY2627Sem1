@@ -56,7 +56,7 @@ All three history features are computed in `data_prep.ipynb` through `phase2_fea
 
 Because hyperparameters were first tuned on the original feature set and then held fixed while features changed, the ladder isolates the effect of each feature change. All 13 declared candidates were then re-run on the final feature set, and the selection comes from that final run.
 
-### Chunk 1 feature contract
+### Shared feature contract
 
 The versioned [`phase2_feature_spec.json`](../data/phase2_feature_spec.json) freezes the **candidate** feature lists, target rules, prediction point, missing-value policies, and split definitions shared by both modelling tasks. The saved table contains one row per eligible delivered order; identifiers, timestamps, targets, and split/fold columns are metadata, never predictors. The 20 candidate inputs are the starting set, not a claim that every feature will improve validation performance. Any later addition or removal must be justified using training-period evidence and recorded before final test evaluation.
 
@@ -80,10 +80,10 @@ For the primary experiment, check the late-order count in every training and val
 
 ## Open before reporting model performance
 
-1. In model notebooks, put fitted preprocessing, feature selection, calibration and threshold choice inside the appropriate training folds. The current data-preparation notebook does not fit these components.
+1. The classification experiment fits preprocessing within each training fold and chooses its provisional threshold from validation predictions. Apply the same train-only discipline in the upcoming regression and voting comparisons; the data-preparation notebook itself does not fit models.
 2. Keep the agreed Phase 2 business claim explicitly conditional on delivery. A separate non-delivery outcome would be needed for an all-purchase operational score.
 3. Check how excluding undelivered and recently purchased orders changes the apparent late rate and delivery-time distribution.
-4. Compare models with and without `payment_type` and `max_installments` because payment-row timing cannot be established from the CSVs. The classification comparison is recorded in the [Chunk 2 review](phase2_classification_review.md).
+4. Compare models with and without `payment_type` and `max_installments` because payment-row timing cannot be established from the CSVs. The classification comparison is recorded in the [classification review](phase2_classification_review.md).
 
 ## Classification implementation decisions
 

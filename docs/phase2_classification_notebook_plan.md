@@ -166,7 +166,7 @@ All under `results/phase2/classification/`. The notebook reads these and never t
 - All tests in `tests/test_phase2_*.py` pass.
 
 **Things the builder must know:**
-- **The existing `classification.ipynb` is out of date and will fail its hash check.** Rebuild it; do not patch it. `candidate_comparison.png`, `fold_comparison.png` and `threshold_review.png` in the results folder come from the old notebook and are stale; regenerate them from the notebook.
+- **The existing `classification.ipynb` is out of date and will fail its hash check.** Rebuild it; do not patch it. The three PNGs from the old notebook (`candidate_comparison.png`, `fold_comparison.png`, `threshold_review.png`) were stale and have been deleted. Figures live inside the notebook; export image files from it only if the report needs them.
 - **Pooled vs mean-of-folds numbers differ.** `cv_summary.csv` and the ladder use the mean of the five per-window scores. `threshold_metrics.csv` and its AP/ROC-AUC are pooled over all 38,005 validation orders. Always say which one a number is.
 - **Odds ratios:** `logistic_odds_ratios.csv` includes one row per one-hot category level, and the biggest values are rare states. For the chart, show the numeric features (they are per one standard deviation) and summarise states separately or leave them out, and say that categories are relative and noisy.
 - **`promise_slack` has a below-0.5 single-feature AUC** (a looser promise means fewer late orders). Explain the sign; do not present it as a mistake.

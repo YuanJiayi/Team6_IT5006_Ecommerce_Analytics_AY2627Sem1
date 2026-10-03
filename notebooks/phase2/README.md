@@ -1,33 +1,24 @@
 # Phase 2 modelling notebooks
 
-The shared `data_prep.ipynb` notebook builds the Phase 2 order table, defines both evaluation splits, and records the rationale and limits. The versioned `data/phase2_feature_spec.json` is the shared candidate-feature and target contract. Classification and regression notebooks should load the saved order table and contract; rerun data preparation only when that contract changes. Fitted preprocessing belongs inside each model Pipeline and its training folds.
+Start with [data_prep.ipynb](data_prep.ipynb). It builds the one-row-per-delivered-order table from the raw Olist tables, explains the targets and the chronological validation design, and saves the shared [feature contract](../../data/phase2_feature_spec.json). The current contract has 20 candidate inputs. It excludes `purchase_month` as a model feature and adds historical route delivery time, promise slack and seller handover speed; all three use events completed before the current purchase. The prepared order table remains shared with the planned regression task.
 
-Use the primary chronological split and expanding validation indices in [data_prep.ipynb](data_prep.ipynb) for model selection and future-order claims. The random split is a separate secondary benchmark. The checkout-timing assumptions are documented; model-specific pipeline and test-use checks remain for later chunks.
+[classification.ipynb](classification.ipynb) is the executed, plain-language review of the saved classification results. It explains the problem, validation choices, feature signal, model and feature ladder, interpretation, and risk ranking. The code that produced the saved model results is [`phase2_classification.py`](../../phase2_classification.py); point-in-time historical features are implemented in [`phase2_features.py`](../../phase2_features.py). The notebook **only displays** saved results and plots training-period distributions. It does not train a model or read test-period outcomes. Its figures are generated in the notebook, not taken from older PNG files in the results directory.
 
-## Review checkpoints
+To rerun the display notebook from a fresh kernel, open it from the repository root or this directory and choose the `it5006-proj` environment. To rerun the model experiment separately from the repository root, use `it5006-proj/bin/python phase2_classification.py`. The notebook checks the input and implementation hashes in [`selection.json`](../../results/phase2/classification/selection.json) before showing the saved outputs. Current results and supporting tables are under [`results/phase2/classification/`](../../results/phase2/classification/). The [assumptions log](../../docs/phase2_assumptions.md) and [classification review](../../docs/phase2_classification_review.md) explain the methodological limits.
 
-1. Shared feature engineering: complete; versioned contract and raw-data checks are committed.
-2. [Classification](classification.ipynb): validation comparison, payment sensitivity, and alert threshold ready for review. See the [results interpretation](../../docs/phase2_classification_review.md).
-3. Regression: after the classification review.
-4. Voting ensembles: combine the selected linear and tree approaches after both task reviews.
-5. Final evaluation and report: primary holdout once, separate random benchmark, and report evidence.
+## Review sequence
 
-To reproduce classification from the repository root, run `python phase2_classification.py` in an environment with `requirements.txt` installed. The notebook reads the completed results and exports figures; set `RERUN_TRAINING=True` to repeat training there. It checks input and implementation hashes before displaying saved results. The helper at the repository root keeps fitting and metric code testable. Outputs are in `results/phase2/classification/`; `selection.json` records settings, versions, seed, and input hashes. Classification uses only primary training/validation rows. The later test and secondary random benchmark are reserved for the final evaluation chunk.
+1. Shared preparation and feature contract: complete.
+2. Classification validation review: complete for discussion; the later-period test is reserved.
+3. Delivery-time regression: next.
+4. Voting comparison of the selected linear and tree-based models: after both task reviews.
+5. Final evaluation and report: one later-period test after choices are fixed.
 
 ## Changes from the original data-preparation notebook
 
-These are the three substantive changes to discuss with the teammate who prepared the first version:
+1. **Lateness rule (`1fcd790`):** compare actual and estimated calendar dates. Delivery on the promised date counts as on time.
+2. **Evaluation split (`d2f0e05`):** test later purchases from 2018-05-26; use earlier purchases for a training snapshot only when their outcomes were known. The teammate's seeded random split is retained as a separate same-history benchmark.
+3. **Location and paths (`52026f2`):** keep data preparation in `notebooks/phase2/` and locate the root `data/` directory from either supported launch location.
+4. **Feature contract:** the later feature revision removed `purchase_month` as a model input and added point-in-time route and seller summaries. These changes were assessed on primary training and validation windows only. They did not change the delivered-order target or use the later-period test.
 
-1. **Lateness rule (`1fcd790`):** compare actual and estimated **calendar dates**. Delivery on the promised date is on time. The earlier full-timestamp comparison called 1,292 same-date deliveries late; the corrected delivered-order count is 6,534 late out of 96,470.
-2. **Evaluation split (`d2f0e05`):** the primary experiment now tests later purchases from 2018-05-26 and uses expanding-time validation. Earlier purchases delivered after each training cutoff cannot provide labels at that cutoff. The original seed-42 stratified random 80/20 split and folds remain in `random_split` and `random_cv_fold` as a separate same-history benchmark.
-3. **Notebook location and paths (`52026f2`):** moved `data_prep.ipynb` from `milestone2/` into `notebooks/phase2/`, removed the duplicate protocol document, and made its setup locate the root `data/` folder from either the repository root or this folder.
-
-The [Phase 2 assumptions log](../../docs/phase2_assumptions.md) records the agreed checkout-time prediction point, the delivered-only scope of the current targets, and checks still needed before reporting model performance. The commit messages preserve the detailed history; this summary is the handoff for review.
-
-The checkout-time audit now lists all 18 features and their source-timing assumptions in that log. The CSVs do not prove historical checkout availability; payment aggregation has particular uncertainty because payment rows have no timestamps, so compare models with and without those inputs. The primary validation folds now end 60 days before the test cutoff. The former latest fold excluded 1,802 orders delivered after the cutoff and understated its late rate (1.38% versus 5.75% for all delivered purchases in that window). Recent labelled training orders still enter the final fit, but not validation.
-
-## Reconciliation with teammate's 3 October update
-
-The update merged into `origin/main` from `data-preprocessing` (`43d01f1`) independently makes the same calendar-date lateness correction. We compared its saved table against this notebook's table: the same 96,470 order IDs, all 18 candidate features, and both targets agree. Its notebook still lived under `milestone2/`; the merged version remains here under `notebooks/phase2/`.
-
-The evaluation assignments differ. The teammate's 80th-percentile timestamp cutoff splits the calendar day of 26 May 2018 and places earlier purchases in training even when their delivery happened after that cutoff. Its expanding folds likewise use older purchase blocks without checking whether those orders' outcomes were known when the validation block starts. This version keeps the whole-day cutoff, the `unavailable_at_cutoff` group, and outcome-aware fit indices. The teammate's useful reminder that the May–August test has no Black Friday season is now in the assumptions log. Do not combine the teammate's `time_block` or saved split labels with this version's `cv_fold` and `split` columns.
+The teammate's later update made the same calendar-date lateness correction. Its saved order targets and original candidate features matched the earlier local table, but its split used a timestamp within the cutoff day and did not require labels to be available at each fit date. The current notebook retains the whole-day cutoff and outcome-aware training indices. See the [assumptions log](../../docs/phase2_assumptions.md) for remaining checkout-time uncertainties, especially payment rows.
