@@ -1,9 +1,12 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "prediction_point": "after checkout and payment submission, before approval or dispatch",
   "population": "delivered orders with actual and estimated delivery timestamps",
   "numeric_features": [
     "promised_days",
+    "promise_slack",
+    "route_typical_days",
+    "seller_ship_days",
     "distance_km",
     "same_state",
     "purchase_hour",
@@ -21,12 +24,35 @@
     "seller_state",
     "product_category",
     "payment_type",
-    "purchase_dayofweek",
-    "purchase_month"
+    "purchase_dayofweek"
   ],
   "payment_sensitivity_features": [
     "payment_type",
     "max_installments"
+  ],
+  "history_features": {
+    "features": [
+      "promise_slack",
+      "route_typical_days",
+      "seller_ship_days"
+    ],
+    "rule": "each order uses only earlier orders whose delivery (route) or carrier handover (seller) was recorded before its purchase",
+    "route_prior_strength": 20,
+    "seller_prior_strength": 10,
+    "seller_ship_days_valid_range": [
+      0,
+      60
+    ]
+  },
+  "retired_features": {
+    "purchase_month": "removed after validation: at most one earlier year per month; kept in the table for reference only"
+  },
+  "linear_log_candidates": [
+    "total_price",
+    "total_freight",
+    "distance_km",
+    "total_weight_g",
+    "total_volume_cm3"
   ],
   "classification_target": "is_late",
   "classification_rule": "actual delivery calendar date > estimated delivery calendar date",

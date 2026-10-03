@@ -1,3 +1,5 @@
+> **Superseded.** This review describes the first classification run on the original 18-feature set (with `purchase_month`). The feature contract has since changed (schema version 2, 20 features) and all results were regenerated. The numbers below are kept for history only; see [the notebook plan](phase2_classification_notebook_plan.md) and `results/phase2/classification/` for the current results.
+
 # Chunk 2: classification review
 
 The provisional choice is **logistic regression with C=0.1 and no class weighting**. This is validation evidence for the agreed delivered-only population, not final test performance. The complete experiment and figures are in [classification.ipynb](../notebooks/phase2/classification.ipynb); machine-readable evidence is in [results/phase2/classification](../results/phase2/classification/).

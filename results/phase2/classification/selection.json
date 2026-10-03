@@ -3,19 +3,139 @@
   "selection_metric": "mean fold average precision",
   "pr_auc_definition": "sklearn average_precision_score (not trapezoidal PR area)",
   "selected_candidate": "logistic_c01",
-  "selected_threshold": 0.08003039907333498,
+  "selected_threshold": 0.07878485347563163,
   "threshold_rule": "maximise pooled validation MCC; exact ties favour fewer alerts",
   "threshold_caveat": "selected and measured on the same validation predictions; not an unbiased final score",
   "family_winners": {
     "linear": "logistic_c01",
-    "tree_based": "forest_depth12_no_payment"
+    "tree_based": "forest_depth12"
+  },
+  "selection_scope": "highest mean average precision among the 13 declared candidates on the final feature set; payment checks are reported separately",
+  "winners_on_original_features": {
+    "linear": "logistic_c01",
+    "tree_based": "forest_depth12"
+  },
+  "feature_stages": {
+    "original": {
+      "numeric": [
+        "promised_days",
+        "distance_km",
+        "same_state",
+        "purchase_hour",
+        "n_items",
+        "n_products",
+        "n_sellers",
+        "total_price",
+        "total_freight",
+        "total_weight_g",
+        "total_volume_cm3",
+        "max_installments"
+      ],
+      "categorical": [
+        "customer_state",
+        "seller_state",
+        "product_category",
+        "payment_type",
+        "purchase_dayofweek",
+        "purchase_month"
+      ]
+    },
+    "no_month": {
+      "numeric": [
+        "promised_days",
+        "distance_km",
+        "same_state",
+        "purchase_hour",
+        "n_items",
+        "n_products",
+        "n_sellers",
+        "total_price",
+        "total_freight",
+        "total_weight_g",
+        "total_volume_cm3",
+        "max_installments"
+      ],
+      "categorical": [
+        "customer_state",
+        "seller_state",
+        "product_category",
+        "payment_type",
+        "purchase_dayofweek"
+      ]
+    },
+    "route": {
+      "numeric": [
+        "promised_days",
+        "promise_slack",
+        "route_typical_days",
+        "distance_km",
+        "same_state",
+        "purchase_hour",
+        "n_items",
+        "n_products",
+        "n_sellers",
+        "total_price",
+        "total_freight",
+        "total_weight_g",
+        "total_volume_cm3",
+        "max_installments"
+      ],
+      "categorical": [
+        "customer_state",
+        "seller_state",
+        "product_category",
+        "payment_type",
+        "purchase_dayofweek"
+      ]
+    },
+    "seller": {
+      "numeric": [
+        "promised_days",
+        "promise_slack",
+        "route_typical_days",
+        "seller_ship_days",
+        "distance_km",
+        "same_state",
+        "purchase_hour",
+        "n_items",
+        "n_products",
+        "n_sellers",
+        "total_price",
+        "total_freight",
+        "total_weight_g",
+        "total_volume_cm3",
+        "max_installments"
+      ],
+      "categorical": [
+        "customer_state",
+        "seller_state",
+        "product_category",
+        "payment_type",
+        "purchase_dayofweek"
+      ]
+    }
+  },
+  "log_transform": {
+    "columns": [
+      "total_price",
+      "total_freight",
+      "distance_km",
+      "total_weight_g",
+      "total_volume_cm3"
+    ],
+    "adopted": true,
+    "rule": "adopt for the linear model if it does not lower mean validation PR-AUC",
+    "mean_ap_with_log": 0.20026769696565502,
+    "mean_ap_without_log": 0.19537673262958305
   },
   "candidates": {
     "prior_baseline": {
       "algorithm": "dummy",
       "model_family": "baseline",
       "parameters": {},
-      "include_payment": true
+      "feature_set": "seller",
+      "include_payment": true,
+      "log_transformed": []
     },
     "logistic_baseline": {
       "algorithm": "linear",
@@ -24,7 +144,15 @@
         "C": 1.0,
         "class_weight": null
       },
-      "include_payment": true
+      "feature_set": "seller",
+      "include_payment": true,
+      "log_transformed": [
+        "total_price",
+        "total_freight",
+        "distance_km",
+        "total_weight_g",
+        "total_volume_cm3"
+      ]
     },
     "logistic_c01": {
       "algorithm": "linear",
@@ -33,7 +161,15 @@
         "C": 0.1,
         "class_weight": null
       },
-      "include_payment": true
+      "feature_set": "seller",
+      "include_payment": true,
+      "log_transformed": [
+        "total_price",
+        "total_freight",
+        "distance_km",
+        "total_weight_g",
+        "total_volume_cm3"
+      ]
     },
     "logistic_c10": {
       "algorithm": "linear",
@@ -42,7 +178,15 @@
         "C": 10.0,
         "class_weight": null
       },
-      "include_payment": true
+      "feature_set": "seller",
+      "include_payment": true,
+      "log_transformed": [
+        "total_price",
+        "total_freight",
+        "distance_km",
+        "total_weight_g",
+        "total_volume_cm3"
+      ]
     },
     "logistic_balanced": {
       "algorithm": "linear",
@@ -51,7 +195,15 @@
         "C": 1.0,
         "class_weight": "balanced"
       },
-      "include_payment": true
+      "feature_set": "seller",
+      "include_payment": true,
+      "log_transformed": [
+        "total_price",
+        "total_freight",
+        "distance_km",
+        "total_weight_g",
+        "total_volume_cm3"
+      ]
     },
     "tree_baseline": {
       "algorithm": "tree",
@@ -60,7 +212,9 @@
         "max_depth": null,
         "min_samples_leaf": 1
       },
-      "include_payment": true
+      "feature_set": "seller",
+      "include_payment": true,
+      "log_transformed": []
     },
     "tree_depth6": {
       "algorithm": "tree",
@@ -69,7 +223,9 @@
         "max_depth": 6,
         "min_samples_leaf": 50
       },
-      "include_payment": true
+      "feature_set": "seller",
+      "include_payment": true,
+      "log_transformed": []
     },
     "tree_depth12": {
       "algorithm": "tree",
@@ -78,7 +234,9 @@
         "max_depth": 12,
         "min_samples_leaf": 20
       },
-      "include_payment": true
+      "feature_set": "seller",
+      "include_payment": true,
+      "log_transformed": []
     },
     "tree_balanced": {
       "algorithm": "tree",
@@ -88,7 +246,9 @@
         "min_samples_leaf": 20,
         "class_weight": "balanced"
       },
-      "include_payment": true
+      "feature_set": "seller",
+      "include_payment": true,
+      "log_transformed": []
     },
     "forest_baseline": {
       "algorithm": "forest",
@@ -97,7 +257,9 @@
         "max_depth": null,
         "min_samples_leaf": 1
       },
-      "include_payment": true
+      "feature_set": "seller",
+      "include_payment": true,
+      "log_transformed": []
     },
     "forest_depth12": {
       "algorithm": "forest",
@@ -106,7 +268,9 @@
         "max_depth": 12,
         "min_samples_leaf": 20
       },
-      "include_payment": true
+      "feature_set": "seller",
+      "include_payment": true,
+      "log_transformed": []
     },
     "forest_leaf20": {
       "algorithm": "forest",
@@ -115,7 +279,9 @@
         "max_depth": null,
         "min_samples_leaf": 20
       },
-      "include_payment": true
+      "feature_set": "seller",
+      "include_payment": true,
+      "log_transformed": []
     },
     "forest_balanced": {
       "algorithm": "forest",
@@ -125,7 +291,9 @@
         "min_samples_leaf": 20,
         "class_weight": "balanced_subsample"
       },
-      "include_payment": true
+      "feature_set": "seller",
+      "include_payment": true,
+      "log_transformed": []
     },
     "logistic_c01_no_payment": {
       "algorithm": "linear",
@@ -134,18 +302,28 @@
         "C": 0.1,
         "class_weight": null
       },
+      "feature_set": "seller",
       "include_payment": false,
+      "log_transformed": [
+        "total_price",
+        "total_freight",
+        "distance_km",
+        "total_weight_g",
+        "total_volume_cm3"
+      ],
       "paired_with": "logistic_c01"
     },
-    "tree_depth12_no_payment": {
+    "tree_depth6_no_payment": {
       "algorithm": "tree",
       "model_family": "tree_based",
       "parameters": {
-        "max_depth": 12,
-        "min_samples_leaf": 20
+        "max_depth": 6,
+        "min_samples_leaf": 50
       },
+      "feature_set": "seller",
       "include_payment": false,
-      "paired_with": "tree_depth12"
+      "log_transformed": [],
+      "paired_with": "tree_depth6"
     },
     "forest_depth12_no_payment": {
       "algorithm": "forest",
@@ -154,7 +332,9 @@
         "max_depth": 12,
         "min_samples_leaf": 20
       },
+      "feature_set": "seller",
       "include_payment": false,
+      "log_transformed": [],
       "paired_with": "forest_depth12"
     }
   },
@@ -185,8 +365,9 @@
     "numpy": "2.5.3"
   },
   "input_sha256": {
-    "phase2_order_table.csv": "d9020d44fecbca3eb87791e3a5bdc663f76a656af0a7da18209d7037c774cf70",
-    "phase2_feature_spec.json": "115e308a9ae6cb5ca810f9358ccd9c3745023e395550bbc77594a86ac8b47c19"
+    "phase2_order_table.csv": "90a25126d4bc9c3686bd1d8f356d5091adf5c86f5cadeebf8d07cf5847c90a43",
+    "phase2_feature_spec.json": "a5c207da275a881f201ce7e149515b7e6225e98d99d0d3c901a17699b8f505eb"
   },
-  "implementation_sha256": "9cbe4ddbe790fde8c4e4446a2666f10b37c26eab5ef0a736d27857ca6eecdd30"
+  "implementation_sha256": "0c5a93e1b8ed93a204cfb04ae238404fd7ca4ded0cd09e52a3f0770da4a14436",
+  "features_module_sha256": "57958bedc0fc79971b5d06386bbad71260e3bcdd1cb0c46d07347677273ca6d5"
 }
