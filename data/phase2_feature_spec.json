@@ -24,5 +24,8 @@
   "classification_target": "is_late",
   "regression_target": "delivery_days",
   "random_state": 42,
+  "split": "time-based: most recent 20% of orders by purchase time are the test set",
+  "test_cutoff": "2018-05-26 18:18:03",
+  "cv": "expanding window: fold k trains on time_block < k and validates on time_block == k",
   "n_folds": 5
 }
