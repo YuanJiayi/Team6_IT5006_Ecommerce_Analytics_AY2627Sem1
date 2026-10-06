@@ -1,0 +1,184 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[margin=0.78in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tikz}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue,urlcolor=blue}
+\definecolor{modelblue}{HTML}{266F9B}
+\definecolor{muted}{HTML}{78838E}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.48em}
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.13}
+
+\begin{document}
+\begin{center}
+{\Large\bfseries Predicting delivery performance at checkout}\\[3pt]
+{\small IT5006 Phase 2 --- shared introduction and classification draft}
+\end{center}
+\vspace{-0.5em}
+
+\section*{Introduction}
+When a customer places an order, the operations team cannot yet know whether it will arrive on time. An early warning could help staff decide which orders to watch. We approach this in two ways: classification ranks orders by their risk of arriving late, while regression estimates how long delivery will take. Both predictions are made just after checkout and payment submission, before approval or dispatch.
+
+\section*{Data and validation}
+We use the Olist CSVs supplied on the course's Canvas page, as required by the project brief. We join orders with their items, customers, sellers, products, payments and locations, then make one row per delivered order. We join customer records using \texttt{customer\_id}; \texttt{customer\_unique\_id} links repeat orders by the same customer. Neither ID is used as a model input. The resulting dataset contains 96,470 delivered orders with both an actual and a promised delivery date.
+
+An order is late only if it arrives after its promised \emph{calendar date}. Arrival on that date counts as on time. For regression, delivery time is the number of days from purchase to arrival. We can calculate either outcome only for orders that arrived. Our results therefore apply to delivered orders; they do not tell us whether a new order will be cancelled or never arrive.
+
+The models use order details and past delivery history. They exclude approval, carrier handover, delivery, status and review information because none of those events had happened at checkout. Route and seller history is built only from deliveries already recorded before each purchase. We assume the stored delivery promise and payment details were available at checkout. The CSVs do not tell us when those fields were first recorded, so we cannot confirm that timing.
+
+We reserve purchases from 26 May 2018 onward as the final test period. Of the earlier purchases, 75,099 had a known delivery outcome by that date and are eligible for training; 2,008 were delivered later and cannot be used to simulate what was known at the cutoff. We do not use the test period to choose features, models or alert thresholds.
+
+For development, we use five successive validation windows, each with 7,601 orders. Before scoring a window, we train on still-earlier purchases whose outcomes were known when that window began. The windows end by 26 March 2018, leaving 60 days before the test cutoff so that recent orders have time to reach a known outcome. Table~\ref{tab:folds} shows how much the late-order rate changes over time. A random split could hide that change. Each window's missing-value handling, encoding and scaling are fitted on its eligible training orders. We use seed 42 for the stochastic models and checks.
+
+\begin{table}[h]
+\centering
+\caption{The late rate and selected logistic model's PR-AUC vary across validation windows. Each window contains 7,601 orders.}
+\label{tab:folds}
+\begin{tabular}{@{}r l r r r@{}}
+\toprule
+Window & Purchase dates & Training orders & Late rate & PR-AUC \\
+\midrule
+1 & 22 Sep--14 Nov 2017 & 23,695 & 4.1\% & 0.0738 \\
+2 & 14 Nov--11 Dec 2017 & 30,987 & 13.8\% & 0.2231 \\
+3 & 11 Dec 2017--20 Jan 2018 & 36,197 & 4.8\% & 0.0760 \\
+4 & 20 Jan--22 Feb 2018 & 45,014 & 9.9\% & 0.2331 \\
+5 & 22 Feb--26 Mar 2018 & 52,198 & 20.7\% & 0.3954 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section*{Classification features}
+We treat the delivery promise and details such as the order's size, value, product category, purchase time and submitted payment as available at checkout. We also estimate seller-to-customer distance from ZIP-prefix locations and use past delivery records to describe the route and seller. For each validation window, we fill missing numbers with medians from that window's training orders and turn categories into indicator columns. Logistic regression also uses scaled numbers and a circular encoding of purchase hour, so 23:00 and 00:00 sit next to each other.
+
+To see whether our feature work helped, we changed the features one step at a time and kept the logistic model settings fixed (Table~\ref{tab:features}). We first removed purchase month: the data span is too short to tell whether a poor November would happen again. We then added route and seller history from earlier deliveries and compressed large numeric values with a log transform. PR-AUC rose at each step. These small gains depend on the order in which we made the changes. They show better validation predictions, not how much each feature would help on its own.
+
+\begin{table}[h]
+\centering
+\caption{Each feature step raised mean PR-AUC across the five validation windows.}
+\label{tab:features}
+\begin{tabular}{@{}lrr@{}}
+\toprule
+Feature set after step & Mean PR-AUC & Change \\
+\midrule
+Original checkout features & 0.1808 & --- \\
+Remove purchase month & 0.1897 & +0.0089 \\
+Add past route time and promise slack & 0.1910 & +0.0013 \\
+Add seller's past handover speed & 0.1954 & +0.0043 \\
+Log-transform skewed inputs & 0.2003 & +0.0049 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section*{Model comparison}
+We began with a baseline that assigns every order in a window the same risk. It cannot tell the team which order to check first. Its mean PR-AUC is 0.1067, the average late-order rate across validation windows; its ROC-AUC is 0.5. We compared it with logistic regression, a decision tree and a random forest of 200 trees. We use mean PR-AUC (scikit-learn's average precision) to select a model because late orders are uncommon and the team would start with the highest-risk orders. ROC-AUC gives another view of ranking. Once we choose an alert cutoff, precision, recall, F1 and Matthews correlation coefficient (MCC) describe the resulting alerts.
+
+The main comparison contains 13 declared candidates: the prior-only baseline and four settings for each algorithm. For logistic regression, we tested unweighted $C\in\{0.1,1,10\}$ and a class-weighted version at $C=1$. Smaller $C$ means stronger regularisation. For a single tree, we compared unrestricted growth with depth/leaf-size pairs of $6/50$ and $12/20$, plus a class-weighted $12/20$ version. The forest used 200 trees and compared unrestricted growth, depth $12$ with at least 20 training orders per leaf, unrestricted depth with at least 20 per leaf, and a class-weighted version of the last setting. These choices test whether simpler trees generalise better and whether giving late orders more influence helps. A separate check of the two other weighted logistic $C$ settings did not change the winner.
+
+With the final features, the unrestricted tree scored 0.111 mean PR-AUC; limiting it to depth 6 and at least 50 orders per leaf raised that to 0.149. Limiting forest depth and leaf size raised its score from 0.181 to 0.200. Class weighting found more late orders at its chosen alert cutoff, but also produced more false alerts and worse ranking scores. All candidates use the same temporal windows, and each model's preprocessing is fitted inside its training fold.
+
+\begin{table}[h]
+\centering
+\caption{Logistic regression and the forest rank orders similarly. Scores are means of five window scores; voting was checked afterwards using validation data.}
+\label{tab:models}
+\begin{tabular}{@{}lrr@{}}
+\toprule
+Approach & PR-AUC & ROC-AUC \\
+\midrule
+Prior-only baseline & 0.1067 & 0.500 \\
+Best single tree & 0.1495 & 0.566 \\
+Logistic regression ($C=0.1$) & 0.2003 & 0.677 \\
+Best random forest & 0.1999 & 0.668 \\
+Equal-weight logistic--forest vote & 0.2050 & 0.683 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+We also tried averaging the logistic and forest risk scores. This raised mean PR-AUC by 0.0048 over logistic regression. The vote beat logistic regression in three of five windows, but beat both individual models in only two. That gain did not justify running two models for this study, so we selected logistic regression before opening the test period. The validation scores are too close to claim that it is reliably more accurate than the forest or the vote. Dropping payment type and instalment count changed logistic mean PR-AUC from 0.2003 to 0.2001; the result is nearly identical without those inputs, whose checkout timing is uncertain.
+
+\section*{What the models learned}
+To see which inputs the forest relies on, we shuffled one feature at a time in each validation window and measured the fall in PR-AUC. Table~\ref{tab:importance} shows the five largest mean falls. Customer state, the gap between the promised delivery time and past route time (\texttt{promise\_slack}), and past route time carry the strongest signals in this check. Shuffling correlated features can split their apparent importance, so these values are not isolated effects.
+
+\begin{table}[h]
+\centering
+\caption{The forest relies most on location, delivery promise and route history. Values are mean validation PR-AUC drops after feature shuffling.}
+\label{tab:importance}
+\begin{tabular}{@{}lrr@{}}
+\toprule
+Feature & Mean PR-AUC drop & Positive windows \\
+\midrule
+Customer state & 0.0260 & 5/5 \\
+Promise slack & 0.0171 & 5/5 \\
+Past route delivery time & 0.0167 & 4/5 \\
+Promised delivery time & 0.0089 & 5/5 \\
+Seller's past handover time & 0.0071 & 5/5 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The selected logistic model shows a similar, though not identical, pattern. Across all five training fits, a longer past seller handover time and greater log-distance have positive coefficients, while longer promised time and promise slack have negative coefficients. These are associations after adjustment for the other inputs, not proof that changing one factor would change delivery performance. The promise, route time and slack are related by construction, so we should not interpret any one of their coefficients in isolation.
+
+\section*{What the ranking could do}
+Suppose staff could review only 10\% of orders. Taking the highest-risk 10\% in each validation window would put 951 of the 4,054 late orders on their lists: 23.5\% of all late orders (Figure~\ref{fig:ranking}). A random list of the same size would find about 10\%. Risk ranking could help staff focus their attention, although a short list would still miss most late orders.
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[x=15cm,y=5.4cm]
+  \draw[->,thin] (0,0) -- (0.33,0) node[below right] {\small Share of orders reviewed};
+  \draw[->,thin] (0,0) -- (0,0.61) node[above left,align=center] {\small Share of late\\[-2pt]\small orders found};
+  \foreach \x/\lab in {0.1/10,0.2/20,0.3/30} {
+    \draw[thin] (\x,0) -- (\x,-0.009) node[below] {\scriptsize \lab\%};
+  }
+  \foreach \y/\lab in {0.2/20,0.4/40,0.6/60} {
+    \draw[thin] (0,\y) -- (-0.004,\y) node[left] {\scriptsize \lab\%};
+  }
+  \draw[muted,dashed,thick] (0,0) -- (0.3,0.3);
+  \draw[modelblue,very thick] (0,0) -- (0.1,0.23458) -- (0.2,0.39813) -- (0.3,0.51751);
+  \foreach \x/\y in {0.1/0.23458,0.2/0.39813,0.3/0.51751}
+    \fill[modelblue] (\x,\y) circle[radius=0.0031];
+  \node[anchor=west,text=modelblue] at (0.155,0.54) {\scriptsize Logistic risk ranking};
+  \node[anchor=west,text=muted] at (0.19,0.17) {\scriptsize Random selection};
+\end{tikzpicture}
+\caption{Reviewing the highest-risk orders finds more late deliveries than random selection. Counts are pooled across five windows; orders are ranked within each window.}
+\label{fig:ranking}
+\end{figure}
+
+If the team needs a yes/no alert, it must choose a risk cutoff. We selected the cutoff that gives the highest MCC on the combined logistic validation predictions: 0.0788. This flags 3,600 orders. Of those, 1,145 arrive late and 2,455 arrive on time; it misses another 2,909 late orders. Precision is 31.8\%, recall 28.2\%, F1 is 0.299 and MCC is 0.222. Because we chose the cutoff and measured it on the same validation orders, these alert scores are likely optimistic.
+
+\section*{Final held-out evaluation}
+After fixing the features, logistic model and cutoff, we fitted the model on all 75,099 eligible training orders and scored the later test period once. Of its 19,363 delivered orders, 674 were late (3.48\%). Table~\ref{tab:heldout} compares this final result with the development evidence. The model's test PR-AUC is 0.0651, above the constant-risk baseline of 0.0348; ROC-AUC is 0.668. The risk scores still rank orders better than chance. Raw PR-AUC is lower than the validation mean partly because late orders are much less common in the test period.
+
+\begin{table}[h]
+\centering
+\caption{The ranking retains some value, but the validation-selected alert cutoff transfers poorly. Validation PR-AUC and ROC-AUC are means of five window scores; its alert metrics pool those windows. Test metrics come from one later period.}
+\label{tab:heldout}
+\begin{tabular}{@{}lrr@{}}
+\toprule
+Measure & Validation & Later test \\
+\midrule
+Late-order rate & 10.7\% & 3.48\% \\
+PR-AUC & 0.2003 & 0.0651 \\
+ROC-AUC & 0.677 & 0.668 \\
+Share flagged at cutoff 0.0788 & 9.5\% & 42.9\% \\
+Precision & 31.8\% & 5.2\% \\
+Recall & 28.2\% & 64.4\% \\
+F1 & 0.299 & 0.097 \\
+MCC & 0.222 & 0.082 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+At the fixed cutoff, the test period produces 8,316 alerts. Only 434 of those orders arrive late; 7,882 are false alerts, and 240 late orders are missed. This is not a useful alert volume for a team able to review only a small share of orders. We do not adjust the cutoff using test labels, because that would turn the final check into another tuning step. Any operational alert rule would need a new, separate evaluation and a decision about review capacity and the costs of false and missed alerts.
+
+These predictions have limits. At checkout, we cannot know which carrier delays or other disruptions an order will face. Past route performance and distance give useful clues, but cannot settle what will happen to a particular delivery. Late-order rates also change over time. The held-out result supports the model as a modest risk-ranking tool, not as a ready-made yes/no alert system.
+
+% Integrate the team's regression findings and joint classification--regression
+% comparison here. Classification's reserved test has been evaluated once;
+% the team's regression result has not been added to this draft.
+\end{document}
