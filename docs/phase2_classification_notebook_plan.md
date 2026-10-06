@@ -1,6 +1,83 @@
 # Plan: Phase 2 classification notebook
 
+**Execution status (2026-10-05):** The validation work and voting check are complete. Logistic regression, its features and the validation-selected alert cutoff were frozen; the notebook's final held-out section was then enabled and executed once. Earlier instructions below to leave that section off describe the pre-evaluation stage.
+
 Hand-off brief for whoever builds `notebooks/phase2/classification.ipynb`. Read the whole file first. Sections 1 and 2 are hard rules; section 3 is the content.
+
+## Reader review, 2026-10-05 (supersedes figure-count guidance below)
+
+The user reviewed the executed notebook as a first-time reader and found that several cells did not make their purpose apparent; the month/payment chart also could not answer the seasonal-stability question attributed to it. The current editing pass must audit **every** cell for a clear reason, a method that can answer that reason, and a nearby interpretation of meaningful output. A figure can be illustrative or inconclusive, but its intended use must be understandable within a few seconds. Do not keep a plot solely to satisfy an earlier figure list.
+
+In particular, the earlier request to chart all 17 original inputs and every log-transformed distribution is superseded. Use a few representative original-input examples, retain the numeric-input heatmap and late-versus-on-time distributions for the three history features, and show one focused before/after log example with an honest skewness comparison. The extra single-feature ROC-AUC plot for those history features was also removed: the distributions describe the initial association, and the later validation ladder tests predictive gain. The removed month/payment display cannot establish repeatable seasonality from this short record; explain that limit and let the validation comparisons decide input inclusion. Keep all modelling code, result comparisons, and the guarded held-out test visible. The user requested this revision without a commit.
+
+## Revision 2 (overrides anything below that says the notebook only reads saved results)
+
+The notebook is a graded submission. It must **contain and run the modelling code**, in the style of the course tutorial notebook (T07): a reader sees the pipeline, the candidate models, the cross-validation loop and the evaluation being executed, with outputs saved in the file.
+
+1. **Training happens in the notebook.** Define the preprocessing pipelines, the 13 declared candidates, the temporal fold construction, the metric functions, the ladder runs, the threshold choice, the risk-ranking and the interpretation (odds ratios, permutation importance) in visible code cells, each preceded by a short plain-English explanation. Do not hide the work behind `import phase2_classification`. Importing `phase2_features` is not needed; the history features are already in the saved order table (the notebook should show how they were built only by pointing to `data_prep.ipynb`).
+2. **Same results as the script.** `phase2_classification.py` stays as a command-line reproduction and test target. Both must give identical numbers (seed 42, same folds). The notebook should end its modelling sections with a short check that its live results match `results/phase2/classification/` (for example the ladder summary and selected threshold), which also shows reproducibility.
+3. **Runtime.** A full run takes roughly 10 to 15 minutes (the forests dominate). Keep forests at `n_jobs=4`, keep everything deterministic, and commit the notebook with outputs saved so a grader can read it without rerunning. Remove the `RERUN_TRAINING` flag and the hash checks.
+4. **Follow the tutorial's flow.** Baseline first, then models, then cross-validation and tuning, then evaluation, then diagnostics and interpretation, then threshold or ranking. Explain each step before its code.
+5. **Cover the brief's deliverables visibly:** precision, recall, F1, ROC-AUC and PR-AUC (and MCC), cross-validation results, hyperparameter tuning methodology (the declared candidate grid and why), feature importance, model comparison and final selection, and ensemble results once the voting comparison exists.
+6. **Held-out test.** Keep the test period out of every selection step. End the notebook with a clearly marked **final held-out evaluation** section that fits the chosen model on the primary training rows and scores the later-period test **exactly once**. Write that section now but leave it unexecuted (with a guard flag, default off) until the voting comparison is done and the model choices are frozen. Once it has been run, the results and the glossary must not be tuned against it.
+7. All other readability guidance below still applies.
+
+## Revision 3: opening and feature-engineering sections (overrides the earlier outline where they conflict)
+
+The notebook must run in this order: **A. Where we start → B. Feature engineering → C. Model training** (Revision 2 covers C).
+Everything computed in A and B must be visible code run in the notebook, on primary-training rows only. That includes the five validation windows, which sit inside the training period; it never includes the reserved test period. Window-by-window charts in B are descriptive: they motivate a feature, and the ladder (not these charts) decides whether it stays.
+
+### A. Where this notebook starts
+- Input: `data/phase2_order_table.csv` and `data/phase2_feature_spec.json`, produced by `data_prep.ipynb`.
+- A short table or bullets summarising what pre-processing already did: delivered orders only (96,470), the definition of "late" (actual delivery date after the estimated date), checkout-time-only inputs (20 features), as-of history features, and the fixed time-based split (cutoff, 60-day gap, 5 validation windows, reserved test period).
+- A short statement of what this notebook does (compare features and models step by step, choose and explain one model) and does not do (rebuild features or redefine the split).
+- A load-and-check cell asserting row counts, the column list from the spec, and that no test rows are in the training data.
+
+### B. Feature engineering: why these features
+Give each feature the depth it earns.
+1. **Features we changed get full proof** (`promise_slack`, `route_typical_days`, `seller_ship_days`, the removed `purchase_month`, the log transform, the payment features we tested). For each: a plain-English reason it should help, a chart of its link to late/not late, and its stability across the 5 validation windows. Add a tiny worked example (3 or 4 rows) of how a route's typical days is built from earlier orders only. The real gain is measured later in the ladder; correlation only motivates a feature, and the notebook must say so.
+2. **The 17 original features get one compact treatment.** Group them (order size and weight, geography and distance, timing, the delivery promise), one sentence per group on why it plausibly matters, and one chart of each feature's signal against late. Keep the two correlation plots.
+3. **Exclusions.** Excluded-by-rule features (anything unknown at checkout, plus identifiers) are explained once in `data_prep.ipynb`; this notebook just links to that table in one sentence. Tested-and-dropped features for classification (payment, month) are reported here with their own results. Do not cite the extra features tried only in diagnostics (peak season, platform load, recent platform late rate, seller late rate); leave them out.
+4. Finish B with a one-paragraph summary of the final 20 features and a pointer to the ladder.
+
+### Change to `data_prep.ipynb` (markdown only)
+If it has no clear "features excluded by rule and why" table, add one markdown cell with a table (excluded feature or group, why it is unavailable at checkout). Do not change code, data or outputs there. If a table already exists, tell me and don't duplicate it.
+
+### Same rules as before
+Plain English, short cells, explanation before code, finding-style figure titles, no editing `data/`, `results/` or `phase2_classification.py`, no commits.
+
+## Revision 4: `data_prep.ipynb` follow-ups
+
+Apply after Revision 3, as one pass over `data_prep.ipynb` alongside its formatting clean-up. Not related to modelling. The builder is free to run its own code and analysis here; the only constraint is that the saved data files and feature spec should end up unchanged (check with `git diff --stat data/`).
+
+### 4a. Customer counts (Phase 1 feedback)
+
+The Phase 1 feedback asked us to "clarify which customer key was used and what filtering produced 95,420 unique customers". Phase 2 does not yet answer it. In `data_prep.ipynb`, add one markdown cell (markdown only) with a short table:
+
+| Count | Value | Filter |
+|---|---|---|
+| Distinct `customer_unique_id` in the customers table | 96,096 | none |
+| Distinct people among orders that have item records | 95,420 | 98,666 orders with at least one item |
+| Distinct people in the Phase 2 order table | 93,350 | 96,470 delivered orders |
+
+State that `customer_unique_id` (a person) is the key, not `customer_id` (assigned per order), and why the three counts differ. Phase 2 modelling does not use a customer key as a feature. These figures were checked against the raw CSVs.
+
+### 4b. Justify the 60-day validation gap
+**Background.** The last validation window ends 60 days before the 2018-05-26 cutoff. Close to the cutoff, only orders that were delivered quickly are complete, so judging a model on completed orders alone would understate lateness. The 60-day figure was set as a conservative buffer *before* any check, so the notebook must present the check as confirmation, not as how 60 was derived. Also explain in one sentence why the test split is by purchase date (the model predicts at checkout), not by delivery date. Do not run a sensitivity study that varies the gap against model scores; the gap is not a hyperparameter.
+
+**Check to run (no model, purchases before the cutoff only).** Recompute from `data/phase2_order_table.csv` and report whether it matches the figures below:
+- Days from purchase to delivery: median 11, 90th percentile 25, 99th 48, 99.5th 56, 99.9th 88 (77,107 delivered orders, late rate 7.6%).
+- Share still undelivered after N days: 45 days 1.35%, 60 days 0.38%, 90 days 0.10%.
+- Orders over 60 days are 98.6% late; over 45 days, 96.1% late.
+- Late rate if only orders delivered within N days are kept: 30 days 3.3%, 45 days 6.4%, 60 days 7.3% (true 7.6%).
+- Caveat: the table holds delivered orders only, so it cannot show orders that never arrived.
+
+**Wording to aim for.** "We set a 60-day gap as a conservative buffer. This check confirms it: 60 days is about the 99.5th percentile of delivery time, so under 0.4% of orders are still in transit and validation labels are essentially complete."
+
+Add a one-paragraph plain-English summary to `classification.ipynb` in "Make validation face the future", pointing to this section instead of recomputing.
+
+### 4c. Formatting of `data_prep.ipynb`
+To be specified after the notebook is reviewed. Aim for the same readability goals as the classification notebook.
 
 ## 0. Why this notebook exists, in one paragraph
 
@@ -25,14 +102,14 @@ The reader may not be a data scientist. The notebook must make sense top to bott
 - **Figure titles state the finding**, not the chart type. Good: "Late rate swings from 1% to 19% by month". Bad: "Late rate by month".
 - **One idea per figure.** Maximum one table per section unless it is the main ladder table. No walls of columns: keep the 4 to 6 columns the reader needs.
 - **Consistent colours.** One colour for the baseline, one for the selected model, one for "late". Do not recolour between sections.
-- **Show, do not narrate code.** Training and metric code live in `phase2_classification.py`. Notebook cells only load saved results and plot them. Hide plumbing; keep cells short.
-- **Every number in the text comes from a saved file**, not typed by hand, so text and tables cannot drift. Use f-strings.
+- **Show the modelling code.** Explain each step, then show the pipeline, fitting or metric cell and its output. Keep cells focused; `phase2_classification.py` remains the independent reference.
+- **Every empirical number in the notebook text comes from the live calculation**, not typed by hand; use f-strings. Saved files are used for the final comparison.
 - **Be honest about limits in plain words.** Threshold metrics selected on the same data are optimistic; say so. Differences of about 0.003 PR-AUC are not meaningful; say so.
-- **Run top to bottom with no errors** in a fresh kernel (`RERUN_TRAINING=False`), and check it renders cleanly with outputs saved.
+- **Run top to bottom with no errors** in a fresh kernel, and check it renders cleanly with outputs saved. Keep the final held-out evaluation guard off.
 
-## 2. Do the computing first (prerequisites, not the notebook's job)
+## 2. Completed preparation before the visible modelling run
 
-The notebook is token-heavy to author and review. Anything computational must be finished *before* it is written, so the notebook only reads files. Order of work:
+The data contract, reference script and reference results were completed before the notebook revision. Revision 2 requires the notebook to repeat the modelling visibly and compare its live results with those files. The historical preparation order was:
 
 1. **Update the data contract** (`notebooks/phase2/data_prep.ipynb`, `data/phase2_feature_spec.json`, `docs/phase2_assumptions.md`):
    - Remove `purchase_month` from the features (reason: at most one earlier year of each month; decision made on validation evidence before any test use).
@@ -44,7 +121,7 @@ The notebook is token-heavy to author and review. Anything computational must be
 2. **Extend `phase2_classification.py`** so one run saves everything the notebook needs (details in section 4). Keep fitting and metrics in the script, not the notebook.
 3. **Update tests** (`tests/`), rerun the script, and regenerate `results/phase2/classification/`. Confirm all tests pass.
 4. **Regenerate `selection.json` hashes** (the script does this) so the notebook's integrity checks pass.
-5. **Only then** build the notebook.
+5. **Only then** build the notebook and run its visible modelling cells.
 
 Constraints for all of the above:
 - Use only primary training and validation rows. The test period and the random benchmark stay untouched until final evaluation. Do not fit a final model.
@@ -69,7 +146,7 @@ Four or five bullet points: the question, the headline result with the baseline 
 
 ### 3. Why testing is harder than it looks (time matters)
 - Explain training on the past and testing on the future, in plain words.
-- **Table: the same models on a random split vs a time-based split** (this is the reader's "aha"): e.g. ROC-AUC 0.76 vs 0.64. Regenerate from saved results.
+- **Table: the same models on a random split vs a time-based split** (this is the reader's "aha"). Calculate both within the notebook, using only primary training-period rows for the shuffled diagnostic.
 - One diagram or short list of the five validation periods, with their late rates.
 - State clearly: we use the time-based split, because it answers the real question.
 
@@ -134,7 +211,7 @@ Seeds, versions, where saved results live, how to rerun. This is the only place 
 
 ## 4. Files the script must save for the notebook
 
-All under `results/phase2/classification/`. The notebook reads these and never trains.
+All under `results/phase2/classification/`. The notebook recomputes the modelling results and reads these files only for its final reproducibility comparison.
 
 | File | Contents |
 |---|---|
@@ -154,8 +231,8 @@ All under `results/phase2/classification/`. The notebook reads these and never t
 - A fresh-kernel run completes with no errors and no unexplained warnings.
 - Every figure has a finding-style title and every section has "The question" and "What we learned".
 - A non-specialist classmate can read it top to bottom and explain the result and its limits back in a minute.
-- Every number in the text is generated from a saved file.
-- Tests pass, `selection.json` hashes match, and no test-period score exists anywhere.
+- Every empirical number in the notebook text is generated from the live run or the saved reference files.
+- Tests pass, live results match the saved reference, and no test-period score exists in the executed outputs.
 - `docs/phase2_classification_review.md` and `notebooks/phase2/README.md` are updated so they no longer describe the old feature set or the "Chunk" labels.
 
 ## 6. Status and notes for the builder
@@ -166,7 +243,7 @@ All under `results/phase2/classification/`. The notebook reads these and never t
 - All tests in `tests/test_phase2_*.py` pass.
 
 **Things the builder must know:**
-- **The existing `classification.ipynb` is out of date and will fail its hash check.** Rebuild it; do not patch it. The three PNGs from the old notebook (`candidate_comparison.png`, `fold_comparison.png`, `threshold_review.png`) were stale and have been deleted. Figures live inside the notebook; export image files from it only if the report needs them.
+- **The earlier results-viewer notebook is out of date.** The three PNGs from that version (`candidate_comparison.png`, `fold_comparison.png`, `threshold_review.png`) were stale and have been deleted. Figures live inside the revised notebook; export image files from it only if the report needs them.
 - **Pooled vs mean-of-folds numbers differ.** `cv_summary.csv` and the ladder use the mean of the five per-window scores. `threshold_metrics.csv` and its AP/ROC-AUC are pooled over all 38,005 validation orders. Always say which one a number is.
 - **Odds ratios:** `logistic_odds_ratios.csv` includes one row per one-hot category level, and the biggest values are rare states. For the chart, show the numeric features (they are per one standard deviation) and summarise states separately or leave them out, and say that categories are relative and noisy.
 - **`promise_slack` has a below-0.5 single-feature AUC** (a looser promise means fewer late orders). Explain the sign; do not present it as a mistake.
