@@ -1,5 +1,31 @@
 # Phase 2 classification handover
 
+## Progress at 8 October 2026 (resume here; report due Sunday 11 October 23:59)
+
+**Done**
+- Report review: the numbers in the draft match the evidence. Main gaps: no story about the promise shift; pooled test ROC-AUC 0.668 hides within-month ROC-AUC ≈ 0.58; no success criteria, citations, feature-rationale table, train/validation/test tables, AI declaration or regression section; page budget probably tight.
+- Promise shift: from about 23 May 2018 (truckers' strike) promises lengthened, then fell to a median of 13.4 days by August, below anything in training. This likely explains the cutoff failure, the over-prediction and the August ROC-AUC of 0.52. Tables: `experiments/phase2_promise_regime_audit/`. Post hoc regime features lose on validation (PR-AUC 0.1960 vs 0.2003) but help on the test (ROC-AUC 0.705; 0.723 with monthly refit). Report this as hindsight only.
+- Regression ([spec](phase2_regression_spec.md), `phase2_regression.py`, `results/phase2/regression/`):
+  - Selected ridge alpha 100 (validation MAE 5.81 vs forest 5.76, inside the 0.05-day margin).
+  - Test scored once: MAE 5.00 (route-history baseline 5.21, mean baseline 6.27); monthly refit 4.90.
+  - Bias +3.6 days because test deliveries were faster (8.8 vs 13.3-day mean), so test R² is −0.18.
+- Regression diagnostics (`experiments/phase2_regression_diagnostics/`, training and validation only):
+  - OLS fit: R² 0.264, adjusted R² 0.263, F 180.6.
+  - Assumptions: heteroscedastic, heavy right tail, mild autocorrelation; VIF 16.7, 12.2, 5.3 for promise, slack and route.
+  - A log target is worse (MAE 6.06).
+  - Conclusion: these affect inference, not MAE-based selection.
+- Public Olist R² ≈ 0.48 (shef4793 repo) comes from target outlier capping before the split, `review_score` as a feature, and a random split. Not comparable.
+
+**Next (agreed direction, not yet started)**
+1. Spec, then agent build:
+   - 90% quantile regression for promise dates, linear plus a tree-based model. Exclude promised days and slack. Evaluate on coverage, pinball loss, and comparison with Olist's promise (median 23.5 days, 92.9% on time).
+   - A WLS validation check.
+   - Clip predictions at 0.
+   - Drop `promise_slack` for the coefficient table.
+   - This replaces classification v2 in the spec; record the change in its change log.
+2. Training-set scores for train/validation/test tables, regression error analysis by route, distance and state, and final-fit odds ratios and coefficients.
+3. Report rewrite (classification plus regression in 6–8 pages). Literature citations from the Phase 1 report in `ref/`. Mechanical formatting is to go to Codex (CLI not yet installed). No LaTeX toolchain is installed locally.
+
 **Status: 7 October 2026.** This is a starting map for another agent. Check Git status and the current files before making changes; several recent analyses and the report draft are local, uncommitted work.
 
 ## Read in this order

@@ -95,5 +95,5 @@
   "interpretation_file": "coefficients.csv",
   "train_orders": 75099,
   "random_state": 42,
-  "test_status": "not scored"
+  "test_status": "scored"
 }
