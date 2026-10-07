@@ -1,0 +1,99 @@
+{
+  "selected_candidate": "ridge_100",
+  "algorithm": "ridge",
+  "parameters": {
+    "alpha": 100.0
+  },
+  "reason": "forest_baseline has the lowest mean MAE (5.7629); ridge_100 (5.8099) is within 0.05 days and simpler, so it is chosen",
+  "rule": "lowest mean validation MAE over 5 windows; candidates within 0.05 days of the lowest lose to the simplest (linear, tree, forest; fewer parameters first); baselines are reference only",
+  "simplicity_order": [
+    "linear_baseline",
+    "ridge_1",
+    "ridge_10",
+    "ridge_100",
+    "tree_depth6",
+    "tree_depth12",
+    "tree_baseline",
+    "forest_depth12",
+    "forest_leaf20",
+    "forest_baseline"
+  ],
+  "mean_scores": {
+    "mean_baseline": {
+      "mean_mae": 7.21569445041069,
+      "mean_rmse": 10.673734836288642,
+      "mean_r2": -0.07825362973781118,
+      "mean_signed_error": -2.757263094117482
+    },
+    "route_baseline": {
+      "mean_mae": 6.154887494356121,
+      "mean_rmse": 9.64959782614471,
+      "mean_r2": 0.11984988724546697,
+      "mean_signed_error": -2.9150289916884944
+    },
+    "linear_baseline": {
+      "mean_mae": 5.861648406758029,
+      "mean_rmse": 9.466531041839781,
+      "mean_r2": 0.1552761575820199,
+      "mean_signed_error": -3.1400001661862444
+    },
+    "ridge_1": {
+      "mean_mae": 5.859646981958169,
+      "mean_rmse": 9.464548460123163,
+      "mean_r2": 0.15565430157381177,
+      "mean_signed_error": -3.1377138130732667
+    },
+    "ridge_10": {
+      "mean_mae": 5.849727495170383,
+      "mean_rmse": 9.45336248323636,
+      "mean_r2": 0.15769952904803514,
+      "mean_signed_error": -3.12545460358385
+    },
+    "ridge_100": {
+      "mean_mae": 5.809875032290913,
+      "mean_rmse": 9.40117462878528,
+      "mean_r2": 0.1666650615885094,
+      "mean_signed_error": -3.0584112070820786
+    },
+    "tree_baseline": {
+      "mean_mae": 7.772510325761229,
+      "mean_rmse": 12.15115551215104,
+      "mean_r2": -0.4160379396072832,
+      "mean_signed_error": -3.218329321921579
+    },
+    "tree_depth6": {
+      "mean_mae": 5.941715187954637,
+      "mean_rmse": 9.511257457185131,
+      "mean_r2": 0.14400180502765697,
+      "mean_signed_error": -3.012243370461576
+    },
+    "tree_depth12": {
+      "mean_mae": 6.14976065786222,
+      "mean_rmse": 9.815795942612175,
+      "mean_r2": 0.08857049092643794,
+      "mean_signed_error": -3.3579191833562008
+    },
+    "forest_baseline": {
+      "mean_mae": 5.762918396768137,
+      "mean_rmse": 9.308373049992374,
+      "mean_r2": 0.18068258365994289,
+      "mean_signed_error": -2.9375014350417734
+    },
+    "forest_depth12": {
+      "mean_mae": 5.813634746056713,
+      "mean_rmse": 9.371560948759873,
+      "mean_r2": 0.17074861667108499,
+      "mean_signed_error": -2.9079840912875654
+    },
+    "forest_leaf20": {
+      "mean_mae": 5.780683153410642,
+      "mean_rmse": 9.33688881891105,
+      "mean_r2": 0.17673002980906197,
+      "mean_signed_error": -2.9352701101353427
+    }
+  },
+  "interpretation_file": "coefficients.csv",
+  "train_orders": 75099,
+  "random_state": 42,
+  "test_status": "not scored"
+}
