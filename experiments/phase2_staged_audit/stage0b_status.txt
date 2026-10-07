@@ -1,0 +1,1 @@
+Stage 0b not fitted: shipping_limit_date exists in order_items, but the CSV has no timestamp showing when that deadline was set or revised. The preparation notebook marks it as post-purchase information. Its availability at checkout cannot be asserted, so using it would violate the stated stage rule.

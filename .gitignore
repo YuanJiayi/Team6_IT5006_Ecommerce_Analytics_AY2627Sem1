@@ -13,3 +13,7 @@ __pycache__/
 
 # Streamlit secrets
 .streamlit/secrets.toml
+
+# Large regenerable prediction dumps (rerun the seeded audit scripts)
+experiments/phase2_marketplace_climate_audit/predictions.csv
+experiments/phase2_promise_regime_audit/predictions.csv

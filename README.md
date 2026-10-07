@@ -27,6 +27,8 @@ The [Phase 2 data preparation notebook](notebooks/phase2/data_prep.ipynb) explai
 
 Record business scope, checkout-time feature assumptions, preprocessing choices, and remaining checks in [the Phase 2 assumptions log](docs/phase2_assumptions.md) for the final report.
 
+For the current classification work, frozen decisions, completed evaluation, post hoc diagnostics, and reproducible scripts, start with the [Phase 2 classification handover](docs/phase2_classification_handover.md).
+
 Deadline: Sunday, 11 October 2026 at 23:59 (end of Week 8)
 Weight: 40%
 Report length: 6–8 pages (excludes cover page, references, appendices)

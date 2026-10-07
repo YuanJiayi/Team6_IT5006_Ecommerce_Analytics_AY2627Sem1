@@ -9,10 +9,10 @@ To rerun the notebook from a fresh kernel, open it from the repository root or t
 ## Review sequence
 
 1. Shared preparation and feature contract: complete.
-2. Classification validation review: complete for discussion; the later-period test is reserved.
+2. Classification validation review and the frozen-model later-period test: complete. See the [classification handover](../../docs/phase2_classification_handover.md) for the report and subsequent post hoc diagnostics.
 3. Delivery-time regression: next.
-4. Voting comparison of the selected linear and tree-based models: after both task reviews.
-5. Final evaluation and report: one later-period test after choices are fixed.
+4. Classification voting comparison: complete; its small validation gain did not change the selected checkout model.
+5. Final joint report: integrate the completed classification evaluation with the teammates' regression work.
 
 ## Changes from the original data-preparation notebook
 

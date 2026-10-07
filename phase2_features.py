@@ -26,7 +26,14 @@ def as_of_counts_and_sums(history_keys, history_values, history_time, query_keys
         known = by_key.get(key)
         if known is None:
             continue
-        position = np.searchsorted(known["time"].to_numpy(), group["time"].to_numpy(), side="left")
+        known_times = known["time"].to_numpy()
+        query_times = group["time"].to_numpy()
+        position = np.searchsorted(known_times, query_times, side="left")
+        # Assert the point-in-time contract on the exact history rows used below.
+        has_history = position > 0
+        assert np.all(known_times[position[has_history] - 1] < query_times[has_history]), (
+            "A history outcome was not known before its query purchase"
+        )
         cumulative = np.r_[0.0, np.cumsum(known["value"].to_numpy())]
         rows = queries.index.get_indexer(group.index)
         count[rows] = position

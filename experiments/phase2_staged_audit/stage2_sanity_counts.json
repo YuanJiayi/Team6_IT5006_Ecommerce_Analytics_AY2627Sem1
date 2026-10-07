@@ -1,0 +1,25 @@
+{
+  "test_stage2_orders": 19230,
+  "handover_after_promised_date": 120,
+  "fraction": 0.0062402496099844,
+  "all_late_after_promise": true,
+  "before_or_on_promise_metrics": {
+    "orders": 19110,
+    "late": 552,
+    "late_rate": 0.028885400313971743,
+    "pr_auc": 0.15735039303904452,
+    "ap_over_rate": 5.447402193797356,
+    "roc_auc": 0.7793541126839318,
+    "mean_predicted": 0.10102420989137666,
+    "reviewed_at_5": 956,
+    "late_found_at_5": 128,
+    "precision_at_5": 0.13389121338912133,
+    "recall_at_5": 0.2318840579710145,
+    "lift_at_5": 4.635255593960341,
+    "reviewed_at_10": 1911,
+    "late_found_at_10": 193,
+    "precision_at_10": 0.10099424385138671,
+    "recall_at_10": 0.3496376811594203,
+    "lift_at_10": 3.4963768115942027
+  }
+}

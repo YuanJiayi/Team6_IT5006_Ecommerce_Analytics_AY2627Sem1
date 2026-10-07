@@ -1,0 +1,3 @@
+period,flagged,flagged_share,true_alerts,false_alerts,missed_late
+Pooled validation,3600,0.09472437837126693,1145,2455,2909
+Later test,8316,0.42947890306254194,434,7882,240

@@ -1,0 +1,65 @@
+stage,input,source_column,depends_on_timestamp,availability_uncertain
+checkout,promised_days,orders.estimated_delivery_date + purchase_timestamp,purchase (assumed),True
+checkout,promise_slack,promised_days + earlier delivered route history,purchase (assumed promise),True
+checkout,route_typical_days,earlier delivered orders + customer/seller states,purchase (as-of history),True
+checkout,seller_ship_days,earlier carrier handovers + item seller_id,purchase (as-of history),True
+checkout,distance_km,customer/seller ZIP prefixes + geolocation centroids,purchase (assumed profiles/map),True
+checkout,same_state,customers.customer_state + sellers.seller_state,purchase (assumed profiles),True
+checkout,purchase_hour,orders.order_purchase_timestamp,purchase,False
+checkout,n_items,order_items.order_item_id,purchase (assumed basket),True
+checkout,n_products,order_items.product_id,purchase (assumed basket),True
+checkout,n_sellers,order_items.seller_id,purchase (assumed basket),True
+checkout,total_price,order_items.price,purchase (assumed basket),True
+checkout,total_freight,order_items.freight_value,purchase (assumed quote),True
+checkout,total_weight_g,products.product_weight_g + order_items,purchase (assumed catalog),True
+checkout,total_volume_cm3,products dimensions + order_items,purchase (assumed catalog),True
+checkout,max_installments,payments.payment_installments (all rows),purchase (assumed submitted payments),True
+checkout,customer_state,customers.customer_state,purchase (assumed address),True
+checkout,seller_state,sellers.seller_state + order_items,purchase (assumed profile),True
+checkout,product_category,products.product_category_name + order_items,purchase (assumed catalog),True
+checkout,payment_type,payments.payment_type (first sequence),purchase (assumed submitted payments),True
+checkout,purchase_dayofweek,orders.order_purchase_timestamp,purchase,False
+approval,promised_days,orders.estimated_delivery_date + purchase_timestamp,purchase (assumed),True
+approval,promise_slack,promised_days + earlier delivered route history,purchase (assumed promise),True
+approval,route_typical_days,earlier delivered orders + customer/seller states,purchase (as-of history),True
+approval,seller_ship_days,earlier carrier handovers + item seller_id,purchase (as-of history),True
+approval,distance_km,customer/seller ZIP prefixes + geolocation centroids,purchase (assumed profiles/map),True
+approval,same_state,customers.customer_state + sellers.seller_state,purchase (assumed profiles),True
+approval,purchase_hour,orders.order_purchase_timestamp,purchase,False
+approval,n_items,order_items.order_item_id,purchase (assumed basket),True
+approval,n_products,order_items.product_id,purchase (assumed basket),True
+approval,n_sellers,order_items.seller_id,purchase (assumed basket),True
+approval,total_price,order_items.price,purchase (assumed basket),True
+approval,total_freight,order_items.freight_value,purchase (assumed quote),True
+approval,total_weight_g,products.product_weight_g + order_items,purchase (assumed catalog),True
+approval,total_volume_cm3,products dimensions + order_items,purchase (assumed catalog),True
+approval,max_installments,payments.payment_installments (all rows),purchase (assumed submitted payments),True
+approval,approval_delay_days,orders.order_approved_at - purchase_timestamp,approval,False
+approval,customer_state,customers.customer_state,purchase (assumed address),True
+approval,seller_state,sellers.seller_state + order_items,purchase (assumed profile),True
+approval,product_category,products.product_category_name + order_items,purchase (assumed catalog),True
+approval,payment_type,payments.payment_type (first sequence),purchase (assumed submitted payments),True
+approval,purchase_dayofweek,orders.order_purchase_timestamp,purchase,False
+handover,promised_days,orders.estimated_delivery_date + purchase_timestamp,purchase (assumed),True
+handover,promise_slack,promised_days + earlier delivered route history,purchase (assumed promise),True
+handover,route_typical_days,earlier delivered orders + customer/seller states,purchase (as-of history),True
+handover,seller_ship_days,earlier carrier handovers + item seller_id,purchase (as-of history),True
+handover,distance_km,customer/seller ZIP prefixes + geolocation centroids,purchase (assumed profiles/map),True
+handover,same_state,customers.customer_state + sellers.seller_state,purchase (assumed profiles),True
+handover,purchase_hour,orders.order_purchase_timestamp,purchase,False
+handover,n_items,order_items.order_item_id,purchase (assumed basket),True
+handover,n_products,order_items.product_id,purchase (assumed basket),True
+handover,n_sellers,order_items.seller_id,purchase (assumed basket),True
+handover,total_price,order_items.price,purchase (assumed basket),True
+handover,total_freight,order_items.freight_value,purchase (assumed quote),True
+handover,total_weight_g,products.product_weight_g + order_items,purchase (assumed catalog),True
+handover,total_volume_cm3,products dimensions + order_items,purchase (assumed catalog),True
+handover,max_installments,payments.payment_installments (all rows),purchase (assumed submitted payments),True
+handover,approval_delay_known_at_handover,orders.order_approved_at - purchase_timestamp,handover only if approval <= handover,False
+handover,handover_after_approval_days,orders.carrier_date - approved_at,handover only if approval <= handover,False
+handover,days_left_at_handover,orders.estimated_delivery_date - carrier_date,handover (assumed promise),True
+handover,customer_state,customers.customer_state,purchase (assumed address),True
+handover,seller_state,sellers.seller_state + order_items,purchase (assumed profile),True
+handover,product_category,products.product_category_name + order_items,purchase (assumed catalog),True
+handover,payment_type,payments.payment_type (first sequence),purchase (assumed submitted payments),True
+handover,purchase_dayofweek,orders.order_purchase_timestamp,purchase,False

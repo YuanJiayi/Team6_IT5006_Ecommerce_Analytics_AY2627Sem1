@@ -1,0 +1,10 @@
+group,columns,mean_ap_decrease,min_ap_decrease,max_ap_decrease
+promise,"promised_days,promise_slack,days_left_at_handover",0.16308856646000872,0.16105251292776476,0.1645588179231311
+route_and_seller_history,"route_typical_days,seller_ship_days",-0.02281232664853348,-0.04104694042892515,-0.010916276792766522
+geography,"customer_state,seller_state,same_state,distance_km",-0.07794251949621252,-0.08502500639262131,-0.06803309711557606
+basket,"n_items,n_products,n_sellers,total_price,total_freight",-0.017189801646439518,-0.022430823540725592,-0.01307256503885526
+catalog,"product_category,total_weight_g,total_volume_cm3",0.0023782683974727823,-0.002214675142007211,0.006870908780104545
+payment,"payment_type,max_installments",0.0002021570751106594,-0.000643367628754804,0.000958505407453486
+purchase_time,"purchase_hour,purchase_dayofweek",0.0007241228751967421,-0.0006521042303653801,0.0014086230029646263
+approval_delay,approval_delay_known_at_handover,0.0016781246195990474,-0.0001791234745915915,0.0028879002222756966
+handover_delay,handover_after_approval_days,0.14065180508879238,0.13886415481064301,0.14261749417524525

@@ -1,0 +1,8 @@
+month,flipped,orders
+2018-05,False,760
+2018-06,False,6084
+2018-06,True,12
+2018-07,False,6088
+2018-07,True,68
+2018-08,False,6084
+2018-08,True,267

@@ -1,0 +1,4 @@
+population,orders,stage1_invalid_or_missing_approval,stage1_approval_after_delivery,stage2_invalid_or_missing_handover,stage2_handover_before_purchase,stage2_handover_after_delivery,stage2_approval_not_yet_known,stage2_days_left_missing_on_eligible
+train,75099,41,27,51,27,23,533,0
+test,19363,34,34,133,133,0,651,0
+unavailable_at_cutoff,2008,0,0,5,5,0,15,0

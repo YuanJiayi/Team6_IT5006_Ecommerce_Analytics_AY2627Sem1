@@ -1,0 +1,15 @@
+{
+  "seed": 42,
+  "bootstrap_replicates": 1000,
+  "boundary": "2018-05-26",
+  "logistic_C": 0.1,
+  "stage0b": "not fitted because checkout availability cannot be asserted",
+  "prediction_timestamps": {
+    "checkout": "purchase (after submitted payment, assumed)",
+    "approval": "order_approved_at",
+    "handover": "order_delivered_carrier_date"
+  },
+  "stage2_approval_handling": "impute from fit median if approval is after handover",
+  "missing_stage_events": "exclude from that stage; no prediction timestamp exists",
+  "test_analysis_status": "all new staged and diagnostic test comparisons are exploratory/post hoc"
+}

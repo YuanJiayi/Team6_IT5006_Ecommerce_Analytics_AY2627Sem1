@@ -1,0 +1,3 @@
+group,positives,comparison,roc_auc,top10_capture
+flipped_same_day,347,unchanged on-time,0.6393560769962452,0.10662824207492795
+calendar_late,674,unchanged on-time,0.6703218311365299,0.19584569732937684
