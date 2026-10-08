@@ -1,6 +1,18 @@
 # Phase 2 classification handover
 
-## Progress at 8 October 2026 (resume here; report due Sunday 11 October 23:59)
+## Latest handover: 8 October 2026, after the recent-history audit (resume here)
+
+The user paused report work to diagnose why checkout delivery-time regression overpredicted the later period. The frozen classification and regression models, their feature contract, and their original test scores were not changed. Current checkout: `josh`, four local commits ahead of the last fetched `origin/josh`, with only the new audit script, its outputs/notes, this handover edit, and its focused test uncommitted. Check `git status` again before continuing; no push was requested.
+
+**Diagnosis.** The saved regression predicts 3.659 days too long on average on 19,363 later orders (MAE 5.001). On rows with valid stage timestamps, mean carrier-to-customer time fell from 9.947 days in training to 6.109 days in the test, while seller-to-carrier time fell from 2.955 to 2.368 days. Reweighting older seller-state/customer-state routes to the later route mix still gives about 12.64 days versus 8.60 actual days on those routes: most of the change is within routes. The existing `route_typical_days` is an all-earlier-history purchase-to-delivery mean, so it can lag this shift. Fitting ridge on only the last 90 or 180 days *without rebuilding that history feature* did not improve later-period MAE. These observations locate the measured change; the CSVs do not establish its operational cause. Phase 1's `notebooks/phase1/operational_capacity.ipynb` had already plotted weekly actual versus promised delivery time, but had not tested a recent-history forecast.
+
+**New, reproducible exploratory results.** Start with [the recent-history audit](../experiments/phase2_recent_history_audit/README.md), its [script](../experiments/phase2_recent_history_audit.py), `checkout.csv`, and `handover.csv`. It compares only histories known strictly before each purchase or handover, uses the same five chronological validation windows, and leaves the frozen model intact. Adding a 90-day seller-state-to-customer-state **carrier-to-customer** history to checkout ridge lowered mean validation MAE from 5.810 to 5.679 days (better in all five windows); the already-open test changed from 5.001 to 4.490. A 30-day total purchase-to-delivery route history also helped (validation 5.763, opened test 4.501), so the experiment does not prove that separating the carrier leg is the only useful approach. Global recent delivery history alone worsened validation; recent sample weighting helped validation but barely changed the opened test.
+
+At carrier handover, a simple update—**observed purchase-to-handover time plus the last 90 days' route-specific carrier-to-customer average**—lowered mean validation MAE from 5.809 to 5.304 days on the same eligible cohorts (better in all five windows). On the same 19,230 later orders it lowered MAE from 4.991 to 3.762. This is a later prediction, not a better checkout prediction. A 30-day handover average scored 2.916 on the opened test but was worse on validation (5.503), so do not choose it from that test result. The staged *classification* audit is separate evidence and does not prove regression performance.
+
+**Resume decision.** Treat every new test comparison above as post hoc because these ideas followed an opened test. Review the per-window and monthly CSVs, then decide whether to formalize the 90-day carrier-history input and the simple handover update as exploratory candidates. Keep the frozen published model/result identifiable and seek a new future period for independent confirmation if available. The 90th-percentile promise model and joint report work below are deferred while this delivery-time diagnosis is the focus. The audit's two point-in-time tests pass with `it5006-proj/bin/python tests/test_phase2_recent_history_audit.py -q`; the script also checks that its all-history route calculation reproduces the saved feature.
+
+## Earlier progress at 8 October 2026 (report due Sunday 11 October 23:59)
 
 **Done**
 - Report review: the numbers in the draft match the evidence. Main gaps: no story about the promise shift; pooled test ROC-AUC 0.668 hides within-month ROC-AUC ≈ 0.58; no success criteria, citations, feature-rationale table, train/validation/test tables, AI declaration or regression section; page budget probably tight.
@@ -16,7 +28,7 @@
   - Conclusion: these affect inference, not MAE-based selection.
 - Public Olist R² ≈ 0.48 (shef4793 repo) comes from target outlier capping before the split, `review_score` as a feature, and a random split. Not comparable.
 
-**Next (agreed direction, not yet started)**
+**Earlier proposed next work (deferred during the recent-history diagnosis)**
 1. Spec, then agent build:
    - 90% quantile regression for promise dates, linear plus a tree-based model. Exclude promised days and slack. Evaluate on coverage, pinball loss, and comparison with Olist's promise (median 23.5 days, 92.9% on time).
    - A WLS validation check.
@@ -26,14 +38,14 @@
 2. Training-set scores for train/validation/test tables, regression error analysis by route, distance and state, and final-fit odds ratios and coefficients.
 3. Report rewrite (classification plus regression in 6–8 pages). Literature citations from the Phase 1 report in `ref/`. Mechanical formatting is to go to Codex (CLI not yet installed). No LaTeX toolchain is installed locally.
 
-**Status: 7 October 2026.** This is a starting map for another agent. Check Git status and the current files before making changes; several recent analyses and the report draft are local, uncommitted work.
+**Historical status: 7 October 2026.** The snapshot below was a starting map for another agent. Its uncommitted-file description predates the latest handover above; check current Git status before making changes.
 
 ## Read in this order
 
 1. [Project brief](../ref/IT5006%20Project%20Description%20-%20AY%202026_27%20Semester%201.pdf), [submitted Phase 1 report](../ref/Team6_Phase1_IT5006_AY2627Sem1-2.pdf), and [Phase 1 feedback](../ref/Phase%201%20Report%20feedback.txt) for the assignment and its context. The [Phase 1 validation audit](phase1_validation.md) records corrections made after submission.
 2. [Phase 2 assumptions](phase2_assumptions.md) for the business question, prediction timing, target, feature availability, and split decisions. The [data preparation notebook](../notebooks/phase2/data_prep.ipynb) builds the prepared data; the exact modelling inputs and split settings are in [phase2_feature_spec.json](../data/phase2_feature_spec.json).
 3. [Classification notebook](../notebooks/phase2/classification.ipynb) for the reader-facing, executable modelling story. [phase2_classification.py](../phase2_classification.py) is its independent validation reference; [phase2_features.py](../phase2_features.py) builds point-in-time features. The original validation files are in [results/phase2/classification/](../results/phase2/classification/).
-4. [Classification review](phase2_classification_review.md), then the [current classification report draft](../reports/phase2_classification_draft.tex) and [report changelog](../reports/phase2_report_changelog.md). The report evidence generator is [phase2_report_evidence.py](../reports/phase2_report_evidence.py). Regression is being handled by teammates and is not completed in this classification draft.
+4. [Classification review](phase2_classification_review.md), then the [current classification report draft](../reports/phase2_classification_draft.tex) and [report changelog](../reports/phase2_report_changelog.md). The report evidence generator is [phase2_report_evidence.py](../reports/phase2_report_evidence.py). Regression results now exist, but they have not been integrated into this classification draft.
 
 ## What is fixed, and what has already been evaluated
 
@@ -69,4 +81,4 @@ it5006-proj/bin/python experiments/phase2_marketplace_climate_audit.py
 
 The scripts can refit models and regenerate output files; inspect the diff before retaining regenerated artifacts. The last two were run successfully for this handover. The climate script reproduced the saved frozen checkout test probabilities exactly (`max absolute difference = 0`). No report or frozen-model edit was made for the two most recent diagnostic requests.
 
-Before editing, run `git status --short --branch`. At this handover the checkout is `josh` with local uncommitted edits to `phase2_features.py` and the LaTeX report, plus untracked report evidence and experiment scripts/outputs. Preserve these; they are not disposable scratch files. Do not treat the public Olist repository's test metrics as directly comparable, and do not turn post hoc findings into prespecified results. The user asked for the recent audits as **scripts and plain tables** and explicitly kept the frozen model, cutoff, boundary, and report unchanged.
+Before editing, run `git status --short --branch`. At the **earlier** handover, the checkout was `josh` with local uncommitted edits to `phase2_features.py` and the LaTeX report, plus untracked report evidence and experiment scripts/outputs; the latest status is described at the top of this file. Preserve any current uncommitted work. Do not treat the public Olist repository's test metrics as directly comparable, and do not turn post hoc findings into prespecified results. The user asked for those earlier audits as **scripts and plain tables** and kept the frozen model, cutoff, boundary, and report unchanged.
