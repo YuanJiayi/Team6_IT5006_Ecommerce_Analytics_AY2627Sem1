@@ -1,0 +1,57 @@
+{
+  "prediction_points": {
+    "checkout": "after checkout and payment submission, before approval or dispatch",
+    "handover": "when the carrier records receiving the parcel from the seller"
+  },
+  "target": "delivery_days",
+  "population": "delivered orders with a carrier handover after purchase and before delivery",
+  "coverage": {
+    "orders": 96470,
+    "handover_cohort": 96272,
+    "excluded_no_valid_handover": 198,
+    "train_orders": 75039,
+    "test_orders": 19230
+  },
+  "stage_features": {
+    "checkout": [],
+    "checkout_transit": [
+      "route_transit_90d"
+    ],
+    "handover_elapsed": [
+      "route_transit_90d",
+      "approval_days",
+      "handover_days"
+    ],
+    "handover": [
+      "approval_days",
+      "handover_days",
+      "route_transit_90d_at_handover"
+    ]
+  },
+  "selected_candidate": "linear_baseline",
+  "lowest_mae_candidate": "ridge_100",
+  "highest_r2_candidate": "ridge_100",
+  "reason": "ridge_100 has the lowest mean validation MAE (5.0985); linear_baseline (5.1462) is within 0.05 days and simpler, so it is chosen",
+  "rule": "lowest mean validation MAE over 5 chronological windows; candidates within 0.05 days of the lowest lose to the simplest; baselines and the ensemble are reference only",
+  "family_winners": {
+    "linear": "ridge_100",
+    "tree_based": "boost_baseline"
+  },
+  "simplicity_order": [
+    "linear_baseline",
+    "ridge_1",
+    "ridge_10",
+    "ridge_100",
+    "tree_depth6",
+    "tree_baseline",
+    "forest_leaf20",
+    "boost_baseline",
+    "boost_slow"
+  ],
+  "interpretation_files": [
+    "selected_coefficients.csv",
+    "tree_winner_permutation_importance.csv"
+  ],
+  "random_state": 42,
+  "test_status": "post hoc: the later period was opened before the handover stage was designed"
+}
