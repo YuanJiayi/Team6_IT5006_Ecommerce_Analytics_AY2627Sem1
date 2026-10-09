@@ -1,0 +1,97 @@
+# Fast-delivery badge classifier on Olist
+
+Population: delivered orders only (conditional on delivery; late/undelivered orders absent, and recent purchases are right-censored toward fast ones, so test base rates are inflated).
+fast = delivered calendar date - purchase calendar date <= D. Val = Jan..May25 2018 monthly windows (cutoffs from prior windows need history, so val stats/selection use windows 2-5 (Feb-May); val precision is POOLED over those windows, coverage is the mean of window coverages). Cutoff modes: static (last 2 prior val windows), static_all (all prior val windows), daily (purchases 90-45d earlier, resolved), each with a target offset delta in 0..4pt. Test = 2018-05-26..2018-08-31, evaluated once with frozen rule.
+
+## Base rates
+ D  val1  val2  val3  val4  val5 tMay26-31  tJun  tJul  tAug
+ 7 25.3% 17.9% 23.1% 36.4% 41.4%     26.6% 47.3% 50.2% 57.3%
+10 44.3% 31.8% 36.9% 57.6% 58.0%     46.3% 69.7% 73.9% 79.9%
+
+## Main table (val = mean over windows 2-5; test pooled)
+ D  tgt fam                     choice  val_prec  val_cov  val_n  val_broken  te_prec  te_cov  te_n  te_broken
+ 7 0.95  B1        ('B1', 'static', 0)       NaN   0.0000      0           0   1.0000  0.0000     0          0
+ 7 0.95  B2        ('B2', 'static', 0)       NaN   0.0000      0           0   1.0000  0.0000     0          0
+ 7 0.95   R                      (21,)    0.9504   0.0268    686          34   0.8859  0.1947  3770        430
+ 7 0.95  C1     ('C1_C1', 'static', 0)    0.9498   0.0100    239          12   0.9119  0.0891  1726        152
+ 7 0.95  C2  ('C2_c', 'static_all', 0)    0.9565   0.0037     92           4   0.9331  0.0409   792         53
+ 7 0.90  B1        ('B1', 'static', 0)       NaN   0.0000      0           0   1.0000  0.0000     0          0
+ 7 0.90  B2        ('B2', 'static', 0)       NaN   0.0000      0           0   1.0000  0.0000     0          0
+ 7 0.90   R                       (0,)    0.9371   0.0481   1241          78   0.8688  0.2444  4732        621
+ 7 0.90  C1   ('C1_C0.1', 'static', 0)    0.9021   0.0354    858          84   0.8443  0.2800  5421        844
+ 7 0.90  C2    ('C2_a', 'daily', 0.02)    0.9024   0.0692   1803         176   0.8277  0.3129  6058       1044
+10 0.95  B1      ('B1', 'daily', 0.03)    1.0000   0.0000      1           0   1.0000  0.0000     0          0
+10 0.95  B2    ('B2', 'static_all', 0)    0.8904   0.0030     73           8   1.0000  0.0000     0          0
+10 0.95   R                      (14,)    0.9508   0.1284   3351         165   0.9396  0.4175  8084        488
+10 0.95  C1     ('C1_C1', 'static', 0)    0.9644   0.0115    281          10   0.9480  0.3058  5921        308
+10 0.95  C2   ('C2_b', 'static', 0.04)    0.9574   0.0363    869          37   0.9352  0.0263   509         33
+10 0.90  B1      ('B1', 'daily', 0.01)    0.8922   0.0037    102          11   0.9214  0.1662  3219        253
+10 0.90  B2 ('B2', 'static_all', 0.02)    0.8902   0.0095    246          27   0.9117  0.2557  4951        437
+10 0.90   R                       (0,)    0.9397   0.1498   3913         236   0.9296  0.4678  9058        638
+10 0.90  C1  ('C1_C1', 'static', 0.02)    0.9075   0.0526   1287         119   0.9382  0.3721  7205        445
+10 0.90  C2  ('C2_b', 'static_all', 0)    0.9392   0.0636   1595          97   0.9601  0.1386  2683        107
+
+Best classifier val coverage at precision 95%: {7: 0.009976623810318918, 10: 0.036274837201536146}
+Primary D = 10: at D=7 every method has <3% val coverage at 95% precision (not meaningful); D=10 reported in detail, D=7 in main table
+
+## Test by month (D=10): precision / coverage / n / broken
+  cfg           May26-31                 Jun                  Jul                  Aug
+B1@95      nan%/0.0%/0/0       nan%/0.0%/0/0        nan%/0.0%/0/0        nan%/0.0%/0/0
+B2@95      nan%/0.0%/0/0       nan%/0.0%/0/0        nan%/0.0%/0/0        nan%/0.0%/0/0
+ R@95 90.3%/24.3%/185/18 95.6%/28.3%/1723/76 94.6%/35.2%/2169/117 93.1%/63.1%/4007/277
+C1@95 82.3%/32.8%/249/44 95.2%/28.3%/1727/83  95.1%/28.1%/1727/84  95.6%/34.9%/2218/97
+C2@95 86.3%/27.9%/212/29    97.9%/3.1%/187/4     100.0%/0.9%/56/0     100.0%/0.9%/54/0
+  cfg           May26-31                  Jun                  Jul                  Aug
+B1@90      nan%/0.0%/0/0 91.3%/19.9%/1215/106 89.5%/21.3%/1312/138    98.7%/10.9%/692/9
+B2@90    84.2%/2.5%/19/3    84.0%/2.0%/119/19 90.3%/33.0%/2031/198 92.2%/43.8%/2782/217
+ R@90 85.8%/29.6%/225/32 94.5%/32.9%/2003/111 94.0%/40.5%/2491/149 92.0%/68.3%/4339/346
+C1@90 81.7%/36.7%/279/51 93.7%/33.7%/2054/129 94.1%/33.2%/2041/120 94.9%/44.6%/2831/145
+C2@90 80.5%/33.7%/256/50   98.2%/14.7%/899/16   97.6%/10.9%/674/16   97.1%/13.4%/854/25
+
+## Val by window (D=10), precision/coverage
+  cfg        Feb         Mar         Apr         May
+B1@95  nan%/0.0% 100.0%/0.0%   nan%/0.0%   nan%/0.0%
+B2@95  nan%/0.0%   nan%/0.0%   nan%/0.0%  89.0%/1.2%
+ R@95 94.0%/7.4% 94.5%/10.8% 96.9%/15.2% 94.2%/18.0%
+C1@95 92.9%/0.9%   nan%/0.0%  92.9%/0.2%  97.6%/3.5%
+C2@95  nan%/0.0%   nan%/0.0%   nan%/0.0% 95.7%/14.5%
+  cfg         Feb         Mar         Apr         May
+B1@90   nan%/0.0%  79.5%/0.6%  95.2%/0.9%   nan%/0.0%
+B2@90  87.3%/1.0%  77.4%/0.4%  94.2%/1.0%  90.4%/1.4%
+ R@90  92.8%/9.1% 92.9%/13.2% 96.4%/17.1% 93.1%/20.5%
+C1@90  90.4%/3.3%  92.6%/0.4%  97.0%/0.5% 90.6%/16.8%
+C2@90 90.7%/10.8% 100.0%/0.2% 100.0%/0.9% 96.2%/13.5%
+
+## Ranking quality (D=10): PR-AUC / ROC-AUC, val mean over windows 2-5 | test pooled
+fam  val PR  val ROC  test PR  test ROC  test base
+ B1   0.712    0.787    0.882     0.778      0.734
+ B2   0.651    0.733    0.825     0.681      0.734
+  R   0.821    0.830    0.927     0.838      0.734
+ C1   0.793    0.829    0.921     0.830      0.734
+ C2   0.820    0.835    0.915     0.827      0.734
+
+## Avg promised days (M2 conformal 0.9425 level promise / Olist estimate), test, D=10, precision 95% badge
+fam  n_badged  M2 promise badged  M2 promise other  Olist est. badged  Olist est. other  actual days badged
+ B1         0                NaN              17.1                NaN              22.1                 NaN
+ B2         0                NaN              17.1                NaN              22.1                 NaN
+  R      8084                9.8              22.3               14.3              27.6                 5.6
+ C1      5921                9.5              20.4               14.3              25.5                 5.2
+ C2       509                8.7              17.3               17.5              22.2                 4.6
+
+## Overlap on test (D=10, 95%): fraction of badges of row-family also badged by column-family
+fam  B1  B2    R   C1   C2
+ B1 0.0 0.0 0.00 0.00 0.00
+ B2 0.0 0.0 0.00 0.00 0.00
+  R 0.0 0.0 1.00 0.66 0.06
+ C1 0.0 0.0 0.90 1.00 0.08
+ C2 0.0 0.0 0.89 0.96 1.00
+
+## Permutation importance, best classifier C2_b (D=10), model fit < May 2018 val window, PR-AUC drop on val window 5 (base PR-AUC 0.843)
+rd_n           0.0258
+dist           0.0257
+sell_hand30    0.0085
+rl90           0.0077
+sell_hand      0.0065
+freight        0.0063
+dow            0.0045
+backlog        0.0039

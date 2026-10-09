@@ -1,0 +1,34 @@
+# Geo experiment results
+
+## Rule variants on validation (mean over 5 monthly windows of promise days at 95% on-time)
+  ('R0', ('1',)): 29.15
+  ('R0', ('mu',)): 29.07
+  ('R0', ('sp',)): 29.46
+  ('R1', (180, 10, '1')): 29.46
+  ('R1', (180, 10, 'mu')): 29.83
+  ('R1', (180, 10, 'sp')): 29.36
+  ('R1', (180, 20, '1')): 29.37
+  ('R1', (180, 20, 'mu')): 29.43
+  ('R1', (180, 20, 'sp')): 29.22
+  ('R1', (180, 40, '1')): 29.30
+  ('R1', (180, 40, 'mu')): 29.20
+  ('R1', (180, 40, 'sp')): 29.16
+  ('R1', (None, 10, '1')): 29.65
+  ('R1', (None, 10, 'mu')): 29.78
+  ('R1', (None, 10, 'sp')): 29.31
+  ('R1', (None, 20, '1')): 29.57
+  ('R1', (None, 20, 'mu')): 29.54
+  ('R1', (None, 20, 'sp')): 29.26
+  ('R1', (None, 40, '1')): 29.49
+  ('R1', (None, 40, 'mu')): 29.28
+  ('R1', (None, 40, 'sp')): 29.16
+R0 chosen ('R0', ('mu',)); R1 chosen ('R1', (180, 40, 'sp'))
+window ('val', 0)
+window ('val', 3)
+window ('val', 1)
+window ('val', 2)
+window ('val', 4)
+window ('test', 0)
+window ('test', 2)
+window ('test', 1)
+window ('test', 3)

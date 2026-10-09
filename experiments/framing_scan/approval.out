@@ -1,0 +1,3 @@
+boleto n 19600 mean hrs 33.1 median 29.0
+val n=5087 MAE hrs: global median 17.20  median-by-hour 16.55  HGB 14.70   (mean y 32.7)
+test n=3585 MAE hrs: global median 18.83  median-by-hour 18.15  HGB 15.93   (mean y 34.1)

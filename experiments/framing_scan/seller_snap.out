@@ -1,0 +1,45 @@
+rows 13311 19808 49436 1896
+
+=== A. Seller dormancy (active in last 180d, zero orders next 90d) ===
+val n 19808 prevalence 0.328 trailing GMV share of dormant 0.088
+test n 1896 prevalence 0.334 trailing GMV share of dormant 0.103
+[val] rule: days since last order  PR-AUC 0.732  ROC 0.846  prec@10% 0.857  recall@10% 0.261
+[val] rule: -orders in last 90d    PR-AUC 0.677  ROC 0.841  prec@10% 0.826  recall@10% 0.251
+[val] rule: -orders in last 30d    PR-AUC 0.739  ROC 0.858  prec@10% 0.857  recall@10% 0.261
+[val] rule: -(orders180) tie-> recency PR-AUC 0.664  ROC 0.803  prec@10% 0.799  recall@10% 0.243
+[test] rule: days since last order PR-AUC 0.715  ROC 0.835  prec@10% 0.820  recall@10% 0.244
+[test] rule: -orders in last 90d   PR-AUC 0.666  ROC 0.829  prec@10% 0.799  recall@10% 0.238
+[test] rule: -orders in last 30d   PR-AUC 0.720  ROC 0.847  prec@10% 0.825  recall@10% 0.246
+[test] rule: -(orders180) tie-> recency PR-AUC 0.647  ROC 0.785  prec@10% 0.788  recall@10% 0.235
+[val] HGB cand0                    PR-AUC 0.768  ROC 0.873  prec@10% 0.883  recall@10% 0.269
+[val] HGB cand1                    PR-AUC 0.759  ROC 0.868  prec@10% 0.871  recall@10% 0.265
+[val] HGB cand2                    PR-AUC 0.757  ROC 0.866  prec@10% 0.874  recall@10% 0.266
+chosen 0
+[test] HGB (trained to 2018-02-24) PR-AUC 0.760  ROC 0.864  prec@10% 0.873  recall@10% 0.260
+test top10% flagged 189 sellers: 87.3% dormant; their trailing-180d GMV 56,501 = 1.0% of total; mean orders180 flagged 2.3 vs all 22.0
+worth-saving sellers (>=10 orders/180d): n 710 prevalence 0.104
+  [test, >=10 orders] HGB          PR-AUC 0.502  ROC 0.860  prec@10% 0.577  recall@10% 0.554
+  [test, >=10 orders] rule recency PR-AUC 0.468  ROC 0.847  prec@10% 0.521  recall@10% 0.500
+new sellers (tenure<=120d): n 623 prevalence 0.316
+  [test, new] HGB                  PR-AUC 0.678  ROC 0.822  prec@10% 0.823  recall@10% 0.259
+  [test, new] rule recency         PR-AUC 0.632  ROC 0.787  prec@10% 0.710  recall@10% 0.223
+perm importance top: {'rec': 0.119, 'ho180': 0.018, 'topcat': 0.012, 'o90': 0.009, 'o30': 0.006, 'score180': 0.004}
+
+=== B. Seller quality deterioration: next-90d bad-review rate ===
+n val/test 4634 354 mean next bad rate val/test 0.187 0.108
+val share with next bad>=0.25: 0.259 ; of those, trailing bad180< 0.25 : 0.7928452579034941
+  [val] regression MAE: platform mean 0.0940  trailing180 rate 0.1080  shrunk(k=20) 0.0941
+test share with next bad>=0.25: 0.076 ; of those, trailing bad180< 0.25 : 0.5185185185185185
+  [test] regression MAE: platform mean 0.0884  trailing180 rate 0.0882  shrunk(k=20) 0.0825
+[val] rule trailing bad rate       PR-AUC 0.438  ROC 0.663  prec@10% 0.555  recall@10% 0.214
+[val] rule shrunk bad rate         PR-AUC 0.473  ROC 0.683  prec@10% 0.613  recall@10% 0.236
+[val] rule late rate               PR-AUC 0.352  ROC 0.608  prec@10% 0.449  recall@10% 0.173
+[test] rule trailing bad rate      PR-AUC 0.335  ROC 0.741  prec@10% 0.343  recall@10% 0.444
+[test] rule shrunk bad rate        PR-AUC 0.310  ROC 0.736  prec@10% 0.314  recall@10% 0.407
+[test] rule late rate              PR-AUC 0.132  ROC 0.628  prec@10% 0.171  recall@10% 0.222
+[val] HGB cand0                    PR-AUC 0.381  ROC 0.628  prec@10% 0.402  recall@10% 0.155
+[val] HGB cand1                    PR-AUC 0.381  ROC 0.634  prec@10% 0.395  recall@10% 0.152
+[test] HGB cls                     PR-AUC 0.223  ROC 0.748  prec@10% 0.257  recall@10% 0.333
+[test] HGB regression MAE 0.0895
+[val] HGB regression MAE 0.1012
+test top10% flagged: 35 sellers; their next-90d orders 1630.0 mean next bad rate 0.193 vs all 0.108

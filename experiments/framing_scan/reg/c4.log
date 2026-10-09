@@ -1,0 +1,14 @@
+absolute_error 0 {'WAPE': np.float64(0.6311168399813568), 'spearman': np.float64(0.738573720122601), 'top10_capture': np.float64(0.5689190058390899), 'oracle_top10': np.float64(0.6608232980677171), 'zero_share': np.float64(0.32486491610579205), 'n': 10549}
+absolute_error 1 {'WAPE': np.float64(0.6271245960131352), 'spearman': np.float64(0.7406929912194956), 'top10_capture': np.float64(0.5693504086158063), 'oracle_top10': np.float64(0.6608232980677171), 'zero_share': np.float64(0.32486491610579205), 'n': 10549}
+squared_error 0 {'WAPE': np.float64(0.9238161432419874), 'spearman': np.float64(0.6975308095035214), 'top10_capture': np.float64(0.5634263724718759), 'oracle_top10': np.float64(0.6608232980677171), 'zero_share': np.float64(0.32486491610579205), 'n': 10549}
+squared_error 1 {'WAPE': np.float64(0.809258380894472), 'spearman': np.float64(0.6925309927809123), 'top10_capture': np.float64(0.5684667848866948), 'oracle_top10': np.float64(0.6608232980677171), 'zero_share': np.float64(0.32486491610579205), 'n': 10549}
+chosen absolute_error {'learning_rate': 0.03, 'max_iter': 200, 'max_leaf_nodes': 8, 'min_samples_leaf': 80, 'l2_regularization': 3}
+                          WAPE  spearman  top10_capture  oracle_top10  zero_share        n
+val  last90              0.689     0.696          0.557         0.661       0.325  10549.0
+     last180/2           0.722     0.628          0.540         0.661       0.325  10549.0
+     0.5*g90+0.5*g180/2  0.689     0.674          0.551         0.661       0.325  10549.0
+test last90              0.845     0.671          0.574         0.674       0.336   1879.0
+     last180/2           0.869     0.578          0.536         0.674       0.336   1879.0
+     0.5*g90+0.5*g180/2  0.836     0.633          0.557         0.674       0.336   1879.0
+val  GBM                 0.627     0.741          0.569         0.661       0.325  10549.0
+test GBM                 0.702     0.715          0.569         0.674       0.336   1879.0

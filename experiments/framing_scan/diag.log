@@ -1,0 +1,173 @@
+/private/tmp/claude-501/-Users-joshualum-Documents-VSCode-IT5006-Grp-6/69c8a3a0-dc52-4a45-be15-6c61b93aef54/scratchpad/rv_diag.py:22: UserWarning: This pattern is interpreted as a regular expression, and has match groups. To actually get the groups, use str.extract.
+  f = lambda df: df.text.str.contains(p, regex=True).mean()
+/private/tmp/claude-501/-Users-joshualum-Documents-VSCode-IT5006-Grp-6/69c8a3a0-dc52-4a45-be15-6c61b93aef54/scratchpad/rv_diag.py:28: UserWarning: This pattern is interpreted as a regular expression, and has match groups. To actually get the groups, use str.extract.
+  print(nm, "on-time bad n", len(s), "partial%", s.text.str.contains(pats[list(pats)[1]]).mean().round(3), "notrecv%", s.text.str.contains(pats[list(pats)[0]]).mean().round(3))
+on-time delivered reviewed: 89443 bad: 8324 rate 0.093
+late: 6381 0.625
+share of on-time bad with text: 0.789  good: 0.373
+                                                 ontime_bad  ontime_good  late_bad
+pattern                                                                           
+not received (não recebi/nao chegou)                  0.138        0.009     0.385
+partial (recebi apenas/só/faltou/falta/um dos)        0.158        0.009     0.038
+wrong/different (errado/diferente/trocado)            0.103        0.005     0.012
+defect/broken (defeito/quebrado/danific)              0.084        0.006     0.007
+quality (qualidade/ruim/péssim/fraco/falsific)        0.126        0.030     0.066
+delay words (atraso/demor/prazo)                      0.067        0.095     0.182
+delivery word (entrega)                               0.181        0.098     0.265
+return/refund (devol/reembolso/estorno/cancel)        0.130        0.006     0.053
+seller contact (vendedor/loja/contato/resposta)       0.104        0.035     0.118
+multi-seller on-time bad n 591 partial% 0.448 notrecv% 0.355
+multi-item on-time bad n 2237 partial% 0.445 notrecv% 0.223
+single item on-time bad n 6087 partial% 0.053 notrecv% 0.106
+
+cause shares of on-time bad reviews
+ cause
+other comment                  0.251
+no comment                     0.211
+partial / missing item         0.182
+wrong / not as described       0.088
+not received (per customer)    0.085
+poor quality                   0.079
+defective / damaged            0.068
+delivery time                  0.037
+
+ns
+      size   mean
+ns              
+1   88194  0.088
+2    1190  0.465
+3      59  0.644
+
+ni
+      size   mean
+ni              
+1   80407  0.076
+2    6935  0.233
+3    1224  0.275
+4     877  0.323
+
+nprod
+         size   mean
+nprod              
+1      86399  0.085
+2       2668  0.321
+3        376  0.370
+
+price
+                    size   mean
+price                         
+(0.849, 39.0]     18221  0.078
+(39.0, 66.99]     17634  0.081
+(66.99, 105.0]    17901  0.092
+(105.0, 174.0]    17803  0.096
+(174.0, 13440.0]  17884  0.118
+
+freight_share
+                   size   mean
+freight_share                
+(-0.001, 0.103]  17889  0.088
+(0.103, 0.155]   17889  0.089
+(0.155, 0.214]   17888  0.090
+(0.214, 0.303]   17888  0.099
+(0.303, 0.955]   17889  0.099
+
+photos_min
+              size   mean
+photos_min              
+(-1, 1]     43768  0.101
+(1, 2]      17394  0.088
+(2, 4]      16950  0.086
+(4, 30]     10101  0.078
+
+desc_mean
+                    size   mean
+desc_mean                     
+(3.999, 314.0]    17767  0.098
+(314.0, 501.0]    17604  0.098
+(501.0, 739.0]    17566  0.092
+(739.0, 1135.0]   17681  0.088
+(1135.0, 3992.0]  17595  0.088
+
+sel_bad_max
+                    size   mean
+sel_bad_max                   
+(0.0155, 0.0914]  17931  0.065
+(0.0914, 0.116]   17847  0.075
+(0.116, 0.133]    17888  0.087
+(0.133, 0.167]    17889  0.101
+(0.167, 0.654]    17888  0.137
+
+sel_n_max
+              size   mean
+sel_n_max               
+(-1, 0]      5383  0.091
+(0, 4]       8631  0.084
+(4, 19]     15179  0.088
+(19, 99]    27701  0.091
+(99, 9999]  32549  0.100
+
+cat_bad_max
+                   size   mean
+cat_bad_max                  
+(0.0254, 0.116]  17898  0.076
+(0.116, 0.13]    17880  0.082
+(0.13, 0.142]    17888  0.087
+(0.142, 0.162]   17888  0.102
+(0.162, 0.448]   17889  0.117
+
+promise_days
+                     size   mean
+promise_days                   
+(2.009, 16.619]    17889  0.075
+(16.619, 21.401]   17888  0.087
+(21.401, 25.186]   17889  0.089
+(25.186, 30.251]   17888  0.099
+(30.251, 155.135]  17889  0.116
+
+handover_d
+                     size   mean
+handover_d                     
+(-171.213, 0.985]  17889  0.077
+(0.985, 1.776]     17888  0.081
+(1.776, 2.85]      17889  0.089
+(2.85, 4.431]      17888  0.092
+(4.431, 55.101]    17889  0.126
+                       size   mean
+cat                               
+office_furniture       1137  0.185
+unknown                1272  0.130
+home_construction       435  0.126
+bed_bath_table         8404  0.120
+furniture_decor        5730  0.116
+computers_accessories  6062  0.114
+telephony              3765  0.108
+watches_gifts          5035  0.097
+
+multi-seller on-time n 1249 bad 0.473  bad-with-text share 0.854
+multi-seller on-time vs late rates; late share among multi-seller delivered: 0.01 vs single 0.067
+  - em partes sou cliente há anos, porém sempre há divergências e problemas na entrega, consta como produto entregue, porém foi entregue apenas 
+  - parte do produto foi entregue, falta um relogio, embora nesse email conste que foram entregues os tres que fazem parte do pedido.a nota fisc
+  - este foi o pedido
+balde com 128 peças - blocos de montar 2 un - r$ 25,00 cada (não foi entregue)
+vendido e entregue targaryen
+tapete de e
+  - so recebi metade dos produtos a nota fiscal veio no valor inferior ao pago .. não recomendo ! dei uma estrela pq eh obrigada a dar pelo meno
+  - recebi apenas um cobertor de casal. o de solteiro não é a mercadoria foi deixado do lado de fora de casa sem ninguém que receber.
+  - recebi apenas um dos produtos,relógio de perola.mas o outro relógio de led,nem sinal dele.no entanto,foi dado como entregue.como pode?a emba
+  - não recomendo srs, efetuei a compra de 2 produtos, entregaram apenas a varredoura feiticeira mod. compact plus, sendo que o parceiro foi a t
+  - boa noite.
+
+comprei 3 produtos, e recebi apenas 1, estou aguardando um retorno ref. aos demais produtos comprados.
+
+aguardo retorno brev
+
+share of on-time bad that is multi-item(>=2): 0.269  multi-seller: 0.071 ; of on-time orders: 0.101 0.014
+single-item on-time bad share: 0.7312590100913022
+other comment                  0.271
+no comment                     0.240
+wrong / not as described       0.107
+not received (per customer)    0.099
+poor quality                   0.098
+defective / damaged            0.086
+partial / missing item         0.053
+delivery time                  0.046

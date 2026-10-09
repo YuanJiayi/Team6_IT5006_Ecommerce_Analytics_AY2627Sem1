@@ -1,0 +1,8 @@
+# Ablation of M2 (static fit on <=2018-05-25, 180d scope, test pooled; scale=mu)
+drop=[]: d@95=17.20 MAE=3.26 bias(mu-need)=0.68
+drop=['month']: d@95=17.55 MAE=4.82 bias(mu-need)=3.26
+drop=['route_vol7']: d@95=17.45 MAE=3.31 bias(mu-need)=0.74
+drop=['backlog']: d@95=17.43 MAE=3.47 bias(mu-need)=1.02
+drop=['month', 'route_vol7', 'backlog']: d@95=17.43 MAE=5.04 bias(mu-need)=3.55
+drop=['month', 'route_vol7', 'backlog', 'sell_hand', 'sell_hand30', 'sell_n']: d@95=18.02 MAE=5.33 bias(mu-need)=3.78
+drop=['month', 'route_vol7', 'backlog', 'sell_hand', 'sell_hand30', 'sell_n', 'dist', 'capital', 'z3_dur', 'z5_dur', 'z3_dur30', 'z3_dur90', 'z3_leg', 'z5_leg', 'z3_leg30', 'z5_n', 'city_late']: d@95=18.23 MAE=5.08 bias(mu-need)=3.39

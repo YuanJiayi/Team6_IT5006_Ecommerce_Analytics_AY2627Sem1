@@ -1,0 +1,42 @@
+
+===== POINT B: n=95824 base=0.128
+VALIDATION (mean of 5 windows)
+                                 base     PR    ROC    p@5    r@5   p@10   r@10
+logit C=0.03                   0.155  0.492  0.792  0.647  0.217  0.585  0.384
+logit C=0.3                    0.155  0.491  0.792  0.653  0.219  0.586  0.385
+hgb d3 lr.05 it150             0.155  0.531  0.794  0.748  0.251  0.630  0.409
+hgb leaf15 lr.05 it200         0.155  0.533  0.794  0.745  0.250  0.628  0.407
+hgb leaf31 lr.03 it300         0.155  0.530  0.793  0.742  0.249  0.630  0.409
+days late                      0.155  0.444  0.684  0.709  0.237  0.569  0.357
+late flag (ties by days late)  0.155  0.444  0.684  0.708  0.236  0.567  0.356
+late + multi-seller            0.155  0.471  0.715  0.716  0.240  0.608  0.389
+PR-AUC std across windows: {'logit C=0.03': 0.113, 'logit C=0.3': 0.113, 'hgb d3 lr.05 it150': 0.129, 'hgb leaf15 lr.05 it200': 0.129, 'hgb leaf31 lr.03 it300': 0.127, 'days late': 0.145, 'late flag (ties by days late)': 0.145, 'late + multi-seller': 0.134} 
+chosen model: hgb leaf15 lr.05 it200  chosen rule: late + multi-seller
+
+TEST (purchases >= 2018-05-26, once): train n=73829 test n=19278
+                                      base     PR    ROC    p@5    r@5   p@10   r@10
+MODEL hgb leaf15 lr.05 it200         0.097  0.314  0.713  0.477  0.247  0.338  0.350
+rule: days late                      0.097  0.210  0.554  0.346  0.179  0.204  0.211
+rule: late flag (ties by days late)  0.097  0.210  0.554  0.345  0.179  0.203  0.210
+rule: late + multi-seller            0.097  0.244  0.597  0.454  0.235  0.262  0.271
+MODEL(other family) logit C=0.03     0.097  0.299  0.712  0.455  0.235  0.343  0.355
+
+TEST by month (model vs best rule):
+   month    n  base  PR model  PR rule  r@10 model  r@10 rule  p@10 model  p@10 rule
+2018-05  758 0.083     0.300    0.252       0.317      0.222       0.263      0.184
+2018-06 6072 0.100     0.286    0.198       0.333      0.213       0.333      0.213
+2018-07 6118 0.097     0.291    0.235       0.309      0.267       0.299      0.258
+2018-08 6330 0.095     0.371    0.322       0.412      0.386       0.393      0.368
+bootstrap model-rule diff: recall@10 0.080 [0.064, 0.094]; PR-AUC 0.070 [0.058, 0.081]
+
+Permutation importance (test PR-AUC drop), top 10:
+ days_late           0.1458
+n_items             0.0627
+n_sellers           0.0113
+handover_d          0.0048
+cat_c               0.0036
+customer_state_c    0.0023
+carrier_leg_d       0.0023
+approve_h           0.0022
+sel_bad_max         0.0021
+promise_days        0.0021

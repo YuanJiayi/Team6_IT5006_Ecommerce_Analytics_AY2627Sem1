@@ -1,0 +1,182 @@
+<title>Delivery Promise Plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one narrow reading column, a key-figure strip, then the order timeline as two stops */
+:root {
+  --bg: #f5f7f8;
+  --surface: #ffffff;
+  --ink: #16242c;
+  --muted: #56666f;
+  --line: #d9e0e4;
+  --accent: #c2410c;      /* shipping-label orange */
+  --accent-soft: #fdeee6;
+  --good: #1f7a55;
+  --bar-base: #b8c4cb;
+  --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f171c; --surface: #16222a; --ink: #e6edf1; --muted: #9aabb4; --line: #2a3a44;
+    --accent: #f08a4b; --accent-soft: #3a2418; --good: #5cc79a; --bar-base: #3d505b;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f171c; --surface: #16222a; --ink: #e6edf1; --muted: #9aabb4; --line: #2a3a44;
+  --accent: #f08a4b; --accent-soft: #3a2418; --good: #5cc79a; --bar-base: #3d505b;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--ink); font: 15px/1.6 var(--body); }
+.wrap { max-width: 46rem; margin: 0 auto; padding-inline: 20px; padding-block: 40px 56px; display: grid; gap: 36px; }
+h1, h2 { font-family: var(--display); text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: 2.1rem; font-weight: 800; letter-spacing: -0.01em; }
+h2 { font-size: 1.15rem; font-weight: 700; }
+p { margin: 0; max-width: 65ch; }
+.eyebrow { font: 500 0.72rem/1 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
+.lede { color: var(--muted); font-size: 1.05rem; }
+header { display: grid; gap: 12px; }
+section { display: grid; gap: 14px; }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+.figs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.fig { background: var(--surface); padding: 16px; display: grid; gap: 4px; align-content: start; }
+.fig b { font: 700 1.9rem/1 var(--display); }
+.fig b small { font-size: 0.95rem; color: var(--muted); font-weight: 500; }
+.fig span { font-size: 0.85rem; color: var(--muted); }
+
+.bars { display: grid; gap: 8px; }
+.bar { display: grid; grid-template-columns: 9.5rem 1fr; gap: 12px; align-items: center; font-size: 0.88rem; }
+.bar .track { position: relative; height: 26px; }
+.bar .fill { height: 100%; background: var(--bar-base); border-radius: 3px; display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; font: 500 0.8rem var(--mono); color: var(--ink); }
+.bar.us .fill { background: var(--accent); color: #fff; }
+.bar .label small { display: block; color: var(--muted); font-size: 0.78rem; }
+
+.stops { display: grid; gap: 0; border-left: 2px solid var(--line); margin-left: 6px; }
+.stop { position: relative; padding: 0 0 24px 24px; display: grid; gap: 8px; }
+.stop:last-child { padding-bottom: 0; }
+.stop::before { content: ""; position: absolute; left: -8px; top: 4px; width: 14px; height: 14px; border-radius: 50%; background: var(--bg); border: 3px solid var(--accent); }
+.stop .when { font: 500 0.75rem/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.tag { display: inline-block; font: 500 0.72rem/1 var(--mono); padding: 4px 7px; border-radius: 3px; background: var(--accent-soft); color: var(--accent); margin-left: 6px; vertical-align: 2px; }
+.kv { display: grid; grid-template-columns: 7.5rem 1fr; gap: 4px 12px; font-size: 0.92rem; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; min-width: 0; }
+
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+th, td { text-align: left; padding: 9px 10px 9px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font: 500 0.72rem var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+td.n { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.up { color: var(--good); }
+.down { color: var(--accent); }
+ul { margin: 0; padding-left: 1.1rem; display: grid; gap: 6px; max-width: 65ch; }
+.note { font-size: 0.82rem; color: var(--muted); }
+.versus { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 16px 18px; display: grid; gap: 10px; }
+
+@media (max-width: 560px) {
+  h1 { font-size: 1.7rem; }
+  .figs { grid-template-columns: 1fr; }
+  .bar { grid-template-columns: 1fr; gap: 4px; }
+  .kv { grid-template-columns: 1fr; }
+  .kv dt { margin-top: 6px; }
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">IT5006 Team 6 · Phase 2 proposal</div>
+    <h1>Promise faster, warn earlier</h1>
+    <p class="lede">We promise customers 22 days for parcels that arrive in about 9. One regression model lets us promise 5 days sooner at almost the same reliability. One classification model then flags orders that will miss that promise, before the customer finds out.</p>
+  </header>
+
+  <section>
+    <h2>The problem</h2>
+    <ul>
+      <li><strong>The promise is padded.</strong> In the most recent months the median order arrived 13 days before its promised date. Customers see a long wait at checkout.</li>
+      <li><strong>Padding buys nothing.</strong> Orders 4 to 7 days early and 15 to 21 days early get the same review score (4.2 to 4.3 stars).</li>
+      <li><strong>Missing the promise is costly.</strong> 61% of late orders get a 1 to 2 star review. The review request goes out on the promised date, so late customers review before the parcel arrives.</li>
+    </ul>
+  </section>
+
+  <section aria-label="Key figures">
+    <div class="figs">
+      <div class="fig"><b class="num">17.1<small> days</small></b><span>Average promise from our model, against 22.1 today</span></div>
+      <div class="fig"><b class="num">95.9%</b><span>Orders on time with our promise, against 96.5% today</span></div>
+      <div class="fig"><b class="num">62%</b><span>Late orders caught by a warning list of 10% of shipments</span></div>
+    </div>
+    <p class="note">Test period: 19,363 orders bought 26 May to 31 Aug 2018. Models were trained only on earlier orders and settings were fixed before the test period was scored.</p>
+  </section>
+
+  <section>
+    <h2>Average promise at checkout (test period)</h2>
+    <div class="bars" role="img" aria-label="Average promise: today 22.1 days at 96.5% on time; best simple rule 17.6 days at 94.8%; our model 17.1 days at 95.9%">
+      <div class="bar"><div class="label">Today's promise<small>96.5% on time</small></div><div class="track"><div class="fill num" style="width:100%">22.1</div></div></div>
+      <div class="bar"><div class="label">Best simple rule<small>94.8% on time</small></div><div class="track"><div class="fill num" style="width:79.6%">17.6</div></div></div>
+      <div class="bar us"><div class="label">Our model<small>95.9% on time</small></div><div class="track"><div class="fill num" style="width:77.4%">17.1</div></div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>The two models along an order</h2>
+    <div class="stops">
+      <div class="stop">
+        <div class="when">At checkout</div>
+        <h2>Delivery-time model <span class="tag">Regression</span></h2>
+        <dl class="kv">
+          <dt>Predicts</dt><dd>Days to delivery, as seller handling time plus carrier time. A safety margin, reset daily from recent deliveries, turns it into the promised date.</dd>
+          <dt>Uses</dt><dd>Recent carrier times on the route, current route volume, distance, the seller's usual speed and unshipped backlog.</dd>
+          <dt>Who uses it</dt><dd>Automatic. The customer sees the date. Logistics sets the reliability target.</dd>
+          <dt>Result</dt><dd>Promises 5 days shorter than today at 95.9% vs 96.5% on time. Beats the best simple rule on both length and reliability (17.1 vs 17.6 days, 95.9% vs 94.8%). Average error 3.9 days vs 4.9 for the rule.</dd>
+        </dl>
+      </div>
+      <div class="stop">
+        <div class="when">At carrier handover</div>
+        <h2>Late-warning model <span class="tag">Classification</span></h2>
+        <dl class="kv">
+          <dt>Predicts</dt><dd>Will this order miss its promised date? Yes or no, with a probability.</dd>
+          <dt>Uses</dt><dd>The same route and seller signals, measured against the days left before the promise.</dd>
+          <dt>Who uses it</dt><dd>Customer service, as a daily list: chase the carrier, and message the highest-risk customers before the review request arrives.</dd>
+          <dt>Result</dt><dd>A list of 10% of shipments catches 62% of late orders, typically 1 to 3 days before the promised date. A random list catches 10%. The same model, re-run at handover, also updates the customer's arrival estimate (average error 2.6 days).</dd>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Effect on the business, per year</h2>
+    <p class="note">Scaled from the test period to the last 12 months: 76,124 orders and R$10.4M in sales.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>What changes</th><th>Estimate</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>Promise shown at checkout</td><td class="n up">5 days shorter on every order</td><td>Measured</td></tr>
+          <tr><td>Extra late orders from the shorter promise</td><td class="n down">about 460 (0.6% of orders)</td><td>Measured. Can be removed by raising the reliability target, at a cost of under a day of promise</td></tr>
+          <tr><td>Late orders flagged before the promised date</td><td class="n up">about 1,650 of 2,650</td><td>Measured</td></tr>
+          <tr><td>Warning list workload</td><td class="n">about 20 orders a day</td><td>Measured</td></tr>
+          <tr><td>Sales from shorter promises</td><td class="n">R$104k for each 1% rise in conversion</td><td>Scenario. Needs an A/B test</td></tr>
+          <tr><td>Bad reviews avoided by warnings</td><td class="n">unknown</td><td>Needs a pilot</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>What we are not claiming</h2>
+    <ul>
+      <li>The data has no browsing or abandoned-cart records, so it cannot show that shorter promises sell more. We propose an A/B test.</li>
+      <li>On the warning list, the model performs about the same as a simple rule. It earns its place by supporting the decision and setting list size by probability, not by beating the rule.</li>
+      <li>The safety margin learns from orders 45 to 90 days old, so it reacts slowly to sudden slowdowns. In the Feb to Mar 2018 slowdown, on-time fell to 91.7%. Deployment needs a monitor and a peak-season buffer.</li>
+      <li>Results cover delivered orders only, from one 3-month test period. Models are retrained monthly.</li>
+    </ul>
+  </section>
+
+  <div class="versus">
+    <h2>Why this version, not Pratik's</h2>
+    <p>Pratik's models estimate how long delivery will take, at checkout and at handover. That is useful, but it changes no decision and is not compared with today's promise. Our model sets the promise itself and beats today's on promise length. At handover, on the same 19,230 orders, our model's error is 2.6 days against 3.9 for Pratik's, with less bias (+0.9 vs +2.8 days). On earlier validation months the gap was much smaller (0.2 days), so we claim at least as good, and better on test.</p>
+  </div>
+
+  <p class="note">This is the course brief's Example 4 ("dual framing"): one delivery problem, a regression for the estimate and a classifier for the at-risk flag. Detailed methods, baselines and validation tables are available on request.</p>
+</div>

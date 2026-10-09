@@ -1,0 +1,70 @@
+
+## olist_customers_dataset.csv rows=99441
+   customer_id [str] miss=0.0% card=99441
+   customer_unique_id [str] miss=0.0% card=96096
+   customer_zip_code_prefix [int64] miss=0.0% card=14994 range=1003..9.999e+04
+   customer_city [str] miss=0.0% card=4119
+   customer_state [str] miss=0.0% card=27
+
+## olist_geolocation_dataset.csv rows=1000163
+   geolocation_zip_code_prefix [int64] miss=0.0% card=19015 range=1001..9.999e+04
+   geolocation_lat [float64] miss=0.0% card=717363 range=-36.61..45.07
+   geolocation_lng [float64] miss=0.0% card=717615 range=-101.5..121.1
+   geolocation_city [str] miss=0.0% card=8011
+   geolocation_state [str] miss=0.0% card=27
+
+## olist_order_items_dataset.csv rows=112650
+   order_id [str] miss=0.0% card=98666
+   order_item_id [int64] miss=0.0% card=21 range=1..21
+   product_id [str] miss=0.0% card=32951
+   seller_id [str] miss=0.0% card=3095
+   shipping_limit_date [str] miss=0.0% card=93318 range=2016-09-19 00:15:34..2020-04-09 22:35:08
+   price [float64] miss=0.0% card=5968 range=0.85..6735
+   freight_value [float64] miss=0.0% card=6999 range=0..409.7
+
+## olist_order_payments_dataset.csv rows=103886
+   order_id [str] miss=0.0% card=99440
+   payment_sequential [int64] miss=0.0% card=29 range=1..29
+   payment_type [str] miss=0.0% card=5
+   payment_installments [int64] miss=0.0% card=24 range=0..24
+   payment_value [float64] miss=0.0% card=29077 range=0..1.366e+04
+
+## olist_order_reviews_dataset.csv rows=99224
+   review_id [str] miss=0.0% card=98410
+   order_id [str] miss=0.0% card=98673
+   review_score [int64] miss=0.0% card=5 range=1..5
+   review_comment_title [str] miss=88.3% card=4527
+   review_comment_message [str] miss=58.7% card=36159
+   review_creation_date [str] miss=0.0% card=636 range=2016-10-02 00:00:00..2018-08-31 00:00:00
+   review_answer_timestamp [str] miss=0.0% card=98248 range=2016-10-07 18:32:28..2018-10-29 12:27:35
+
+## olist_orders_dataset.csv rows=99441
+   order_id [str] miss=0.0% card=99441
+   customer_id [str] miss=0.0% card=99441
+   order_status [str] miss=0.0% card=8
+   order_purchase_timestamp [str] miss=0.0% card=98875 range=2016-09-04 21:15:19..2018-10-17 17:30:18
+   order_approved_at [str] miss=0.2% card=90733
+   order_delivered_carrier_date [str] miss=1.8% card=81018 range=2016-10-08 10:34:01..2018-09-11 19:48:28
+   order_delivered_customer_date [str] miss=3.0% card=95664 range=2016-10-11 13:46:32..2018-10-17 13:22:46
+   order_estimated_delivery_date [str] miss=0.0% card=459 range=2016-09-30 00:00:00..2018-11-12 00:00:00
+
+## olist_products_dataset.csv rows=32951
+   product_id [str] miss=0.0% card=32951
+   product_category_name [str] miss=1.9% card=73
+   product_name_lenght [float64] miss=1.9% card=66 range=5..76
+   product_description_lenght [float64] miss=1.9% card=2960 range=4..3992
+   product_photos_qty [float64] miss=1.9% card=19 range=1..20
+   product_weight_g [float64] miss=0.0% card=2204 range=0..4.042e+04
+   product_length_cm [float64] miss=0.0% card=99 range=7..105
+   product_height_cm [float64] miss=0.0% card=102 range=2..105
+   product_width_cm [float64] miss=0.0% card=95 range=6..118
+
+## olist_sellers_dataset.csv rows=3095
+   seller_id [str] miss=0.0% card=3095
+   seller_zip_code_prefix [int64] miss=0.0% card=2246 range=1001..9.973e+04
+   seller_city [str] miss=0.0% card=611
+   seller_state [str] miss=0.0% card=23
+
+## product_category_name_translation.csv rows=71
+   product_category_name [str] miss=0.0% card=71
+   product_category_name_english [str] miss=0.0% card=71
