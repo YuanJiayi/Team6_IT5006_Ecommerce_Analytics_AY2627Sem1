@@ -130,7 +130,7 @@ def plot_calibration(validation, test):
 
 def inline_report_figures(validation, test):
     """Keep the standalone LaTeX source compilable in the built-in editor."""
-    report = ROOT / "reports/phase2_classification_draft.tex"
+    report = ROOT / "reports/phase2_joint_report.tex"
     source = report.read_text()
     shares = np.linspace(.01, .30, 30)
 

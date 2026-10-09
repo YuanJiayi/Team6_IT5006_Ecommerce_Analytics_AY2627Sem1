@@ -1,0 +1,5 @@
+period,variant,orders,negative_predictions,mae
+validation_pooled,original,38005,6,5.809875032290912
+validation_pooled,clipped_at_zero,38005,6,5.80970499469026
+opened_test_post_hoc,original,19363,10,5.001465342850323
+opened_test_post_hoc,clipped_at_zero,19363,10,5.001061286006435

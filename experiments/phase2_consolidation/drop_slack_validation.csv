@@ -1,0 +1,6 @@
+period,variant,mae
+validation_1,ridge_without_promise_slack,3.981621210970021
+validation_2,ridge_without_promise_slack,6.661157790004415
+validation_3,ridge_without_promise_slack,5.325740137396945
+validation_4,ridge_without_promise_slack,5.828814915158338
+validation_5,ridge_without_promise_slack,7.248692848538863

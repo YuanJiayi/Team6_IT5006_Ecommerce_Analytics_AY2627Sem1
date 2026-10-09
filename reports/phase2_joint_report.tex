@@ -1,0 +1,378 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[margin=0.78in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tikz}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue,urlcolor=blue}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.35em}
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{1.1}
+
+\begin{document}
+\begin{center}
+{\Large\bfseries Delivery reliability from payment approval to carrier handover}\\[3pt]
+{\small IT5006 Phase 2 --- joint classification and regression report}\\[2pt]
+{\footnotesize Code and notebooks: \url{https://github.com/YuanJiayi/Team6_IT5006_Ecommerce_Analytics_AY2627Sem1}}
+\end{center}
+\vspace{-0.5em}
+
+\section*{Executive summary and decision}
+We study one business problem at two operational moments. After payment approval, a marketplace delivery operations analyst needs a delivery-time estimate and a ranking of orders at risk of missing the date promised to the customer. The team can then decide which approved orders merit a seller check. At carrier handover, actual seller-processing time becomes known and the analyst can update the arrival estimate for shipment follow-up. The second decision has more information but less time to influence fulfilment. Both analyses are conditional on eventual delivery: the historical data cannot tell us the final delivery outcome for an open or cancelled order.
+
+We first evaluated simple purchase-time models, which can be scored as soon as an order is approved. The risk model still ranked late orders better than chance on later purchases, but its fixed alert rule flagged too many orders for individual warnings. The delivery-time model predicted durations that were too long on average. Adding recent carrier history improved the duration comparison; a shorter model-fitting window looked promising in validation but performed worse on later orders. At handover, updating the forecast with actual seller time improved error further. The data do not show whether acting on these scores would prevent delays or save money.
+
+\section*{Problem and data}
+The delivery operations analyst needs to decide which approved orders merit an internal delivery check. We predict whether an order will arrive after its promised \emph{calendar date}; delivery on that date counts as on time. The first score uses the saved purchase-time feature set and can be used when approval arrives. Payment method and instalments are candidate inputs; approval is the trigger, not a predictor shared by every scored order. Approval delay might consume time before fulfilment, but it was not part of the initial feature set; an approval-stage risk check is in Appendix~\ref{app:paths}. We judge the risk model by whether the top-ranked orders contain more late deliveries than an equally sized random list. We judge the delivery-time model by whether it predicts arrival more accurately than the overall average or past deliveries on that route. Both comparisons use earlier orders for training and later orders for testing. Better scores alone do not prove an operational benefit; that depends on review capacity and the effect of follow-up.
+
+We use the Olist CSVs supplied through Canvas. Of the 99,441 source orders, 96,470 were marked delivered and had both an actual and an estimated delivery date. These 96,470 orders form our modelling cohort. The preparation notebook joins orders with their items, customers, sellers, products, payments and ZIP-prefix locations, then aggregates to one row per order. Identifiers are used to link these tables but are excluded from the model inputs. Other orders do not meet the delivered-status and date requirements for our targets. The findings therefore describe orders that eventually arrived, not every new purchase.
+
+The eligible training period runs from September 2016 to May 2018, but its start is sparse: one delivered order in September 2016, 265 in October, none in November and one in December. October's median promised time was 54.2 days, with only two late deliveries. This is an unusual early period; the CSVs do not establish its business cause. We check below whether retaining it materially affects the models.
+
+\section*{Feature engineering}
+We chose candidate inputs by examining the orders and asking what could affect fulfilment at the first decision point. Basket size, product weight and distance may affect handling or transport; the promised interval defines how much time an order has before it counts as late. Past route delivery time and seller handover speed could describe typical delays, provided those earlier outcomes were already known. These are reasons to try the inputs, not findings inferred from a validation score.
+
+The first learned classifiers used 18 order-level inputs, including engineered purchase time, basket and product summaries, approximate distance and promised days. They also used joined location and payment fields. After this initial comparison, we constructed historical route time, promise slack (promised days minus past route time) and prior seller handover speed as additional candidates. The prepared order table contains the final engineered columns; the modelling code selects the subset used at each comparison. This development order does not mean validation revealed which business variables were missing.
+
+The data also informed two feature choices before their effects were measured. The short record provides little evidence that a purchase-month effect would recur in another year, especially with no delivered orders in November 2016. Price, freight, distance, weight and volume have long right tails, so a log transformation was a plausible choice for a linear model. We tested the removal and transformation on chronological validation windows rather than treating either observation as proof of predictive improvement.
+
+Table~\ref{tab:feature-rationale} shows why we tried each feature group; inclusion does not imply that it improved the model. To prevent leakage, route and seller histories use only outcomes known before purchase. The initial models exclude the current order's approval delay, handover, delivery, status and review data; this preserves the original purchase-time feature contract even when the operational queue is opened at approval. Code checks the history timing. The source files cannot confirm whether the stored promise or payment details were visible at purchase, so we refitted without each group.
+
+\begin{table}[h]
+\centering\small
+\caption{Reasons to consider the initial and later candidate inputs, with purchase-time availability assumptions. The final inputs and timing audit are in \texttt{data/phase2\_feature\_spec.json} and \texttt{docs/phase2\_assumptions.md}.}
+\label{tab:feature-rationale}
+\begin{tabular}{@{}p{0.21\linewidth}p{0.41\linewidth}p{0.30\linewidth}@{}}
+\toprule
+Feature group & Reason for inclusion & Availability assumption \\
+\midrule
+Promise and historical route time & An order may be late when its promised time is short relative to past deliveries on the route. & Stored promise is assumed to be the checkout promise; historical outcomes are strictly earlier. \\
+Seller, route and location & Prior handover speed, state pair and approximate distance may capture fulfilment and transit time. & Seller and ZIP-prefix reference profiles have no historical snapshots. \\
+Basket and product & Item count, sellers, price, freight, size and category may change packing and handling needs. & Item and product records have no source creation times. \\
+Purchase and payment & Hour, weekday, method and instalments may relate to processing queues. & Submitted payment details are assumed available; later edits cannot be excluded. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section*{Evaluation design}
+We evaluate two linked predictions: whether an order will miss its promised date and how many days delivery will take. For delivery time, we measure forecast error mainly with mean absolute error (MAE). We also report root mean squared error (RMSE), which gives more weight to large misses, and whether predictions tend to be too long or too short. Hodson~\cite{hodson2022} explains why MAE and RMSE answer different error questions. For late-order risk, we report average precision, ROC-AUC, and precision and recall at several review-queue sizes. These measures are more informative than accuracy alone when late orders are uncommon.
+
+Our primary question is whether a model trained on earlier purchases can rank \emph{later} purchases. We fixed 26 May 2018, near the 80th purchase percentile, as the test boundary. Of the earlier orders, 75,099 had known delivery outcomes by that date and could be used for fitting. Another 2,008 were bought earlier but delivered after the boundary; using their outcomes would give the model information it could not yet have known. The 19,363 later purchases form the held-out test. This chronological split preserves the real change in late-order frequency rather than forcing train and test to have the same class balance.
+
+Of those later delivered orders, 19,329 have a recorded approval between purchase and delivery. On this approval-eligible subset, the unchanged purchase-time logistic model's PR-AUC was 0.0651 and the ridge forecast's MAE was 5.005 days, close to 0.0651 and 5.001 on the full later cohort. This subset check connects the saved model evaluation to the proposed approval-time queue.
+
+Within the training period, five successive validation windows each contain 7,601 purchases and at least 310 late orders. Before each window, fitting uses only earlier purchases whose outcomes were already known. The last validation window ends 60 days before the test boundary, limiting the tendency for recently purchased, quickly delivered orders to dominate validation. Preprocessing and model fitting are repeated from scratch for each window, using seed 42 where randomness is involved. This gives five checks across different periods, though it cannot guarantee performance beyond the historical data.
+
+\section*{Model comparison and feature checks}
+Missing numeric inputs are filled with medians learned from each fitting fold; categories are one-hot encoded, with unseen values ignored. Logistic regression scales numeric inputs and encodes purchase hour cyclically. Its final version also log-transforms price, freight, distance, weight and volume. These steps are inside the fitted pipeline, so validation rows do not determine imputation or scaling. The forest and single tree use the same available information without linear-model scaling.
+
+The no-input baseline simply predicts the training late rate; it is a reference, not a learned classifier without features. We compared four logistic, four single-tree and four random-forest settings using the initial 18-input set. The grid varied logistic regularisation ($C=0.1,1,10$) and class weighting; tree depth and minimum leaf size; and forest depth, leaf size and class weighting. All forests used 200 trees. The exact settings and final-feature scores are in Appendix~\ref{app:grid}. Mean average precision across the five windows, reported here as PR-AUC, chose the model. This metric rewards finding late orders near the top of a risk-ranked list; the no-skill reference is each window's late-order rate. ROC-AUC gives a second ranking measure.
+
+The initial grid chose $C=0.1$ for logistic regression on the original features. We held that setting fixed while checking the motivated changes above, then reran all 13 candidates on the final 20 inputs. Logistic mean PR-AUC rose from 0.1808 to 0.1897 after removing purchase month, to 0.1910 after adding past route time and promise slack, to 0.1954 after adding past seller handover speed, and to 0.2003 after log-transforming the five long-tailed inputs. Validation measured how these choices performed on later windows; it did not supply their original rationale. These are \emph{ordered, conditional} changes, not independent effects of individual features. Reusing five windows for several decisions can favour this sequence, and steps of 0.001--0.005 are too small to establish that each addition would help in another period.
+
+\begin{table}[h]
+\centering\small
+\caption{More complex models were checked against simpler members of their family. Values are means of five validation-window scores on the final features.}
+\label{tab:models}
+\begin{tabular}{@{}lrr@{}}
+\toprule
+Approach & PR-AUC & ROC-AUC \\
+\midrule
+Constant-risk baseline & 0.1067 & 0.500 \\
+Logistic, default $C=1$ & 0.1913 & 0.664 \\
+Logistic, stronger regularisation $C=0.1$ & 0.2003 & 0.677 \\
+Unrestricted single tree & 0.1107 & 0.512 \\
+Constrained single tree & 0.1495 & 0.566 \\
+Unrestricted forest & 0.1808 & 0.635 \\
+Constrained forest & 0.1999 & 0.668 \\
+Equal-weight logistic--forest vote & 0.2050 & 0.683 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Restricting tree growth raised the single-tree and forest scores substantially. The forest and logistic model finished effectively tied: 0.2003 against 0.1999 is small beside their per-window differences, and logistic won three of five windows. Class weighting chiefly changes the trade-off between late and on-time errors during fitting; with regularisation it can also change the ranking. Here it lowered ranking PR-AUC. The vote improved mean PR-AUC over logistic by just 0.0048, beat logistic in three of five windows, and beat both component models in only two. That small, uneven gain did not establish an advantage worth maintaining two models, so we selected the simpler logistic model \emph{before} examining the later test. Removing payment type and instalment count changed its mean PR-AUC from 0.2003 to 0.2001, suggesting little dependence on the uncertain payment fields.
+
+For interpretation, shuffling one raw input at a time in each forest validation window reduced mean PR-AUC most for customer state (0.026), promise slack (0.017) and past route time (0.017). Shuffling a categorical input moves all its one-hot columns together. This describes the forest, which was not selected. The selected logistic model's coefficients associated slower past seller handover and longer distance with greater risk, and longer promised time with lower risk. These are predictive associations, not evidence that changing a feature would cause delivery to improve. Promise, route time and slack overlap by construction, so their separate coefficients should not be read as isolated effects.
+
+\section*{Ranking results across periods}
+After fixing the features and logistic model, we refitted it on all 75,099 eligible training orders and evaluated the later test period once. It gave PR-AUC 0.0651 (95\% order-bootstrap interval 0.0564--0.0788) and ROC-AUC 0.668 (0.651--0.685). The no-skill PR-AUC reference is the test late rate, 0.0348. Thus the model contains a modest ranking signal, although its absolute PR-AUC is low. The validation mean ROC-AUC of 0.677 is a mean of five separately fitted window scores, whereas test ROC-AUC is one score for the final refit; their closeness is descriptive, not a paired comparison.
+
+For orientation, the final fit's \emph{in-sample} training scores were PR-AUC 0.194 and ROC-AUC 0.732 on 75,099 orders (7.10\% late). Mean out-of-window validation scores were 0.200 and 0.677, with late rates ranging from 4.1\% to 20.7\%. The later test scores were 0.065 and 0.668 on 19,363 orders (3.48\% late). In-sample and out-of-window PR-AUCs are not directly ordered as generalisation evidence because their class mixes differ; the validation windows and later test carry the out-of-time evidence.
+
+Because PR-AUC depends on the frequency of late orders, Table~\ref{tab:periods} also compares it with each period's own late rate. The ratio is 1.59--2.35 across validation windows and 1.87 in the test. The validation late rate itself ranged from 4.1\% to 20.7\%, so the mean PR-AUC of 0.2003 should not be read in isolation. These ratios provide context, not a prevalence-free measure of model quality. The intervals and period diagnostics were calculated after the test opened and are descriptive. Bootstrap intervals resample scored orders 1,000 times with seed 42; they capture order-sampling uncertainty conditional on the fitted model, not uncertainty about future months or model selection.
+
+\begin{table}[h]
+\centering\small
+\caption{Ranking and average predicted risk by period. Validation rows are separate out-of-window models; the later test row is the final refit. The test comparison is post hoc.}
+\label{tab:periods}
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule
+Period & Late rate & Mean risk & PR-AUC & PR-AUC / rate & ROC-AUC \\
+\midrule
+Validation 1 & 4.1\% & 3.2\% & 0.0738 & 1.81 & 0.680 \\
+Validation 2 & 13.8\% & 3.2\% & 0.2231 & 1.61 & 0.653 \\
+Validation 3 & 4.8\% & 2.7\% & 0.0760 & 1.59 & 0.623 \\
+Validation 4 & 9.9\% & 4.5\% & 0.2331 & 2.35 & 0.719 \\
+Validation 5 & 20.7\% & 6.1\% & 0.3954 & 1.91 & 0.711 \\
+Later test & 3.48\% & 9.82\% & 0.0651 & 1.87 & 0.668 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Figure~\ref{fig:gains} asks how many late orders the analyst would find by checking a fixed-size queue of the highest-ranked orders. The validation line averages recall computed separately within each window; the test line ranks the test orders once. The validation top-$k$ results were available during development, but the test top-$k$ policy was examined \emph{after} the test was opened. It is exploratory and did not replace the frozen alert rule.
+
+\begin{figure}[h]
+\centering
+% BEGIN GENERATED GAINS FIGURE
+\begin{tikzpicture}[x=23cm,y=5.7cm]
+\draw[->] (0,0)--(.32,0) node[right] {\scriptsize Share reviewed};
+\draw[->] (0,0)--(0,.69) node[above] {\scriptsize Share of late orders found};
+\draw[dashed,gray] (0,0)--(.30,.30);
+\foreach \x/\lab in {.1/10,.2/20,.3/30} {\draw (\x,0)--(\x,-.008) node[below] {\scriptsize \lab\%};}
+\foreach \y/\lab in {.2/20,.4/40,.6/60} {\draw (0,\y)--(-.004,\y) node[left] {\scriptsize \lab\%};}
+\draw[blue!25,thin] (0.0000,0.0000) -- (0.0100,0.0226) -- (0.0200,0.0484) -- (0.0300,0.0677) -- (0.0400,0.0871) -- (0.0500,0.1129) -- (0.0600,0.1323) -- (0.0700,0.1581) -- (0.0800,0.1871) -- (0.0900,0.2097) -- (0.1000,0.2258) -- (0.1100,0.2387) -- (0.1200,0.2677) -- (0.1300,0.2774) -- (0.1400,0.2935) -- (0.1500,0.3097) -- (0.1600,0.3194) -- (0.1700,0.3355) -- (0.1800,0.3452) -- (0.1900,0.3742) -- (0.2000,0.3968) -- (0.2100,0.4161) -- (0.2200,0.4419) -- (0.2300,0.4645) -- (0.2400,0.4742) -- (0.2500,0.4839) -- (0.2600,0.5000) -- (0.2700,0.5065) -- (0.2800,0.5194) -- (0.2900,0.5387) -- (0.3000,0.5387);
+\draw[blue!25,thin] (0.0000,0.0000) -- (0.0100,0.0238) -- (0.0200,0.0438) -- (0.0300,0.0666) -- (0.0400,0.0828) -- (0.0500,0.1056) -- (0.0600,0.1227) -- (0.0700,0.1418) -- (0.0800,0.1560) -- (0.0900,0.1770) -- (0.1000,0.1931) -- (0.1100,0.2169) -- (0.1200,0.2312) -- (0.1300,0.2474) -- (0.1400,0.2588) -- (0.1500,0.2788) -- (0.1600,0.2912) -- (0.1700,0.3054) -- (0.1800,0.3206) -- (0.1900,0.3378) -- (0.2000,0.3530) -- (0.2100,0.3644) -- (0.2200,0.3749) -- (0.2300,0.3806) -- (0.2400,0.3920) -- (0.2500,0.4072) -- (0.2600,0.4196) -- (0.2700,0.4339) -- (0.2800,0.4443) -- (0.2900,0.4529) -- (0.3000,0.4729);
+\draw[blue!25,thin] (0.0000,0.0000) -- (0.0100,0.0248) -- (0.0200,0.0468) -- (0.0300,0.0689) -- (0.0400,0.0882) -- (0.0500,0.1185) -- (0.0600,0.1295) -- (0.0700,0.1405) -- (0.0800,0.1515) -- (0.0900,0.1736) -- (0.1000,0.1928) -- (0.1100,0.2094) -- (0.1200,0.2204) -- (0.1300,0.2424) -- (0.1400,0.2590) -- (0.1500,0.2617) -- (0.1600,0.2645) -- (0.1700,0.2810) -- (0.1800,0.2865) -- (0.1900,0.2975) -- (0.2000,0.3140) -- (0.2100,0.3306) -- (0.2200,0.3444) -- (0.2300,0.3499) -- (0.2400,0.3636) -- (0.2500,0.3857) -- (0.2600,0.3994) -- (0.2700,0.4077) -- (0.2800,0.4132) -- (0.2900,0.4298) -- (0.3000,0.4435);
+\draw[blue!25,thin] (0.0000,0.0000) -- (0.0100,0.0385) -- (0.0200,0.0809) -- (0.0300,0.1074) -- (0.0400,0.1406) -- (0.0500,0.1698) -- (0.0600,0.1963) -- (0.0700,0.2215) -- (0.0800,0.2454) -- (0.0900,0.2666) -- (0.1000,0.2865) -- (0.1100,0.3077) -- (0.1200,0.3223) -- (0.1300,0.3475) -- (0.1400,0.3700) -- (0.1500,0.3886) -- (0.1600,0.3979) -- (0.1700,0.4125) -- (0.1800,0.4204) -- (0.1900,0.4377) -- (0.2000,0.4602) -- (0.2100,0.4801) -- (0.2200,0.4920) -- (0.2300,0.5093) -- (0.2400,0.5199) -- (0.2500,0.5265) -- (0.2600,0.5371) -- (0.2700,0.5464) -- (0.2800,0.5570) -- (0.2900,0.5637) -- (0.3000,0.5729);
+\draw[blue!25,thin] (0.0000,0.0000) -- (0.0100,0.0286) -- (0.0200,0.0552) -- (0.0300,0.0812) -- (0.0400,0.1028) -- (0.0500,0.1294) -- (0.0600,0.1542) -- (0.0700,0.1789) -- (0.0800,0.2043) -- (0.0900,0.2278) -- (0.1000,0.2487) -- (0.1100,0.2665) -- (0.1200,0.2849) -- (0.1300,0.3027) -- (0.1400,0.3173) -- (0.1500,0.3331) -- (0.1600,0.3490) -- (0.1700,0.3636) -- (0.1800,0.3813) -- (0.1900,0.4023) -- (0.2000,0.4181) -- (0.2100,0.4327) -- (0.2200,0.4442) -- (0.2300,0.4575) -- (0.2400,0.4689) -- (0.2500,0.4810) -- (0.2600,0.4924) -- (0.2700,0.4987) -- (0.2800,0.5076) -- (0.2900,0.5190) -- (0.3000,0.5336);
+\draw[blue!75!black,very thick] (0.0000,0.0000) -- (0.0100,0.0276) -- (0.0200,0.0550) -- (0.0300,0.0784) -- (0.0400,0.1003) -- (0.0500,0.1272) -- (0.0600,0.1470) -- (0.0700,0.1681) -- (0.0800,0.1889) -- (0.0900,0.2109) -- (0.1000,0.2294) -- (0.1100,0.2478) -- (0.1200,0.2653) -- (0.1300,0.2835) -- (0.1400,0.2997) -- (0.1500,0.3144) -- (0.1600,0.3244) -- (0.1700,0.3396) -- (0.1800,0.3508) -- (0.1900,0.3699) -- (0.2000,0.3884) -- (0.2100,0.4048) -- (0.2200,0.4195) -- (0.2300,0.4323) -- (0.2400,0.4437) -- (0.2500,0.4569) -- (0.2600,0.4697) -- (0.2700,0.4786) -- (0.2800,0.4883) -- (0.2900,0.5008) -- (0.3000,0.5123);
+\draw[red!75!black,very thick] (0.0000,0.0000) -- (0.0100,0.0356) -- (0.0200,0.0608) -- (0.0300,0.0831) -- (0.0400,0.1068) -- (0.0500,0.1261) -- (0.0600,0.1395) -- (0.0700,0.1573) -- (0.0800,0.1736) -- (0.0900,0.1840) -- (0.1000,0.1958) -- (0.1100,0.2047) -- (0.1200,0.2181) -- (0.1300,0.2270) -- (0.1400,0.2448) -- (0.1500,0.2582) -- (0.1600,0.2685) -- (0.1700,0.2730) -- (0.1800,0.2819) -- (0.1900,0.2908) -- (0.2000,0.3042) -- (0.2100,0.3175) -- (0.2200,0.3383) -- (0.2300,0.3487) -- (0.2400,0.3694) -- (0.2500,0.3813) -- (0.2600,0.3917) -- (0.2700,0.4095) -- (0.2800,0.4288) -- (0.2900,0.4377) -- (0.3000,0.4614);
+\node[anchor=west,blue!75!black] at (.175,.60) {\scriptsize Validation mean};
+\node[anchor=west,red!75!black] at (.175,.54) {\scriptsize Later test};
+\node[anchor=west,gray] at (.175,.48) {\scriptsize Random list};
+\end{tikzpicture}
+% END GENERATED GAINS FIGURE
+\caption{Cumulative gains: a shorter risk-ranked list finds more late orders than a random list. Test-period operating points are exploratory.}
+\label{fig:gains}
+\end{figure}
+
+\begin{table}[h]
+\centering\small
+\caption{Precision and recall at review capacities of 1--20\%. Validation values are means of five within-window results. Test precision includes 95\% order-bootstrap intervals; every test top-$k$ value is post hoc.}
+\label{tab:topk}
+\begin{tabular}{@{}rrrrr@{}}
+\toprule
+Share reviewed & Validation precision & Validation recall & Test precision (95\% interval) & Test recall \\
+\midrule
+1\% & 29.9\% & 2.8\% & 12.4\% (7.7--17.0\%) & 3.6\% \\
+5\% & 27.3\% & 12.7\% & 8.8\% (7.0--10.4\%) & 12.6\% \\
+10\% & 25.0\% & 22.9\% & 6.8\% (5.8--8.0\%) & 19.6\% \\
+20\% & 21.2\% & 38.8\% & 5.3\% (4.6--6.0\%) & 30.4\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+At 10\% capacity, the exploratory test list contains 1,937 orders and 132 late deliveries. Its 6.8\% precision is about twice the test late rate, but it still misses four in five late deliveries. If a review prevents a fraction $e$ of the late deliveries it identifies, the direct review cost would need to be below $0.068e$ times the cost of a late delivery just to break even against no review. We do not know $e$ or the costs from these data.
+
+A post-hoc error slice shows where that pooled list misses orders. In August it missed 334 of 393 late deliveries. Among routes with approximate distance at most 100 km, 288 orders were late, yet only four orders of any outcome entered the pooled top-10\% list and none of those four was late. Conversely, 860 of the 1,937 selected orders were on routes above 1,000 km. These are properties of this later cohort and global ranking, not evidence that a short route causes lateness or that a subgroup-specific rule has been validated (\path{experiments/phase2_consolidation/classification_error_slices.csv}).
+
+\section*{First-stage delivery-time regression}
+The numeric target is fractional days from purchase to customer delivery for the same delivered-order cohort. We specified the regression candidates and MAE-based selection rule before fitting any regression model (\texttt{docs/phase2\_regression\_spec.md}). Regression began with classification's final 20 purchase-time inputs; it did not repeat the classification feature ladder. The outcome-aware windows and later test boundary also match. We compared a training-mean and historical-route baseline, ordinary linear regression, ridge models, single trees and 200-tree forests; all learned preprocessing was fitted inside each training window. If models finished within 0.05 day of the lowest validation MAE, the simpler one won. The forest attained 5.763 days and ridge with penalty 100 attained 5.810, so the specified tie rule selected ridge. A log-target sensitivity worsened mean validation MAE to 6.061; residuals remained heavy-tailed and heteroscedastic. These diagnostics limit coefficient inference but do not change the MAE selection.
+
+\begin{table}[h]
+\centering\small
+\caption{Delivery-time errors using purchase-time inputs, in days. Validation is the mean of five separate windows; test is one later-period score from the selected ridge fit. The two test baselines use the same later cohort.}
+\label{tab:regression}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Approach & Validation MAE & Later test MAE & Later test note \\
+\midrule
+Training mean & 7.216 & 6.27 & Constant prediction \\
+Historical route & 6.155 & 5.21 & Checkout rule \\
+Ridge, penalty 100 (selected) & 5.810 & 5.001 & RMSE 6.415; $R^2=-0.179$ \\
+Best 200-tree forest & 5.763 & --- & Selection comparison only \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Ridge overpredicted the later period by 3.659 days on average. Its test MAE was 5.001 days versus 6.27 for the mean and 5.21 for route history; a pre-specified monthly refit reduced MAE only to 4.905. The negative test $R^2$ means even an after-the-fact test-period mean would explain more squared variation, despite ridge beating the training-based MAE baselines. In the test, error grew from 2.92 days for promises of at most 14 days to 6.92 for promises above 30 days, and from 2.69 days on routes at most 100 km to 7.50 above 1,000 km (post-hoc slices; \texttt{experiments/phase2\_consolidation/regression\_error\_slices.csv}). These are descriptive associations, not a diagnosis of the carrier's operational cause.
+The final ridge fit's training MAE was 4.392 days; the five-window mean was 5.810 and the later test was 5.001. Those rows represent different periods and fitting sets, so their ordering alone is not a learning-curve claim.
+
+\section*{Improving the forecast as information arrives}
+The initial ridge model can be scored when payment is approved using the purchase-time inputs above. After reviewing its initial result, we added the preceding 90 days' completed carrier-leg time for the route as a more current input. It reduced mean validation MAE from 5.810 to 5.679 days, improving all five windows; later-period MAE was 4.490 versus 5.001. We treat this as the stronger revised first-stage forecast, while retaining the original ridge result as its comparison. The later-period improvement is a retrospective comparison on data already examined.
+
+At carrier handover, actual purchase-to-handover time is known. An updated forecast adds it to the preceding 90-day mean carrier duration on the route. On the same eligible orders, validation MAE fell from 5.809 for the saved first-stage ridge to 5.304 days for the handover update; later-period MAE fell from 4.991 to 3.762 on 19,230 orders. This second prediction can support shipment follow-up and an updated arrival estimate. Its gain comes from information that was not available for the first decision.
+
+\section*{Why the fixed alert rule did not transfer}
+The preselected yes/no rule used the probability cutoff 0.0788, chosen to maximise Matthews correlation coefficient (MCC) on pooled validation predictions. This pools five models fitted at different times and late rates. The same numeric cutoff flagged 9.5\% of validation orders but 42.9\% of test orders. The final refit also assigned a higher mean risk in the test (9.82\%) than the observed late rate (3.48\%); validation predictions had the opposite pattern in every window (Table~\ref{tab:periods}). Figure~\ref{fig:calibration} shows the same mismatch within five equal-count score groups per period. The curves show that predicted probabilities are not well calibrated across periods. They do not establish whether changing order mix, prevalence, model refitting or another factor caused the shift.
+
+\begin{figure}[h]
+\centering
+% BEGIN GENERATED CALIBRATION FIGURE
+\begin{tikzpicture}[x=15cm,y=7.3cm]
+\begin{scope}[xshift=0cm]
+\draw[->] (0,0)--(.31,0) node[right] {\scriptsize Predicted};
+\draw[->] (0,0)--(0,.51) node[above] {\scriptsize Observed};
+\draw[dashed,gray] (0,0)--(.30,.30);
+\foreach \v in {.1,.2,.3} {\draw (\v,0)--(\v,-.009) node[below] {\tiny \v};}
+\foreach \v in {.1,.2,.3,.4,.5} {\draw (0,\v)--(-.006,\v) node[left] {\tiny \v};}
+\node[anchor=west] at (0,.55) {\small Validation windows};
+\draw[blue!75!black,thick] (0.0138,0.0118) -- (0.0215,0.0211) -- (0.0279,0.0388) -- (0.0365,0.0513) -- (0.0621,0.0809);
+\fill[blue!75!black] (0.0138,0.0118) circle[radius=.003];
+\fill[blue!75!black] (0.0215,0.0211) circle[radius=.003];
+\fill[blue!75!black] (0.0279,0.0388) circle[radius=.003];
+\fill[blue!75!black] (0.0365,0.0513) circle[radius=.003];
+\fill[blue!75!black] (0.0621,0.0809) circle[radius=.003];
+\draw[orange!85!black,thick] (0.0114,0.0598) -- (0.0191,0.0967) -- (0.0262,0.1197) -- (0.0357,0.1711) -- (0.0666,0.2441);
+\fill[orange!85!black] (0.0114,0.0598) circle[radius=.003];
+\fill[orange!85!black] (0.0191,0.0967) circle[radius=.003];
+\fill[orange!85!black] (0.0262,0.1197) circle[radius=.003];
+\fill[orange!85!black] (0.0357,0.1711) circle[radius=.003];
+\fill[orange!85!black] (0.0666,0.2441) circle[radius=.003];
+\draw[green!55!black,thick] (0.0092,0.0243) -- (0.0160,0.0329) -- (0.0218,0.0467) -- (0.0298,0.0599) -- (0.0565,0.0750);
+\fill[green!55!black] (0.0092,0.0243) circle[radius=.003];
+\fill[green!55!black] (0.0160,0.0329) circle[radius=.003];
+\fill[green!55!black] (0.0218,0.0467) circle[radius=.003];
+\fill[green!55!black] (0.0298,0.0599) circle[radius=.003];
+\fill[green!55!black] (0.0565,0.0750) circle[radius=.003];
+\draw[red!70!black,thick] (0.0132,0.0302) -- (0.0238,0.0474) -- (0.0334,0.0829) -- (0.0495,0.1079) -- (0.1069,0.2276);
+\fill[red!70!black] (0.0132,0.0302) circle[radius=.003];
+\fill[red!70!black] (0.0238,0.0474) circle[radius=.003];
+\fill[red!70!black] (0.0334,0.0829) circle[radius=.003];
+\fill[red!70!black] (0.0495,0.1079) circle[radius=.003];
+\fill[red!70!black] (0.1069,0.2276) circle[radius=.003];
+\draw[violet!80!black,thick] (0.0198,0.0671) -- (0.0353,0.1342) -- (0.0480,0.1757) -- (0.0676,0.2263) -- (0.1362,0.4336);
+\fill[violet!80!black] (0.0198,0.0671) circle[radius=.003];
+\fill[violet!80!black] (0.0353,0.1342) circle[radius=.003];
+\fill[violet!80!black] (0.0480,0.1757) circle[radius=.003];
+\fill[violet!80!black] (0.0676,0.2263) circle[radius=.003];
+\fill[violet!80!black] (0.1362,0.4336) circle[radius=.003];
+\draw[blue!75!black,thick] (0.1700,0.4700) -- (0.1900,0.4700);
+\node[anchor=west] at (0.1950,0.4700) {\tiny Window 1};
+\draw[orange!85!black,thick] (0.1700,0.4350) -- (0.1900,0.4350);
+\node[anchor=west] at (0.1950,0.4350) {\tiny Window 2};
+\draw[green!55!black,thick] (0.1700,0.4000) -- (0.1900,0.4000);
+\node[anchor=west] at (0.1950,0.4000) {\tiny Window 3};
+\draw[red!70!black,thick] (0.1700,0.3650) -- (0.1900,0.3650);
+\node[anchor=west] at (0.1950,0.3650) {\tiny Window 4};
+\draw[violet!80!black,thick] (0.1700,0.3300) -- (0.1900,0.3300);
+\node[anchor=west] at (0.1950,0.3300) {\tiny Window 5};
+\end{scope}
+\begin{scope}[xshift=6.4cm]
+\draw[->] (0,0)--(.31,0) node[right] {\scriptsize Predicted};
+\draw[->] (0,0)--(0,.51) node[above] {\scriptsize Observed};
+\draw[dashed,gray] (0,0)--(.30,.30);
+\foreach \v in {.1,.2,.3} {\draw (\v,0)--(\v,-.009) node[below] {\tiny \v};}
+\foreach \v in {.1,.2,.3,.4,.5} {\draw (0,\v)--(-.006,\v) node[left] {\tiny \v};}
+\node[anchor=west] at (0,.55) {\small Later test (exploratory)};
+\draw[red!75!black,very thick] (0.0169,0.0028) -- (0.0416,0.0214) -- (0.0681,0.0439) -- (0.1098,0.0529) -- (0.2548,0.0529);
+\fill[red!75!black] (0.0169,0.0028) circle[radius=.003];
+\fill[red!75!black] (0.0416,0.0214) circle[radius=.003];
+\fill[red!75!black] (0.0681,0.0439) circle[radius=.003];
+\fill[red!75!black] (0.1098,0.0529) circle[radius=.003];
+\fill[red!75!black] (0.2548,0.0529) circle[radius=.003];
+\end{scope}
+\end{tikzpicture}
+% END GENERATED CALIBRATION FIGURE
+\caption{Predicted risk versus observed late rate in five equal-count score groups per period. The dashed line means exact agreement. Test calibration is a post-hoc diagnostic.}
+\label{fig:calibration}
+\end{figure}
+
+\begin{table}[h]
+\centering\small
+\caption{Secondary yes/no alert results at the unchanged validation-selected cutoff of 0.0788. Validation alert metrics use the same predictions that selected the cutoff and are optimistic.}
+\label{tab:heldout}
+\begin{tabular}{@{}lrr@{}}
+\toprule
+Measure & Pooled validation & Later test \\
+\midrule
+Orders flagged & 3,600 (9.5\%) & 8,316 (42.9\%) \\
+True / false alerts & 1,145 / 2,455 & 434 / 7,882 \\
+Late orders missed & 2,909 & 240 \\
+Precision / recall & 31.8\% / 28.2\% & 5.2\% / 64.4\% \\
+F1 / MCC & 0.299 / 0.222 & 0.097 / 0.082 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+This cutoff is impractical for a small delivery operations team and should not trigger expensive intervention or customer warnings. Choosing a new cutoff from these test results would overfit to a period we have already seen. We therefore report the original cutoff unchanged and show the ranked-queue results as a retrospective illustration.
+
+\section*{Exploratory period and missing-outcome checks}
+The pooled test score hides large within-period differences (Table~\ref{tab:months}). June ranking was stronger than August ranking; August ROC-AUC was only 0.522, with an order-bootstrap interval spanning 0.5. The late rate also rose from 1.2\% in June to 6.2\% in August. These monthly results and intervals are post-hoc diagnostics, not new independent tests. In particular, the pooled ROC-AUC of 0.668 does not imply stable performance in every month.
+
+\begin{table}[h]
+\centering\scriptsize
+\caption{Post-hoc monthly test results. Parentheses give 95\% order-bootstrap intervals from 1,000 resamples per month. Precision is for each month's top 10\%.}
+\label{tab:months}
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule
+Purchase month & Late / orders & PR-AUC (interval) & PR-AUC / rate & ROC-AUC (interval) & Top-10\% precision (interval) \\
+\midrule
+Jun 2018 & 71 / 6,096 & 0.060 (0.035--0.113) & 5.14 & 0.761 (0.706--0.814) & 3.8\% (2.5--5.6\%) \\
+Jul 2018 & 208 / 6,156 & 0.063 (0.050--0.089) & 1.88 & 0.634 (0.595--0.673) & 7.8\% (5.7--9.9\%) \\
+Aug 2018 & 393 / 6,351 & 0.074 (0.062--0.096) & 1.20 & 0.522 (0.496--0.549) & 7.4\% (5.3--9.4\%) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+There are also 193 purchases from 26 May to 31 August still marked as in progress with no observed delivery: 3 in May, 46 in June, 74 in July and 70 in August. Their eventual delivery outcomes are unknown, so they cannot be assigned a late-delivery label or included in the delivered-only model evaluation. This missing-outcome pattern may affect the observed late rate, especially for recent purchases, but does not establish the cause or size of the PR-AUC drop. Cancelled and unavailable orders are outside this delivered-order question.
+
+Higher scores in public Olist notebooks are not directly comparable when they use a random split, a different late definition, or information recorded after the stated prediction point. In our own primary training period, a shuffled, stratified check gave logistic mean PR-AUC 0.303, compared with 0.200 for chronological validation. Mixing periods makes this particular task easier; it does not measure how the purchase-time model works on future purchases.
+
+\section*{Exploratory comparisons and their implications}
+The additional comparisons help explain the two decisions; Appendix~\ref{app:paths} gives each path's reason, result and role. Removing sparse 2016 orders barely changed validation. Fitting on only the preceding 180 days improved validation but worsened both outcomes on later approved orders, so we retained the full eligible fitting history. The recent carrier \emph{feature} in the forecast section is a different, better-supported change.
+
+A route-time-minus-promise risk rule lost in all five validation windows (mean PR-AUC 0.127 versus 0.200 for logistic), despite scoring 0.124 versus 0.065 on later orders; it remains a comparator.
+
+\clearpage
+\section*{Operational synthesis and limits}
+After payment approval, the delivery-time estimate can support workload planning and the risk ranking can direct internal seller checks. The initial models use information already available by then. The fixed probability alert should not drive customer warnings: it flagged 42.9\% of later orders with only 5.2\% precision. The simple route-versus-promise rule remains a comparator because it performed worse in validation. Recent carrier history improves the first duration estimate; at handover, observed seller processing supports a further update for eligible orders. The data do not show whether follow-up prevents delays or saves money.
+
+\begin{thebibliography}{9}\setlength{\itemsep}{0pt}
+\bibitem{hodson2022} Hodson, T. O. (2022). Root-mean-square error (RMSE) or mean absolute error (MAE): when to use them or not. \emph{Geoscientific Model Development}, 15, 5481--5487. \url{https://doi.org/10.5194/gmd-15-5481-2022}.
+\end{thebibliography}
+\section*{AI declaration}
+AI assistance was used to write and review code, audit numerical outputs, and draft prose. The team remains responsible for checking the source data, methods, computed results, citations and final submission.
+\appendix
+\section{Classification candidate grid}
+\label{app:grid}
+All rows use the final checkout feature set and the same five chronological validation windows. PR-AUC is the mean of the five window scores. The constant-risk baseline is included for reference; $C$ is inverse regularisation strength. The unweighted models were trained at the natural late-order rate.
+
+\begin{center}\small
+\begin{tabular}{@{}p{0.26\linewidth}p{0.44\linewidth}r@{}}
+\toprule
+Candidate & Settings & Mean PR-AUC \\
+\midrule
+Prior baseline & Training-fold late rate for every order & 0.1067 \\
+Logistic baseline & $C=1$, no class weighting & 0.1913 \\
+Logistic $C=0.1$ & Stronger regularisation, no class weighting & 0.2003 \\
+Logistic $C=10$ & Weaker regularisation, no class weighting & 0.1884 \\
+Logistic balanced & $C=1$, balanced class weights & 0.1872 \\
+Single tree baseline & No depth or leaf-size limit & 0.1107 \\
+Single tree, depth 6 & Maximum depth 6; at least 50 orders per leaf & 0.1495 \\
+Single tree, depth 12 & Maximum depth 12; at least 20 per leaf & 0.1414 \\
+Single tree, balanced & Depth 12; leaf 20; balanced weights & 0.1392 \\
+Forest baseline & 200 trees; unrestricted depth; leaf 1 & 0.1808 \\
+Forest, depth 12 & 200 trees; maximum depth 12; leaf 20 & 0.1999 \\
+Forest, leaf 20 & 200 trees; unrestricted depth; leaf 20 & 0.1985 \\
+Forest, balanced & 200 trees; unrestricted depth; leaf 20; balanced subsample weights & 0.1967 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Exploratory paths and decisions}
+\label{app:paths}
+\footnotesize
+Each path gives its reason, result and decision. Validation values average five chronological windows; the later period starts 26 May 2018. Full tables: \path{docs/phase2_evidence_index.md}.
+
+\textbf{A simpler checkout risk signal.} A late delivery should be more likely when past route time exceeds the promised time, so we ranked orders by that gap. It lost to logistic regression in all five validation windows (mean PR-AUC 0.127 versus 0.200), yet won in the later period (0.124 versus 0.065). Within August, it scored 0.159 versus 0.074; June favoured logistic (0.039 versus 0.060). A classifier using predicted delivery time minus promise tested the same idea with a fitted duration estimate: validation PR-AUC was 0.136, later-period PR-AUC 0.124, and monthly refitting reduced the latter to 0.111. These results are consistent with a changing relationship with the promise; neither path gives a consistent validation gain to justify replacing the main checkout model.
+
+\textbf{How far back to fit the models.} Older orders may reflect different promise rules, so we refitted the same logistic and ridge models on shorter eligible histories. Removing all 2016 purchases changed mean validation PR-AUC from 0.2003 to 0.1998 and MAE from 5.810 to 5.812 days: the sparse opening months are not driving the original results. A trailing 180-day fit scored 0.2080 PR-AUC and 5.678 days MAE in validation, ahead of the all-history fit in four and five windows respectively. On the later approved cohort, however, it fell to 0.0613 PR-AUC and 5.520 days MAE, versus 0.0651 and 5.005 with all eligible history. We retain the original fitting horizon. The runnable comparison and per-window scores are in \path{experiments/phase2_training_window_audit.py} and its output directory.
+
+\textbf{More recent delivery history as an input.} Even while the model fits on all eligible orders, a recent route statistic can describe current carrier performance. Using only completed deliveries from the preceding 90 days on a seller-state/customer-state carrier leg reduced ridge's validation MAE from 5.810 to 5.679 days, improving all five windows; later-period MAE fell from 5.001 to 4.490. A 30-day total-route history also helped, so the carrier-leg split is not the only useful representation. We include the recent-history finding in the main delivery-time story, with that qualification.
+
+\textbf{Approval and carrier handover.} An internal order review could start after payment approval. Among delivered orders with an approval timestamp, the median purchase-to-approval time was 20.6 minutes, but 25\% took more than 14.5 hours. The approval-stage risk audit added little ranking value: validation PR-AUC was 0.204 versus 0.200 at checkout, and later-period PR-AUC was 0.067 versus 0.065, on slightly different eligible cohorts. At handover, the analyst knows how long seller processing actually took and can estimate the remaining carrier leg separately. On the same 19,230 eligible later orders, elapsed seller time plus preceding 90-day route-specific carrier history reduced MAE from 4.991 to 3.762 days; the matched validation comparison was 5.809 to 5.304. A 30-day variant reached 2.916 days in the later period but had worse validation MAE (5.503). We use the 90-day result to support a second, later prediction point in the main story.
+
+\textbf{Availability of checkout fields and definition of lateness.} The stored promise may not exactly match what a buyer saw at checkout. Removing it and its derived slack reduced validation PR-AUC from 0.200 to 0.175 and later-period PR-AUC from 0.065 to 0.033; the main story therefore states this assumption explicitly. Payment method and instalments were also checked because their submission timing is uncertain; removing both changed validation PR-AUC by less than 0.001. Finally, treating delivery later on the promised date as late would reclassify 347 later orders and change the classifier's ROC-AUC from 0.668 to 0.660. We keep the calendar-date target because the promise is a date, and the alternative label does not account for the weak later ranking.
+
+\textbf{Changing marketplace conditions and model flexibility.} Promise lengths and order mix changed across periods, which could explain the ranking drop. Adding promise-regime features reduced validation PR-AUC from 0.200 to 0.196; marketplace-climate features reduced it to 0.191. A shallow XGBoost classifier tested whether nonlinear interactions were missing: it reached 0.2046 versus logistic regression's 0.2003 and won three of five windows. These results support discussing period change, but provide no stable reason to replace the reported checkout model.
+
+\textbf{Other ways to fit delivery time.} Long routes might deserve more weight in training, so route-weighted ridge was compared with ordinary ridge; validation MAE changed only from 5.810 to 5.796 days. A log-duration target was worse (6.061 days). Clipping the few negative duration predictions changed MAE by less than 0.001 day. Removing the redundant promise-slack feature left validation MAE virtually unchanged (5.809 versus 5.810) and makes coefficient interpretation simpler. These checks do not materially change the main duration result.
+
+\textbf{Setting a promised date.} A mean delivery-time estimate may set an unreliable customer promise, so we tested 90th-percentile models. In validation, Olist's promise covered 89.3\% of deliveries (pinball loss 2.171); linear quantile covered 81.1\% (2.507) and boosted quantile 78.3\% (2.358). The boosted model had lower later-period loss (1.422 versus 1.528), but validation did not support adoption.
+\normalsize
+\end{document}

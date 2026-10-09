@@ -1,0 +1,2 @@
+period,variant,orders,late_rate,ap,roc_auc,precision_at_10pct
+final_fit_in_sample,frozen_logistic,75099,0.0710262453561299,0.19372923560921856,0.7321957148390206,0.2274300932090546

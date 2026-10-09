@@ -1,0 +1,23 @@
+{
+  "status": "post_hoc_after_checkout_test_opened",
+  "train_orders": 75099,
+  "test_orders": 19363,
+  "prediction_point": "checkout unless separately marked handover",
+  "quantile_features": [
+    "route_typical_days",
+    "seller_ship_days",
+    "distance_km",
+    "same_state",
+    "purchase_hour",
+    "n_items",
+    "n_products",
+    "n_sellers",
+    "total_price",
+    "total_freight",
+    "total_weight_g",
+    "total_volume_cm3",
+    "max_installments"
+  ],
+  "quantile_model_scope": "reduced numeric-only comparison; exploratory",
+  "frozen_models_unchanged": true
+}

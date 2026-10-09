@@ -6,7 +6,7 @@ Phase / Milestone 2: Analytics Implementation - Problem Definition, Model Buildi
 - `app.py`, `dashboard_data.py`, `geomapper.py`, and `map_layers/`: the shared Phase 1 dashboard and map code.
 - `data/`: original Olist tables and the prepared, item-level Phase 1 dataset.
 - `notebooks/phase1/`: Phase 1 exploratory notebooks and historical EDA snippets.
-- `notebooks/phase2/`: new modelling notebooks as they are developed.
+- `notebooks/phase2/`: the data-preparation and classification notebooks; regression and later diagnostics are reproducible Python scripts.
 - `notebooks/phase2/data_prep.ipynb`: shared Phase 2 data preparation, evaluation rationale, and split definitions.
 - `ref/`: project brief, submitted Phase 1 report, and feedback.
 - `tests/`: checks for the dashboard's delivery and review rules.
@@ -25,9 +25,9 @@ For modelling, build a fresh **one-row-per-order** table from the raw Olist CSVs
 
 The [Phase 2 data preparation notebook](notebooks/phase2/data_prep.ipynb) explains both evaluation approaches and saves their partitions. The primary test holds out orders purchased on or after 2018-05-26, about the latest 20% by purchase date, to assess performance on a later period. Primary training uses earlier orders whose outcomes were known by that date, with five expanding-time validation windows. The teammate's seeded, stratified random 80/20 split is retained as a separate secondary benchmark for orders drawn from the same historical mix. Both tasks use the same partitions within each experiment. Run the notebook from the repository root or its own folder; its setup locates the root `data/` directory.
 
-Record business scope, checkout-time feature assumptions, preprocessing choices, and remaining checks in [the Phase 2 assumptions log](docs/phase2_assumptions.md) for the final report.
+The [Phase 2 assumptions log](docs/phase2_assumptions.md) records business scope, checkout-time feature assumptions, and preprocessing choices.
 
-For the current classification work, frozen decisions, completed evaluation, post hoc diagnostics, and reproducible scripts, start with the [Phase 2 classification handover](docs/phase2_classification_handover.md).
+For the completed Phase 2 story, start with the [joint report PDF](reports/Team6_Phase2_IT5006_AY2627Sem1.pdf), its [editable source](reports/phase2_joint_report.tex), and the [evidence index](docs/phase2_evidence_index.md). The [older classification handover](docs/phase2_classification_handover.md) preserves the development history; its dated next-step lists are superseded by the evidence index.
 
 Deadline: Sunday, 11 October 2026 at 23:59 (end of Week 8)
 Weight: 40%

@@ -1,6 +1,6 @@
 # Phase 2 modelling notebooks
 
-Start with [data_prep.ipynb](data_prep.ipynb). It builds the one-row-per-delivered-order table from the raw Olist tables, explains the targets and the chronological validation design, and saves the shared [feature contract](../../data/phase2_feature_spec.json). The current contract has 20 candidate inputs. It excludes `purchase_month` as a model feature and adds historical route delivery time, promise slack and seller handover speed; all three use events completed before the current purchase. The prepared order table remains shared with the planned regression task.
+Start with [data_prep.ipynb](data_prep.ipynb). It builds the one-row-per-delivered-order table from the raw Olist tables, explains the targets and the chronological validation design, and saves the shared [feature contract](../../data/phase2_feature_spec.json). The current contract has 20 candidate inputs. It excludes `purchase_month` as a model feature and adds historical route delivery time, promise slack and seller handover speed; all three use events completed before the current purchase. The prepared order table is shared by the completed regression task.
 
 [classification.ipynb](classification.ipynb) contains and runs the classification experiment in visible cells: preprocessing pipelines, chronological validation folds, the declared model grid, the feature ladder, diagnostics, interpretation and risk ranking. It explains each step before its code and saves the resulting output in the notebook. [`phase2_classification.py`](../../phase2_classification.py) is the independent command-line validation reference; point-in-time historical features are implemented in [`phase2_features.py`](../../phase2_features.py). The notebook compares its live validation results with the saved reference files after fitting. Once the model and alert cutoff were fixed, its final section fitted the model on eligible primary training orders and scored the later test period. The opening sections explain the prepared input and feature rationale before modelling; their signal plots use earlier training snapshots, while the incremental ladder measures validation gains. The data-preparation notebook contains the linked exclusions table.
 
@@ -10,9 +10,9 @@ To rerun the notebook from a fresh kernel, open it from the repository root or t
 
 1. Shared preparation and feature contract: complete.
 2. Classification validation review and the frozen-model later-period test: complete. See the [classification handover](../../docs/phase2_classification_handover.md) for the report and subsequent post hoc diagnostics.
-3. Delivery-time regression: next.
+3. Delivery-time regression: complete in [phase2_regression.py](../../phase2_regression.py), with saved selection and test results under `results/phase2/regression/`.
 4. Classification voting comparison: complete; its small validation gain did not change the selected checkout model.
-5. Final joint report: integrate the completed classification evaluation with the teammates' regression work.
+5. Joint report and completed exploratory checks: see the [evidence index](../../docs/phase2_evidence_index.md) and [joint report](../../reports/phase2_joint_report.tex).
 
 ## Changes from the original data-preparation notebook
 

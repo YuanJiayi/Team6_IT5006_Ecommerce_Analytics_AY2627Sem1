@@ -48,4 +48,4 @@ This design was motivated by the version 1 test result, so its test score is inf
 
 ## Change log
 
-None yet.
+No changes to the original candidate grid or selection rule. The selected ridge model, its once-scored later-period test, and the completed classification version 2 comparison are documented in the [joint report](../reports/phase2_joint_report.tex) and [evidence index](phase2_evidence_index.md). Subsequent quantile, weighted, recent-history and reporting checks are identified as exploratory there.

@@ -1,5 +1,7 @@
 # Phase 2 classification handover
 
+**Historical handover.** The dated next-step lists below record the state on 8 October. The [current joint report](../reports/phase2_joint_report.tex) and [evidence index](phase2_evidence_index.md) supersede them. Check Git status for live checkout state.
+
 ## Latest handover: 8 October 2026, after the recent-history audit (resume here)
 
 The user paused report work to diagnose why checkout delivery-time regression overpredicted the later period. The frozen classification and regression models, their feature contract, and their original test scores were not changed. Current checkout: `josh`, four local commits ahead of the last fetched `origin/josh`, with only the new audit script, its outputs/notes, this handover edit, and its focused test uncommitted. Check `git status` again before continuing; no push was requested.
@@ -45,7 +47,7 @@ At carrier handover, a simple update—**observed purchase-to-handover time plus
 1. [Project brief](../ref/IT5006%20Project%20Description%20-%20AY%202026_27%20Semester%201.pdf), [submitted Phase 1 report](../ref/Team6_Phase1_IT5006_AY2627Sem1-2.pdf), and [Phase 1 feedback](../ref/Phase%201%20Report%20feedback.txt) for the assignment and its context. The [Phase 1 validation audit](phase1_validation.md) records corrections made after submission.
 2. [Phase 2 assumptions](phase2_assumptions.md) for the business question, prediction timing, target, feature availability, and split decisions. The [data preparation notebook](../notebooks/phase2/data_prep.ipynb) builds the prepared data; the exact modelling inputs and split settings are in [phase2_feature_spec.json](../data/phase2_feature_spec.json).
 3. [Classification notebook](../notebooks/phase2/classification.ipynb) for the reader-facing, executable modelling story. [phase2_classification.py](../phase2_classification.py) is its independent validation reference; [phase2_features.py](../phase2_features.py) builds point-in-time features. The original validation files are in [results/phase2/classification/](../results/phase2/classification/).
-4. [Classification review](phase2_classification_review.md), then the [current classification report draft](../reports/phase2_classification_draft.tex) and [report changelog](../reports/phase2_report_changelog.md). The report evidence generator is [phase2_report_evidence.py](../reports/phase2_report_evidence.py). Regression results now exist, but they have not been integrated into this classification draft.
+4. [Classification review](phase2_classification_review.md), then the [current joint report](../reports/phase2_joint_report.tex) and [report changelog](../reports/phase2_report_changelog.md). The report evidence generator is [phase2_report_evidence.py](../reports/phase2_report_evidence.py).
 
 ## What is fixed, and what has already been evaluated
 
