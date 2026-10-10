@@ -1,19 +1,17 @@
 {
-  "selected": "tree_depth6",
-  "reason": "engine model chosen with the adaptive buffer (adaptive_selection.json): tree_depth6",
-  "fixed_buffer_rule_choice": "ridge_1",
-  "fixed_buffer_rule_reason": "forest_leaf20 has the lowest mean promise at 95% on time (29.454 days); ridge_1 (29.698) is 0.244 days longer, within one standard error (0.248) of the paired gap, and simpler, so it is chosen",
-  "fixed_level": 0.975,
-  "mean_validation_on_time_at_fixed_level": 0.9509275095382186,
+  "selected": "ridge_a1000",
+  "reason": "engine model chosen with the adaptive buffer (adaptive_selection.json): ridge_a1000",
+  "fixed_level": 0.9725,
+  "mean_validation_on_time_at_fixed_level": 0.9527430601236679,
   "route_baseline_fixed_level": 0.9725,
   "route_baseline_mean_validation_on_time": 0.9500328904091567,
   "validation_on_time_by_window": {
-    "tree_depth6": {
-      "0": 0.95974,
-      "1": 0.88344,
-      "2": 0.95829,
-      "3": 0.98106,
-      "4": 0.97211
+    "ridge_a1000": {
+      "0": 0.96303,
+      "1": 0.89159,
+      "2": 0.95619,
+      "3": 0.98145,
+      "4": 0.97145
     },
     "route_baseline": {
       "0": 0.96908,

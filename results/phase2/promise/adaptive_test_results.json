@@ -1,15 +1,17 @@
 {
   "engine": {
-    "gamma": 0.05,
-    "mean_promise": 17.275009037855703,
-    "median_promise": 16.0,
-    "on_time": 0.9541393379125136
+    "gamma": 0.0,
+    "target": 0.9710008517887563,
+    "mean_promise": 24.514073232453647,
+    "median_promise": 24.0,
+    "on_time": 0.98455817796829
   },
   "route": {
-    "gamma": 0.05,
-    "mean_promise": 18.864535454216806,
-    "median_promise": 17.0,
-    "on_time": 0.9601301451221401
+    "gamma": 0.0,
+    "target": 0.971986921529175,
+    "mean_promise": 27.376026442183544,
+    "median_promise": 26.0,
+    "on_time": 0.9898259567215824
   },
   "olist": {
     "mean_promise": 22.05030212260497,
@@ -17,8 +19,8 @@
     "on_time": 0.9651913443164799
   },
   "gate": {
-    "engine_shorter_than_olist": true,
-    "engine_on_time_at_least_olist": false,
+    "engine_shorter_than_olist": false,
+    "engine_on_time_at_least_olist": true,
     "engine_shorter_than_route": true
   }
 }

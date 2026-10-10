@@ -1,35 +1,77 @@
 # Phase 2 handoff (10 October 2026)
 
-## RESUME HERE (work in progress, 10 October 2026)
+## RESUME HERE (10 October 2026, evening)
 
-**State:** the code for the tuned two-stage selection is written and unit-tested (68 tests pass), but the **full runs have not been done**. Everything under `results/phase2/` and the numbers in `reports/phase2_report.tex` are still from the previous selection (promise engine `tree_depth6`; classifier `forest_leaf20`) and will change.
+**Read this section first.** Everything under "History" below describes the *previous* selection (tree_depth6 / forest_leaf20) and its numbers are stale. Keep it only as history.
 
-**Agreed design (approved by the user; do not change without asking):**
-- Families: Linear, and Tree-based (single tree, random forest, gradient boosting = `HistGradientBoosting*`), the same for both models (brief: 2–3 families, reused across tasks).
-- Stage 1 (tuning): within each group, the configuration with the best mean score over the five temporal validation windows.
-- Stage 2 (selection): line-up = plain linear, tuned linear, plain tree, tuned tree, tuned forest, tuned boosting; paired one-standard-error rule (simplest entry within 1 SE of the best). Shared code: `phase2_selection.py`.
-- Promise engine score: mean promise at exactly 95% mean validation on-time, each configuration tuned with the adaptive buffer (γ grid × on-time target 0.85–0.98, `matched_scores`). MAE/RMSE/R² for every configuration in `forecast_metrics_by_window.csv`. Route average + buffer is a reference, not a candidate.
-- Classifier score: mean validation PR-AUC. Operating share, slack-rule bootstrap, checkout variant unchanged.
-- Grids are in `phase2_promise.py` and `phase2_handover_classifier.py` (`LINEAR/LOGISTIC`, `TREE`, `FOREST`, `BOOST`, `GROUPS`).
-- Fixed, not reopened: features, target, cohort, splits, 95% target, 5:1 benefit ratio.
+**Deadline:** Phase 2, 11 October 2026, 23:59. Brief: `ref/IT5006 Project Description - AY 2026_27 Semester 1.pdf` (Phase 2 pp. 9–12, marking p. 16).
 
-**Next steps, in order:**
-1. Smoke runs (one config per group, a few minutes each), to a scratch folder:
-   `it5006-proj/bin/python phase2_promise.py --smoke --out /tmp/smoke_promise` and
-   `it5006-proj/bin/python phase2_handover_classifier.py --smoke --out /tmp/smoke_handover`. Check they finish and the JSON outputs look right.
-2. Full runs, one after the other (2-core machine: ~1.5 h promise, ~40 min classifier):
-   `it5006-proj/bin/python phase2_promise.py` then `it5006-proj/bin/python phase2_handover_classifier.py`.
-3. Update `reports/phase2_final_evidence.py` for the new outputs (`adaptive_selection.json` now has `tuned`, `lineup`, `stage2`, `matched`; promise `validation_summary.csv` now holds only the chosen model and baselines, so MAE/RMSE/R² for all configs come from `forecast_metrics_by_window.csv`; classifier `selection.json` has `tuned`/`stage2`). Rerun it.
-4. Rewrite the model sections of `reports/phase2_report.tex`: tuning grids, baseline-vs-tuned table per group, the one-SE line-up, an appendix table of every configuration, and the new numbers. Frame the regression criterion as coverage (on-time %) and interval width (promise length). Keep the explicit "why not MAE" paragraph.
-5. Business framing (from a reviewer, agreed): tie results to bad reviews (62% of late orders get 1–2 stars vs 9% on time) and be honest that the repeat-purchase link is weak (2.5% vs 3.0%) and that conversion cannot be measured in this data (cite Salari et al. 2022). Do not reuse the old "4 days sooner at same reliability" headline unless the new results support it.
-6. Commit and push. The report must still be compiled online (no LaTeX locally).
+### State
+- The tuned two-stage selection has run end to end. Smoke runs and full runs finished cleanly; 68 tests pass. New outputs are in `results/phase2/handover/` and `results/phase2/promise/` (new files: `adaptive_matched.csv`, `adaptive_validation_grid.csv`, `forecast_metrics_by_window.csv`).
+- On an 8-core Mac the classifier took 23 min and the promise engine about 62 min; they can run in parallel.
+- **Not done:** `reports/phase2_final_evidence.py` is not updated for the new outputs, so `reports/generated/numbers.tex` and every number in `reports/phase2_report.tex` are still from the previous selection. The report text has not been rewritten.
 
-**Not yet verified:** the smoke run was stopped before finishing on the original 2-core machine (the forest fit was slow), so the new pipelines have not run end to end yet. Do step 1 before step 2. On a machine with more cores, run the two full scripts in parallel (two terminals); the adaptive buffer loop is single-threaded, so it dominates the promise run time.
+### Design (agreed with the user; do not change without asking)
+- Families: Linear and Tree-based (single tree, random forest, gradient boosting), the same for both models.
+- Stage 1: within each group (linear, tree, forest, boost) keep the configuration with the best mean over the five temporal validation windows.
+- Stage 2: line-up = plain linear, tuned linear, plain tree, tuned tree, tuned forest, tuned boosting; paired one-standard-error rule (simplest entry within 1 SE of the best). Simplicity order: linear < tree < forest/boosting.
+- Promise engine score: mean promise at exactly 95% mean validation on-time, each configuration tuned over step size γ (0 = fixed level) × on-time target. Classifier score: mean validation PR-AUC.
+- Fixed: features, target, cohort, splits, 95% target, 5:1 benefit ratio.
 
-**User preferences for this work:** avoid repeated work, so settle the design before running; everything must be defensible and aligned with the course brief (`ref/IT5006 Project Description - AY 2026_27 Semester 1.pdf`, Phase 2 on pp. 9–12, marking on p. 16). Phase 2 deadline: 11 October 2026, 23:59. The user asked that the report not contain a disclosure about when selection rules changed.
+### Results
+**Late warning (classifier): tuned logistic regression (C = 0.01).**
+- Validation PR-AUC: forest_l50_sqrt 0.369 (best), logistic_c0.01 0.367 (gap 0.002, SE 0.0095, so about 0.2 SE: chosen as simplest), boosting 0.354, tuned tree 0.308, plain logistic 0.343, plain tree 0.137. Checkout variant: logistic, PR-AUC 0.21 (vs 0.37 at handover, both validation).
+- Test (late rate 3.5%, action share 14%): PR-AUC 0.23, ROC-AUC 0.82, precision 11.8%, recall 47%, net benefit negative. Random PR-AUC = 0.035.
+- Validation → test PR-AUC drop (0.37 → 0.23) is mainly the late rate: per-window PR-AUC tracks lateness (W1 4.1% late → 0.33; W3 4.8% → 0.26; W5 20.7% → 0.47), ROC-AUC rose 0.77 → 0.82, and lift over random went 3.4× → 6.6×.
+- Top permutation importance is now `handover_days` (0.130), then `remaining_slack` (0.085).
+- Slack rule on test: PR-AUC 0.52 (beats the model). On validation the model beats it by +0.039 (CI 0.029–0.048).
+- For reference only: the previous forest scored test PR-AUC 0.43. Other configurations were **not** scored on test.
 
-**Environment:** `python -m venv it5006-proj && it5006-proj/bin/pip install -r requirements.txt`; tests: `it5006-proj/bin/python -m unittest discover tests`.
+**Promise engine: ridge (α = 1000) with a fixed coverage level (γ = 0).**
+- γ = 0 was best for **all 31 configurations**: at matched 95% validation on-time, adaptive buffers give longer promises (ridge: γ 0 → 30.9 days, 0.002 → 32.5, 0.01 → 37.3, 0.05 → 35.7).
+- Validation at 95%: ridge_a1000 31.18 days (best), forest +0.22 (SE 0.15), plain linear +0.27 (SE 0.21), boosting +0.28 (SE 0.36, within 1 SE but more complex), tuned tree +1.06, plain tree 46.9. Route average + same buffer 31.79 (reference, not a candidate). Selected level ≈ 0.971.
+- Test: engine 24.5 days, 98.5% on time; Olist 22.05 days, 96.5%; route + buffer 27.4 days, 99.0%. Monthly mean promise at the same level: May 32, Jun 27, Jul 25, Aug 21 days. Olist fell to 93.8% on time in August (15.8-day promises); engine 98.2% (20.6 days).
+- Matched to Olist's test on-time (post hoc, uses test outcomes to set the level): engine 18.9 days, 3.1 shorter than Olist; route average 18.8. So on test the gain comes from the calibrated buffer, not the ML forecast.
 
+### Why the earlier "adaptive buffer" story fell apart
+- The old headline (17.3 vs 22.1 days on test) came from the calm test period, where an adaptive buffer trims promises. On validation the old adaptive engine averaged 40 days vs Olist's 25 (it overreacted after Black Friday). The new matched comparison on validation exposes this.
+- Lag has two sources in `phase2_promise.py`: (1) calibration rows are purchased 45–90 days before the day and already delivered (a newer window would be biased toward fast deliveries); (2) the adaptive feedback for a promise arrives only on its due date, about 3–4 weeks after purchase.
+- "Fixed" is only the coverage level. The buffer in days is recalculated daily from the rolling calibration window, so it still tracks conditions, just slowly.
+- Adaptive conformal inference (Gibbs & Candès 2021) is a research method; there is no evidence here that it is an industry standard. Quantile-of-forecast-error promising (Salari et al. 2022, JD.com) is published retail practice, and that is what the fixed-level buffer does. The Phase 1 literature review does not mention ACI or the one-SE rule.
+
+### Decisions agreed with the user today
+1. Keep the one-SE rule and the chosen models; do not change the selection rule after seeing test (that would be test-set selection).
+2. Defend the classifier's validation → test drop with the late-rate argument and ROC-AUC.
+3. The remaining-slack rule is not a baseline. Keep it as a short limitation (the user leaned this way; confirm).
+4. Cite the one-SE rule as ISLR (James, Witten, Hastie & Tibshirani, *An Introduction to Statistical Learning*, Sec. 6.1.3, p. 214, verified from the PDF). The current ESL Sec. 7.10 citation is **unverified**. Say "standard in statistical learning" (glmnet's default `lambda.1se`, verified), not "industry standard". State two caveats: we apply it across model types (our simplicity order is a judgment), and the SE comes from 5 non-independent windows. Add: "the gap is about a fifth of its standard error, so the choice is not sensitive to the tie-breaking rule."
+
+### OPEN DECISION (the user is asking a teammate to review this)
+How to present the promise engine. Options:
+- **A (recommended).** Fixed coverage level with a daily rolling-recalibrated buffer is the chosen method; adaptive is a tested alternative that lost on validation because of feedback lag. Deployment: daily forecast + buffer; monthly review of on-time against 95% and of the level; analyst raises the level ahead of known peaks (data lags about 6 weeks); late-warning list at handover as the second layer. Pitch: more reliable than Olist on test (98.5% vs 96.5%, and 98.2% vs 93.8% in August) at 2.5 days longer; the level is a reliability-vs-length dial; tie to reviews (62% of late orders get 1–2 stars vs 9%). Lag reduction goes under future work.
+- **B.** Try to reduce the lag tonight (newer calibration window with a censoring correction; the late warning as a leading signal; multi-γ ACI variants). Costs: redesign plus a ~1 h rerun, and it would be designed after seeing test results.
+
+### Report: every section needs checking, not just the model sections
+- Executive summary: rewrite (old models, old 17.3 vs 22.05 headline).
+- Business problem: add the review-led framing; honest about repeat purchase (2.5% vs 3.0%) and that conversion cannot be measured (cite Salari et al.). **Fix an existing error:** it compares checkout validation PR-AUC (`\CheckoutPR`) with handover *test* PR-AUC (`\ClsTestPR`). Compare validation with validation (0.21 vs 0.37).
+- Data section: mostly unchanged; check the Figure 1 caption (buffer line).
+- Model 1 and Model 2: full rewrite; tuning grids, baseline-vs-tuned per group, the one-SE line-up, appendix table of every configuration. The old line "the model is essentially reading how much of the promise has been used" no longer matches (top input is `handover_days`).
+- Limitations: update the buffer and peak claims; add the one-SE caveats; the classifier is trained against Olist's promise, not the engine's (linking them is a Phase 3 simulation).
+- References: add ISLR; drop unused ones.
+- AI declaration: the placeholder must be completed by the team.
+- Length: 6–8 pages main body; the full configuration table goes in the appendix.
+
+### Unchanged data facts (verified against `reports/generated/numbers.tex` and `results/phase2/final/supporting_facts.csv`)
+96,470 delivered orders; handover cohort 96,272 (198 excluded); test 19,363 orders; late share about 4% normal, 14% Black Friday, 21% Feb–Mar 2018, 3.5% test; bad review 62% late vs 9% on time (95,824 rated orders); carrier leg 85% of delivery-time variance; repeat purchase 2.5% after late vs 3.0% after on time (3.0% of 93,350 customers ever reorder).
+
+### Next steps
+1. Settle the open decision with the user.
+2. Update `reports/phase2_final_evidence.py` for the new outputs (`adaptive_selection.json`: `tuned`, `lineup`, `stage2`, `matched`; promise MAE/RMSE/R² from `forecast_metrics_by_window.csv`; classifier `selection.json`: `tuned`, `stage2`), rerun it.
+3. Rewrite the report as above, then reread it end to end against the regenerated numbers.
+4. Commit and push; the report is compiled online (no local LaTeX).
+
+**User preferences:** settle the design before running; everything defensible and aligned with the brief; no report disclosure about when selection rules changed (user's request).
+
+## History (previous selection; numbers below are stale)
 
 Status of branch `phase2-final`, for the next agent. The design is in `docs/phase2_final_spec.md`. Course requirements are in `ref/IT5006 Project Description - AY 2026_27 Semester 1.pdf`: Phase 2 on pp. 9–12, marking on p. 16.
 
