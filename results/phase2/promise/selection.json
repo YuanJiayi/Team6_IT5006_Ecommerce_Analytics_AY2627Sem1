@@ -1,0 +1,29 @@
+{
+  "selected": "forest_leaf20",
+  "reason": "forest_leaf20 has the lowest mean promise at 95% on time (29.454 days) and is the simplest within 0.1 day",
+  "fixed_level": 0.9775,
+  "mean_validation_on_time_at_fixed_level": 0.950874884883568,
+  "route_baseline_fixed_level": 0.9725,
+  "route_baseline_mean_validation_on_time": 0.9500328904091567,
+  "validation_on_time_by_window": {
+    "forest_leaf20": {
+      "0": 0.96093,
+      "1": 0.88423,
+      "2": 0.95737,
+      "3": 0.97987,
+      "4": 0.97198
+    },
+    "route_baseline": {
+      "0": 0.96908,
+      "1": 0.88515,
+      "2": 0.95395,
+      "3": 0.97816,
+      "4": 0.96382
+    }
+  },
+  "level_grid": [
+    0.8,
+    0.995,
+    0.0024999999999999467
+  ]
+}

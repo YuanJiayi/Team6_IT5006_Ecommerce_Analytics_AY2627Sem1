@@ -1,0 +1,33 @@
+{
+  "selected": {
+    "mean_promise": 27.26845013685896,
+    "median_promise": 26.0,
+    "on_time": 0.9910654340752982,
+    "mean_buffer": 14.477753593270062,
+    "orders": 19363
+  },
+  "route_baseline": {
+    "mean_promise": 27.502143262924132,
+    "median_promise": 26.0,
+    "on_time": 0.9899292465010587,
+    "mean_buffer": 15.063998024223174,
+    "orders": 19363
+  },
+  "olist": {
+    "mean_promise": 22.05030212260497,
+    "median_promise": 21.0,
+    "on_time": 0.9651913443164799
+  },
+  "matched_reliability_mean_promise": {
+    "selected": 17.710722216893785,
+    "route_baseline": 18.812683984919694,
+    "olist": 22.05030212260497,
+    "olist_on_time": 0.9651913443164799
+  },
+  "gate_1": {
+    "selected_beats_route_on_validation_promise_at_95": true,
+    "validation_gap_days": 0.8046846684098234,
+    "test_matched_selected_shorter_than_olist": true,
+    "test_matched_gap_days": 4.339579905711183
+  }
+}

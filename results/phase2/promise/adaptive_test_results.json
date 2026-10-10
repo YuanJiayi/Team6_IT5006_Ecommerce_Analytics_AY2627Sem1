@@ -1,0 +1,24 @@
+{
+  "engine": {
+    "gamma": 0.05,
+    "mean_promise": 17.793781955275527,
+    "median_promise": 17.0,
+    "on_time": 0.9629189691680008
+  },
+  "route": {
+    "gamma": 0.05,
+    "mean_promise": 18.864535454216806,
+    "median_promise": 17.0,
+    "on_time": 0.9601301451221401
+  },
+  "olist": {
+    "mean_promise": 22.05030212260497,
+    "median_promise": 21.0,
+    "on_time": 0.9651913443164799
+  },
+  "gate": {
+    "engine_shorter_than_olist": true,
+    "engine_on_time_at_least_olist": false,
+    "engine_shorter_than_route": true
+  }
+}
