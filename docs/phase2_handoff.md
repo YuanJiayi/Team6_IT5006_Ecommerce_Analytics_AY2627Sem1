@@ -23,44 +23,53 @@ The regression is now **Pratik's two-stage delivery-time estimate** (checkout es
 - Pratik's current selection uses a 0.05-day MAE tie margin (`TIE_MARGIN_DAYS`) and a fixed `SIMPLICITY` list, not our one-SE rule, and a smaller candidate set.
 - Pratik's 0.41 R² is a handover model on a **random** split (his doc labels it secondary). Chronological: checkout about 0.17, handover about 0.34 (validation). Do not quote 0.41 as the result.
 
-**Plan (steps before the stretch goal)**
+**Plan (simplified; steps before the stretch goal)**
+
+How `phase2_eta.py` works today (checked): it compares its 9 selectable candidates (`SIMPLICITY`: plain linear, ridge 1/10/100, tree depth 6, unrestricted tree, forest, two boosting settings; plus mean and elapsed + route baselines and an optional voting ensemble as reference rows) **only at the handover stage**, and picks with a 0.05-day MAE margin (`select_candidate`, `TIE_MARGIN_DAYS`). The checkout model is fixed at ridge alpha 100 (`LADDER_MODEL`, from the earlier checkout regression); there is no checkout model comparison. Test scoring is in `score_later_test`.
 
 *Context*
 1. Read this section, `docs/phase2_two_stage_eta.md`, `phase2_eta.py`, `phase2_selection.py`, and the brief (Phase 2 pp. 9–12, marking p. 16).
 2. `it5006-proj/bin/python -m unittest discover tests` must pass (68 tests).
 
-*Decisions to confirm with the user before coding*
-3. Regression selection metric: recommend mean validation MAE over the five windows; RMSE and R² reported alongside.
-4. Checkout-stage inputs: recommend the promise engine's inputs (spec features minus `promised_days` and `promise_slack`, plus `route_transit_90d`) so the stretch goal can reuse the checkout model. Alternative: Pratik's frozen inputs, which include Olist's promise.
-5. Handover-stage inputs: keep Pratik's.
+*Code: the only changes*
+3. In `phase2_eta.py`, replace the body of `select_candidate` with the one-SE rule: `phase2_selection.one_se_choice(SIMPLICITY, per-window MAE, higher_is_better=False)`. Remove `TIE_MARGIN_DAYS`. Keep Pratik's candidates and inputs as they are.
+4. Run the same candidate comparison and selection for the **checkout** stage as well as the handover stage (wrap step 2 of `run()` in a loop over the two stages). Test scoring then uses each stage's selected model.
+5. Keep the ladder, the baselines, the voting ensemble and the random-split benchmark as they are (reference only).
+6. `selection.json`: keep `selected_candidate` = the **handover** model (the classifier reads it, `phase2_handover_classifier.py:450–451`); add the checkout selection and the one-SE rows for both stages.
+7. Update `tests/test_phase2_eta.py` for the new rule; all tests pass.
+8. In `phase2_selection.py` change the docstring citation to ISLR (James, Witten, Hastie & Tibshirani, Sec. 6.1.3, p. 214).
 
-*Align the regression with the agreed selection*
-6. In `phase2_eta.py`, replace `TIE_MARGIN_DAYS` and `SIMPLICITY` with the two-stage method: Stage 1, best mean validation MAE within each group (linear, tree, forest, boost); Stage 2, line-up of plain linear, tuned linear, plain tree, tuned tree, tuned forest, tuned boosting with the paired one-SE rule from `phase2_selection.py`. Reuse the grids in `phase2_promise.py` (`LINEAR`, `TREE`, `FOREST`, `BOOST`, `GROUPS`). Run the selection for the checkout and handover stages separately.
-7. Keep the baselines as reference rows, not candidates: training mean; for handover, Pratik's elapsed days + route transit rule.
-8. Keep the information ladder.
-9. Score test only after selection is recorded, once per stage, selected model only: MAE, RMSE, R², bias, overall and by month.
-10. `results/phase2/eta/selection.json` gets `tuned`, `lineup`, `stage2` (same structure as the classifier) and must keep `selected_candidate` naming the handover-stage model, because the classifier reads it.
-11. Update `tests/test_phase2_eta.py`; add a `--smoke` option like the other scripts; all tests pass.
-
-*Runs*
-12. Smoke run: `phase2_eta.py --smoke --out <scratch folder>`; check the JSON.
-13. Full run: `phase2_eta.py`.
-14. Rerun `phase2_handover_classifier.py` (about 25 min on 8 cores). Its selection should not change; its estimate − promise ranking will use the new handover model.
-15. Commit code and results.
+*Run*
+9. `it5006-proj/bin/python phase2_eta.py` (fast; no smoke run needed). Commit code and results.
+10. Rerun the classifier **only if** the selected handover model differs from the current one (`linear_baseline`). Its own selection does not depend on the regression; only the estimate − promise row does, and the report no longer shows that comparison.
 
 *Evidence*
-16. Update `reports/phase2_final_evidence.py`: regression from `results/phase2/eta/` (both stages' selection, ladder, test metrics); classifier from the new `results/phase2/handover/`; remove or set aside the promise-engine parts for the stretch goal.
-17. Rerun it to regenerate `reports/generated/numbers.tex`, figures and `results/phase2/final/`. Every report number must come from these files.
+11. Update `reports/phase2_final_evidence.py`: regression numbers from `results/phase2/eta/` (both stages' one-SE rows, ladder, test metrics by month, coefficients or permutation importance); classifier numbers from `results/phase2/handover/`; drop promise-engine and slack-rule numbers (keep the code aside for the stretch goal). Rerun it to regenerate `reports/generated/numbers.tex` and figures. Every number in the report comes from these files.
 
 *Report (`reports/phase2_report.tex`)*
-18. Rewrite to the story above: executive summary; business problem; data and validation design (mostly unchanged); regression section (checkout and handover, ladder, grids, baseline-vs-tuned per group, one-SE line-up, MAE/RMSE/R²); classifier section (logistic regression via one-SE, robustness sentence, imbalance metrics); how Olist applies the models; limitations; appendix table of every configuration.
-19. Apply the fixes in "Report: every section needs checking" below: ISLR p. 214 citation (ESL section unverified); validation-vs-validation checkout/handover PR-AUC comparison; feature-importance wording (top input `handover_days`); classifier validation→test drop explained by the late rate plus ROC-AUC; any negative checkout test R² explained as drift; leave the AI declaration placeholder for the team.
-20. Check length (6–8 pages main body) and reread the whole report against the regenerated numbers.
+12. Rewrite to the story above: executive summary; business problem; data and validation design (mostly unchanged); regression (checkout and handover, the ladder, candidates per family with the plain baseline first, one-SE selection, MAE/RMSE/R²); classifier (logistic regression via one-SE, the robustness sentence, imbalance metrics); how Olist applies the models; limitations; appendix with every configuration's validation scores.
+13. Apply the fixes in "Report: every section needs checking" below (ISLR citation; validation-vs-validation checkout/handover PR-AUC; `handover_days` as top classifier input; classifier validation→test drop explained by the late rate plus ROC-AUC; negative checkout test R², if any, explained as drift; remove the slack-rule section and table row; leave the AI declaration placeholder for the team).
+14. Check length (6–8 pages main body), reread the whole report against the regenerated numbers, and check `notebooks/phase2/` and `README.md` do not contradict the final models (add a pointer to the scripts if needed).
+15. Update this handoff; commit; push after the user confirms. The report is compiled online.
 
-*Wrap-up*
-21. Update this handoff, commit, push after the user confirms. The report is compiled online (no local LaTeX).
+**Requirements check (brief pp. 9–12, 16): how the plan covers each**
+| Brief requirement | Covered by |
+|---|---|
+| 1–2 problems, classification and regression | One problem, dual framing (Example 4): two-stage delivery-time regression + handover late classifier |
+| Stakeholder, target, success criteria | Delivery operations; `delivery_days` and late vs promised date; handover update beats checkout in every window; classifier beats its plain baseline |
+| 2–3 families, reused across tasks | Linear and Tree-based in both models (voting ensemble optional, reference only) |
+| Simplest variant per family as baseline | Plain linear / unrestricted tree (regression); plain logistic / unrestricted tree (classifier) |
+| Train/validation/test, no leakage | Chronological split, five validation windows, inputs known at each prediction point, test scored once after selection |
+| CV and hyperparameter tuning | Five chronological windows; ridge strength, tree depth, forest and boosting settings (regression); C and class weight, depth/leaf, forest and boosting grids (classifier) |
+| Systematic comparison, justified choice | Paired one-SE rule for both models (ISLR p. 214) |
+| Metrics | MAE, RMSE, R² (regression); PR-AUC, ROC-AUC, precision, recall, F1, MCC (classifier), with imbalance discussion |
+| Feature importance | Coefficients or permutation importance (regression); permutation importance (classifier) |
+| Ensemble if used | Voting ensemble reported as reference only |
+| Actionable insights, limitations | "How Olist applies the models" and Limitations sections |
+| Reproducibility | Fixed seeds; scripts regenerate every result and every report number |
+| Submission | PDF report with GitHub link; repo with scripts and notebooks; performance tables in the report |
 
-Estimate: 2–3 h code and tests, about 1.5 h runs, 2–3 h evidence and report.
+Estimate: about 1 h code and tests, under 30 min runs, 2–3 h evidence and report.
 
 ### State
 - The tuned two-stage selection has run end to end. Smoke runs and full runs finished cleanly; 68 tests pass. New outputs are in `results/phase2/handover/` and `results/phase2/promise/` (new files: `adaptive_matched.csv`, `adaptive_validation_grid.csv`, `forecast_metrics_by_window.csv`).
