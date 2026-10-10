@@ -27,6 +27,18 @@ The regression is now **Pratik's two-stage delivery-time estimate** (checkout es
 
 How `phase2_eta.py` works today (checked): it compares its 9 selectable candidates (`SIMPLICITY`: plain linear, ridge 1/10/100, tree depth 6, unrestricted tree, forest, two boosting settings; plus mean and elapsed + route baselines and an optional voting ensemble as reference rows) **only at the handover stage**, and picks with a 0.05-day MAE margin (`select_candidate`, `TIE_MARGIN_DAYS`). The checkout model is fixed at ridge alpha 100 (`LADDER_MODEL`, from the earlier checkout regression); there is no checkout model comparison. Test scoring is in `score_later_test`.
 
+**File map: what to edit, reuse, leave alone**
+| Action | Files |
+|---|---|
+| **Edit** | `phase2_eta.py` (selection rule, checkout-stage selection); `tests/test_phase2_eta.py`; `phase2_selection.py` (docstring citation only); `reports/phase2_final_evidence.py`; `reports/phase2_report.tex`; this handoff |
+| **Regenerate (do not hand-edit)** | `results/phase2/eta/` (by `phase2_eta.py`); `reports/generated/*.tex` and `results/phase2/final/` (by `reports/phase2_final_evidence.py`) |
+| **Reuse as is (final)** | `results/phase2/handover/` (classifier results from the full run, commit `574afe4`); `phase2_handover_classifier.py` (rerun only per step 10); `phase2_selection.py` (`one_se_choice`) |
+| **Reuse as dependencies (do not change)** | `phase2_classification.py`, `phase2_regression.py`, `phase2_recent_history_audit.py`, `phase2_features.py` (imported by `phase2_eta.py` and the classifier); `data/` incl. `data/phase2_feature_spec.json` and `data/phase2_order_table.csv` |
+| **Stretch goal only** | `phase2_promise.py`, `results/phase2/promise/`, `tests/test_phase2_promise.py` |
+| **Background reading (partly stale)** | `docs/phase2_two_stage_eta.md` (Pratik's design and results; numbers change after the rerun); `docs/phase2_final_spec.md` (older design; the plan here overrides it); `docs/phase2_external_olist_comparison.md` (cited in the report) |
+| **Old, do not use** | `reports/phase2_report_evidence.py` and `reports/phase2_joint_report.tex` (earlier joint report, superseded by `phase2_final_evidence.py` and `phase2_report.tex`); `reports/Team6_Phase2_IT5006_AY2627Sem1.pdf` (old compile); `docs/phase2_classification_handover.md`, `docs/phase2_regression_spec.md`, `docs/phase2_evidence_index.md` (dated notes); `experiments/` (audits; untracked files there are the user's own) |
+| **Not in git; user provides** | `ref/IT5006 Project Description - AY 2026_27 Semester 1.pdf` (the brief); the `it5006-proj/` venv (`python -m venv it5006-proj && it5006-proj/bin/pip install -r requirements.txt`) |
+
 *Context*
 1. Read this section, `docs/phase2_two_stage_eta.md`, `phase2_eta.py`, `phase2_selection.py`, and the brief (Phase 2 pp. 9–12, marking p. 16).
 2. `it5006-proj/bin/python -m unittest discover tests` must pass (68 tests).
