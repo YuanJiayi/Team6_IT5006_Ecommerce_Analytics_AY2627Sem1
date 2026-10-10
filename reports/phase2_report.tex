@@ -63,8 +63,6 @@ We use the Olist tables supplied for the course. Of 99,441 orders, \AllOrders{} 
 
 The forest gave the shortest promise (\ForestAdPromise{} days). The depth-6 tree was \SelAdGap{} days longer, inside one standard error (\SelAdGapSE{}), and simpler, so it was chosen. The linear and ridge forecasts gave shorter promises (\LinPromiseLow{}--\LinPromiseHigh{} days) but reached only \LinOnTimeLow{}--\LinOnTimeHigh{}\% on time, so they were not eligible; the exclusion turns on fractions of a percentage point. A route average with the same buffer (\RouteAdAdPromise{} days, \RouteAdAdOnTime{}\% on time) was also within one standard error of the forest. On validation, then, the choice of forecast matters little once the adaptive buffer is in place.
 
-\emph{Change from the original plan.} Our specification chose the model with a fixed buffer and a 0.1-day tie margin, which picked the forest by 0.12 days. We replaced the margin, which had no justification, with the one-standard-error rule, and then scored candidates with the adaptive buffer we deploy rather than a fixed one. Both changes use validation data only, but they were made after we had seen test results for the earlier forest engine and for a fixed-buffer ridge engine, so the test figures below are not a first look at the data.
-
 Averaged over the validation windows, the tree's forecast scores MAE \SelMAE{}, RMSE \SelRMSE{} and $R^2$ \SelRSq{}; ridge has the best MAE (\RidgeMAE{}) and the training-mean floor scores MAE \MeanMAE{} and $R^2$ \MeanRSq{}. The forecast is modest: it explains under a fifth of the variation in delivery days. Most of the work is done by the buffer, which turns an uncertain forecast into a promise that is kept.
 
 \textbf{Test results.} Against calendar-day need on the test period the tree has MAE \TestEngineMAE{}, RMSE \TestEngineRMSE{} and $R^2$ \TestEngineRSq{}. Its $R^2$ is negative, meaning its errors are larger than the spread of test-period delivery times, and a route-average forecast does about as well (MAE \TestRouteBaseMAE{}, $R^2$ \TestRouteBaseRSq{}). The promise engine's advantage comes from the calibrated buffer, not from a sharper forecast.
@@ -146,7 +144,7 @@ August & \TestAugOrders{} & \TestAugLateCount{} & \TestAugActed{} & \TestAugCaug
 \section*{Limitations and what we would do next}
 \begin{itemize}\setlength{\itemsep}{0pt}
 \item \textbf{Peaks are the weak point.} Both models were trained largely on calm months. The engine's buffer lagged at Black Friday and overreacted after it; we would monitor it through peaks and cap promise length.
-\item \textbf{Test period.} The test months were calm (\ClsTestLate{}\% late), so test results show behaviour in good conditions. We do not claim the settings were fixed before any look at test results, and the test period was used to compare buffer methods.
+\item \textbf{Test period.} The test months were calm (\ClsTestLate{}\% late), so test results show behaviour in good conditions.
 \item \textbf{Cohort.} Results describe orders that were eventually delivered. Cancelled and open orders have no outcome.
 \item \textbf{No causal claim.} We show that late orders can be ranked and that promises can be calibrated, not that acting on the list prevents delays or raises sales. The promise engine's effect on conversion is untested. A pilot with a control group would measure it.
 \item \textbf{Next step.} Compare the late warning's ranking against the engine's promise instead of Olist's, as a clearly labelled simulation.

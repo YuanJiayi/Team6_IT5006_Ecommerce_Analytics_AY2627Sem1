@@ -1,5 +1,34 @@
 # Phase 2 handoff (10 October 2026)
 
+## RESUME HERE (work in progress, 10 October 2026)
+
+**State:** the code for the tuned two-stage selection is written and unit-tested (68 tests pass), but the **full runs have not been done**. Everything under `results/phase2/` and the numbers in `reports/phase2_report.tex` are still from the previous selection (promise engine `tree_depth6`; classifier `forest_leaf20`) and will change.
+
+**Agreed design (approved by the user; do not change without asking):**
+- Families: Linear, and Tree-based (single tree, random forest, gradient boosting = `HistGradientBoosting*`), the same for both models (brief: 2–3 families, reused across tasks).
+- Stage 1 (tuning): within each group, the configuration with the best mean score over the five temporal validation windows.
+- Stage 2 (selection): line-up = plain linear, tuned linear, plain tree, tuned tree, tuned forest, tuned boosting; paired one-standard-error rule (simplest entry within 1 SE of the best). Shared code: `phase2_selection.py`.
+- Promise engine score: mean promise at exactly 95% mean validation on-time, each configuration tuned with the adaptive buffer (γ grid × on-time target 0.85–0.98, `matched_scores`). MAE/RMSE/R² for every configuration in `forecast_metrics_by_window.csv`. Route average + buffer is a reference, not a candidate.
+- Classifier score: mean validation PR-AUC. Operating share, slack-rule bootstrap, checkout variant unchanged.
+- Grids are in `phase2_promise.py` and `phase2_handover_classifier.py` (`LINEAR/LOGISTIC`, `TREE`, `FOREST`, `BOOST`, `GROUPS`).
+- Fixed, not reopened: features, target, cohort, splits, 95% target, 5:1 benefit ratio.
+
+**Next steps, in order:**
+1. Smoke runs (one config per group, a few minutes each), to a scratch folder:
+   `it5006-proj/bin/python phase2_promise.py --smoke --out /tmp/smoke_promise` and
+   `it5006-proj/bin/python phase2_handover_classifier.py --smoke --out /tmp/smoke_handover`. Check they finish and the JSON outputs look right.
+2. Full runs, one after the other (2-core machine: ~1.5 h promise, ~40 min classifier):
+   `it5006-proj/bin/python phase2_promise.py` then `it5006-proj/bin/python phase2_handover_classifier.py`.
+3. Update `reports/phase2_final_evidence.py` for the new outputs (`adaptive_selection.json` now has `tuned`, `lineup`, `stage2`, `matched`; promise `validation_summary.csv` now holds only the chosen model and baselines, so MAE/RMSE/R² for all configs come from `forecast_metrics_by_window.csv`; classifier `selection.json` has `tuned`/`stage2`). Rerun it.
+4. Rewrite the model sections of `reports/phase2_report.tex`: tuning grids, baseline-vs-tuned table per group, the one-SE line-up, an appendix table of every configuration, and the new numbers. Frame the regression criterion as coverage (on-time %) and interval width (promise length). Keep the explicit "why not MAE" paragraph.
+5. Business framing (from a reviewer, agreed): tie results to bad reviews (62% of late orders get 1–2 stars vs 9% on time) and be honest that the repeat-purchase link is weak (2.5% vs 3.0%) and that conversion cannot be measured in this data (cite Salari et al. 2022). Do not reuse the old "4 days sooner at same reliability" headline unless the new results support it.
+6. Commit and push. The report must still be compiled online (no LaTeX locally).
+
+**User preferences for this work:** avoid repeated work, so settle the design before running; everything must be defensible and aligned with the course brief (`ref/IT5006 Project Description - AY 2026_27 Semester 1.pdf`, Phase 2 on pp. 9–12, marking on p. 16). Phase 2 deadline: 11 October 2026, 23:59. The user asked that the report not contain a disclosure about when selection rules changed.
+
+**Environment:** `python -m venv it5006-proj && it5006-proj/bin/pip install -r requirements.txt`; tests: `it5006-proj/bin/python -m unittest discover tests`.
+
+
 Status of branch `phase2-final`, for the next agent. The design is in `docs/phase2_final_spec.md`. Course requirements are in `ref/IT5006 Project Description - AY 2026_27 Semester 1.pdf`: Phase 2 on pp. 9–12, marking on p. 16.
 
 ## Story

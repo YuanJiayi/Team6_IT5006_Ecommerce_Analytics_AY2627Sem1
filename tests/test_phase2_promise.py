@@ -8,8 +8,8 @@ import numpy as np
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from phase2_promise import (BASELINES, adaptive_promises, LEVELS, SIMPLICITY, buffer_promises, fixed_level, forecast,  # noqa: E402
-                            interpolate, select_candidate)
+from phase2_promise import (BASELINES, CANDIDATES, GROUPS, LEVELS, SMOKE_GROUPS, adaptive_promises,  # noqa: E402
+                            buffer_promises, fixed_level, forecast, interpolate, matched_scores, matched_target)
 
 
 class BufferTests(unittest.TestCase):
@@ -81,16 +81,40 @@ class SelectionTests(unittest.TestCase):
         self.assertAlmostEqual(interpolate(np.array([0.9, 1.0]), np.array([10.0, 20.0]), 0.95), 15.0)
         self.assertTrue(np.isnan(interpolate(np.array([0.9, 0.93]), np.array([10.0, 12.0]), 0.95)))
 
-    def test_simpler_within_one_standard_error_wins(self):
-        base = np.array([20.0, 22.0, 24.0, 26.0, 28.0])
-        scores = {n: base + 2.0 for n in SIMPLICITY} | {n: base + 5.0 for n in BASELINES}
-        scores["forest_leaf20"] = base
-        # ridge_10 is 0.2 days longer on average but the gap swings across windows: within one SE
-        scores["ridge_10"] = base + np.array([1.0, -0.6, 0.8, -0.4, 0.2])
-        self.assertEqual(select_candidate(scores)[0], "ridge_10")
-        # a steady 0.2-day gap has a tiny SE, so the forest wins
-        scores["ridge_10"] = base + np.array([0.21, 0.19, 0.2, 0.2, 0.2])
-        self.assertEqual(select_candidate(scores)[0], "forest_leaf20")
+    def test_groups_are_well_formed(self):
+        names = [n for n, _, _ in CANDIDATES]
+        self.assertEqual(len(names), len(set(names)))
+        for groups in (GROUPS, SMOKE_GROUPS):
+            for _, baseline, configs in groups:
+                self.assertTrue(set(configs) <= set(names) - BASELINES)
+                if baseline is not None:
+                    self.assertEqual(configs[0], baseline)
+        self.assertEqual([g for g, _, _ in GROUPS], ["linear", "tree", "forest", "boost"])
+
+
+class MatchedTargetTests(unittest.TestCase):
+    def test_interpolates_first_crossing(self):
+        targets = np.array([0.90, 0.91, 0.92, 0.93])
+        self.assertAlmostEqual(matched_target(np.array([0.93, 0.94, 0.96, 0.97]), targets), 0.915)
+        self.assertAlmostEqual(matched_target(np.array([0.93, 0.95, 0.96, 0.97]), targets), 0.91)
+
+    def test_unbracketed_is_nan(self):
+        targets = np.array([0.90, 0.91])
+        self.assertTrue(np.isnan(matched_target(np.array([0.93, 0.94]), targets)))  # never reaches 95%
+        self.assertTrue(np.isnan(matched_target(np.array([0.96, 0.97]), targets)))  # already above at the lowest target
+
+    def test_matched_scores_picks_shorter_gamma(self):
+        targets = np.array([0.90, 0.91])
+        rows = []
+        for gamma, promise in [(0.0, (30.0, 40.0)), (0.05, (20.0, 24.0))]:
+            for w in range(2):
+                for t, on, p in zip(targets, (0.94, 0.96), promise):
+                    rows.append({"candidate": "a", "gamma": gamma, "target": t, "window": w, "on_time": on,
+                                 "mean_promise": p + w})
+        got = matched_scores(pd.DataFrame(rows), targets)["a"]
+        self.assertEqual(got["gamma"], 0.05)
+        self.assertAlmostEqual(got["target"], 0.905)
+        np.testing.assert_allclose(got["per_window"], [22.0, 23.0])
 
 
 class AdaptiveTests(unittest.TestCase):

@@ -17,13 +17,13 @@ import pandas as pd
 from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.compose import ColumnTransformer
 from sklearn.dummy import DummyRegressor
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import HistGradientBoostingRegressor, RandomForestRegressor
 from sklearn.impute import SimpleImputer
 from sklearn.inspection import permutation_importance
 from sklearn.linear_model import LinearRegression, Ridge
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import FunctionTransformer, OneHotEncoder, StandardScaler
+from sklearn.preprocessing import FunctionTransformer, OneHotEncoder, OrdinalEncoder, StandardScaler
 from sklearn.tree import DecisionTreeRegressor
 from threadpoolctl import threadpool_limits
 
@@ -78,6 +78,17 @@ def make_regression_pipeline(family, params, spec):
     if family == "route":
         return Pipeline([("model", RouteBaseline())])
     numeric, categorical = feature_columns(spec)
+    if family == "boost":
+        # Gradient boosting (LightGBM-style histogram trees); categories are ordinal codes handled natively, unseen -> NaN.
+        prepare = ColumnTransformer([
+            ("numeric", SimpleImputer(strategy="median", keep_empty_features=True), numeric),
+            ("category", OrdinalEncoder(handle_unknown="use_encoded_value", unknown_value=np.nan,
+                                        encoded_missing_value=np.nan), categorical),
+        ], remainder="drop")
+        mask = [False] * len(numeric) + [True] * len(categorical)
+        return Pipeline([("prepare", prepare),
+                         ("model", HistGradientBoostingRegressor(categorical_features=mask, early_stopping=False,
+                                      random_state=seed, **params))])
     linear = family in LINEAR_FAMILIES
     branches, logged = [], []
     if linear:
@@ -104,7 +115,7 @@ def make_regression_pipeline(family, params, spec):
     elif family == "tree":
         model = DecisionTreeRegressor(random_state=seed, **params)
     elif family == "forest":
-        model = RandomForestRegressor(n_estimators=200, max_features="sqrt", n_jobs=4, random_state=seed, **params)
+        model = RandomForestRegressor(n_estimators=200, n_jobs=4, random_state=seed, **{"max_features": "sqrt", **params})
     else:
         raise ValueError(f"Unknown model family: {family}")
     return Pipeline([("prepare", preparation), ("model", model)])

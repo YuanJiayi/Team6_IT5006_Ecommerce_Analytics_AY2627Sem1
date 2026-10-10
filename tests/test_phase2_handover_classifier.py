@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from phase2_eta import add_stage_features  # noqa: E402
 from phase2_handover_classifier import (K_GRID, add_history_extension, add_remaining_slack, choose_k,  # noqa: E402
-                                        select_candidate, top_flags, weighted_pr_auc, weighted_recall_top)
+                                        CANDIDATES, GROUPS, SMOKE_GROUPS, top_flags, weighted_pr_auc, weighted_recall_top)
 from test_phase2_eta import synthetic  # noqa: E402
 
 
@@ -75,14 +75,16 @@ class OperatingPointTests(unittest.TestCase):
 
 
 class SelectionAndBootstrapTests(unittest.TestCase):
-    def test_simpler_within_margin_wins(self):
-        noisy = {"logistic": [0.30, 0.25, 0.35, 0.28, 0.32], "logistic_balanced": [0.2] * 5,
-                 "tree_depth6": [0.2] * 5, "forest_leaf20": [0.27, 0.30, 0.31, 0.33, 0.30]}
-        chosen, best, _ = select_candidate(noisy)
-        self.assertEqual((chosen, best), ("logistic", "forest_leaf20"))
-        steady = noisy | {"forest_leaf20": [0.32, 0.27, 0.37, 0.30, 0.34]}  # +0.02 in every window
-        chosen, _, _ = select_candidate(steady)
-        self.assertEqual(chosen, "forest_leaf20")
+    def test_groups_are_well_formed(self):
+        names = [n for n, _, _ in CANDIDATES]
+        self.assertEqual(len(names), len(set(names)))
+        for groups in (GROUPS, SMOKE_GROUPS):
+            for _, baseline, configs in groups:
+                self.assertTrue(set(configs) <= set(names))
+                if baseline is not None:
+                    self.assertEqual(configs[0], baseline)
+        default = next(p for n, _, p in CANDIDATES if n == "logistic_c1")
+        self.assertEqual(default, {"C": 1.0, "class_weight": None})
 
     def test_weighted_metrics_match_sklearn_at_unit_weights(self):
         rng = np.random.default_rng(1)

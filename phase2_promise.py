@@ -26,6 +26,7 @@ from threadpoolctl import threadpool_limits
 from phase2_classification import feature_columns, load_primary_training, temporal_folds
 from phase2_eta import add_stage_features
 from phase2_regression import RouteBaseline, assert_fit_precedes, make_regression_pipeline, regression_metrics  # noqa: F401
+from phase2_selection import two_stage_select
 
 ROOT = Path(__file__).resolve().parent
 RESULT_DIR = ROOT / "results" / "phase2" / "promise"
@@ -35,19 +36,25 @@ CAL_FAR, CAL_NEAR, MIN_SCALE = 90, 45, 3.0
 TARGET_ONTIME = 0.95
 OOF_FOLDS = 3
 
-CANDIDATES = [
-    ("mean_baseline", "mean", {}),
-    ("route_baseline", "route", {}),
-    ("linear_baseline", "linear", {}),
-    ("ridge_1", "ridge", {"alpha": 1.0}),
-    ("ridge_10", "ridge", {"alpha": 10.0}),
-    ("ridge_100", "ridge", {"alpha": 100.0}),
-    ("tree_baseline", "tree", {"max_depth": None, "min_samples_leaf": 1}),
-    ("tree_depth6", "tree", {"max_depth": 6, "min_samples_leaf": 50}),
-    ("forest_leaf20", "forest", {"max_depth": None, "min_samples_leaf": 20}),
-]
+# Two families (Linear; Tree-based: single tree, forest, gradient boosting). Each group's first entry is its plain
+# baseline where the group has one; the rest is its tuning grid. Groups are listed from simplest to most complex.
+LINEAR = [("linear_plain", "linear", {})] + [(f"ridge_a{a:g}", "ridge", {"alpha": a}) for a in (0.1, 1, 10, 100, 1000)]
+TREE = [("tree_plain", "tree", {"max_depth": None, "min_samples_leaf": 1})] + [
+    (f"tree_d{d}_l{l}", "tree", {"max_depth": d, "min_samples_leaf": l}) for d in (4, 6, 8, 12) for l in (20, 100)]
+FOREST = [(f"forest_l{l}_{'sqrt' if m == 'sqrt' else 'half'}", "forest", {"max_depth": None, "min_samples_leaf": l, "max_features": m})
+          for l in (5, 20, 50) for m in ("sqrt", 0.5)]
+BOOST = [(f"boost_lr{lr:g}_n{n}_l{l}", "boost", {"learning_rate": lr, "max_iter": n, "min_samples_leaf": l})
+         for lr in (0.03, 0.1) for n in (200, 500) for l in (20, 100)]
+BASELINE_MODELS = [("mean_baseline", "mean", {}), ("route_baseline", "route", {})]
+CANDIDATES = BASELINE_MODELS + LINEAR + TREE + FOREST + BOOST
+GROUPS = [("linear", "linear_plain", [n for n, _, _ in LINEAR]),
+          ("tree", "tree_plain", [n for n, _, _ in TREE]),
+          ("forest", None, [n for n, _, _ in FOREST]),
+          ("boost", None, [n for n, _, _ in BOOST])]
+# Smoke run: one configuration per group and two gammas, to check the pipeline end to end before the full run.
+SMOKE_GROUPS = [("linear", "linear_plain", ["linear_plain"]), ("tree", None, ["tree_d6_l100"]),
+                ("forest", None, ["forest_l20_sqrt"]), ("boost", None, ["boost_lr0.1_n200_l100"])]
 BASELINES = {"mean_baseline", "route_baseline"}
-SIMPLICITY = ["linear_baseline", "ridge_1", "ridge_10", "ridge_100", "tree_depth6", "tree_baseline", "forest_leaf20"]
 PROMISE_FIELDS = ["promised_days", "promise_slack"]
 TRANSIT = "route_transit_90d"
 
@@ -197,34 +204,6 @@ def run_window(full, fit, target, family, params, spec):
 
 # ---------------------------------------------------------------- selection
 
-def paired_gap(worse, best):
-    """Mean and standard error of the per-window gap `worse - best` (windows paired)."""
-    gap = np.asarray(worse, dtype=float) - np.asarray(best, dtype=float)
-    return float(gap.mean()), float(gap.std(ddof=1) / np.sqrt(len(gap))) if len(gap) > 1 else 0.0
-
-
-def select_candidate(promise_at_95):
-    """One-standard-error rule on promise days at 95% on time, per validation window.
-
-    `promise_at_95` maps candidate -> per-window values (lower is better). The best candidate has the lowest mean;
-    the simplest candidate whose paired mean gap to the best is within one standard error of that gap is chosen.
-    """
-    scores = {n: np.asarray(v, dtype=float) for n, v in promise_at_95.items() if n not in BASELINES}
-    if not scores or not set(scores) <= set(SIMPLICITY):
-        raise ValueError("Scores must be a non-empty subset of the selectable candidates")
-    best = min(scores, key=lambda n: scores[n].mean())
-    for n in (n for n in SIMPLICITY if n in scores):
-        gap, se = paired_gap(scores[n], scores[best])
-        if gap <= se:
-            chosen = n
-            break
-    reason = f"{best} has the lowest mean promise at 95% on time ({scores[best].mean():.3f} days)"
-    if chosen != best:
-        reason += (f"; {chosen} ({scores[chosen].mean():.3f}) is {gap:.3f} days longer, within one standard error "
-                   f"({se:.3f}) of the paired gap, and simpler, so it is chosen")
-    return chosen, reason
-
-
 # ---------------------------------------------------------------- runs
 
 def validation_run(full, spec, train_rows, folds, name, family, params):
@@ -276,9 +255,10 @@ def test_summary(frame, promise, level_index):
             "orders": int(len(p))}, per_month
 
 
-def run(root=ROOT):
+def run(root=ROOT, out=RESULT_DIR):
+    """Fixed-level comparison for the engine model chosen by `run_adaptive` (reads its adaptive_selection.json)."""
     started = time.monotonic()
-    out = Path(root) / "results" / "phase2" / "promise"
+    out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
     full, base_spec, train_rows = load_promise_table(root)
     spec = promise_spec(base_spec)
@@ -286,8 +266,11 @@ def run(root=ROOT):
     folds = temporal_folds(train, base_spec)
     print(f"orders {len(full)}; train {len(train_rows)}; windows {len(folds)}", flush=True)
 
+    chosen = json.loads((out / "adaptive_selection.json").read_text())["selected"]
     metrics, fronts = [], []
     for name, family, params in CANDIDATES:
+        if name not in BASELINES and name != chosen:
+            continue
         m, f = validation_run(full, spec, train_rows, folds, name, family, params)
         metrics += m
         fronts.append(f)
@@ -302,10 +285,6 @@ def run(root=ROOT):
         raise ValueError("A window never reaches 95% on time inside the level grid")
     summary.to_csv(out / "validation_summary.csv")
 
-    fixed_rule_choice, fixed_rule_reason = select_candidate(
-        metrics.pivot(index="window", columns="candidate", values="promise_at_95").to_dict("list"))
-    adaptive = json.loads((out / "adaptive_selection.json").read_text())
-    chosen = adaptive["selected"]
     reason = f"engine model chosen with the adaptive buffer (adaptive_selection.json): {chosen}"
     algorithms = {n: (f, p) for n, f, p in CANDIDATES}
     fixed = {name: fixed_level(mean_front(fronts, name)) for name in (chosen, "route_baseline")}
@@ -313,7 +292,6 @@ def run(root=ROOT):
                       .set_index("window")["on_time"].round(5).to_dict() for n in fixed}
     selection = {
         "selected": chosen, "reason": reason,
-        "fixed_buffer_rule_choice": fixed_rule_choice, "fixed_buffer_rule_reason": fixed_rule_reason,
         "fixed_level": float(LEVELS[fixed[chosen]]),
         "mean_validation_on_time_at_fixed_level": float(mean_front(fronts, chosen)[fixed[chosen]]),
         "route_baseline_fixed_level": float(LEVELS[fixed["route_baseline"]]),
@@ -384,6 +362,8 @@ def run(root=ROOT):
 # Extended after the first adaptive run selected the grid edge (0.05); see the spec change log.
 GAMMAS = [0.0, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2]
 ALPHA_TARGET = 0.05
+# On-time targets the adaptive buffer is tuned over, so every candidate can be compared at exactly TARGET_ONTIME.
+TARGETS = np.round(np.arange(0.85, 0.9801, 0.01), 3)
 LEVEL_RANGE = (0.50, 0.995)
 BURN_IN_DAYS = 120
 
@@ -391,8 +371,9 @@ BURN_IN_DAYS = 120
 def adaptive_promises(mu, need, purchase_day, delivery_day, start, end, gamma, alpha0=ALPHA_TARGET):
     """Daily-adaptive buffer (adaptive conformal inference) over purchase days start..end inclusive.
 
-    The level on day D is clip(1 - alpha_D); the quantile of the score is taken directly at that level over the same
-    calibration set as `buffer_promises`. After day D, alpha_{D+1} = alpha_D + gamma * (0.05 - e_D), where e_D is the
+    `alpha0` is the target miss rate (1 - on-time target) and the starting alpha. The level on day D is
+    clip(1 - alpha_D); the quantile of the score is taken directly at that level over the same
+    calibration set as `buffer_promises`. After day D, alpha_{D+1} = alpha_D + gamma * (alpha0 - e_D), where e_D is the
     late share among orders whose promise date (purchase day + promise) was D - 1; alpha is unchanged when there are
     none. Lateness of those orders is known on day D. Returns (promise over all rows, NaN outside the range;
     trace frame with day, level, e, n_informing).
@@ -422,12 +403,15 @@ def adaptive_promises(mu, need, purchase_day, delivery_day, start, end, gamma, a
         e = float((need[informing] > promise[informing]).mean()) if len(informing) else np.nan
         trace.append({"day": day, "level": level, "e": e, "n_informing": len(informing)})
         if len(informing):
-            alpha += gamma * (ALPHA_TARGET - e)
+            alpha += gamma * (alpha0 - e)
     return promise, pd.DataFrame(trace)
 
 
-def adaptive_window(full, fit, target, family, params, spec, gammas=GAMMAS):
-    """Adaptive runs for one scoring window (burn-in 120 days before it). Returns {gamma: (promise at target, trace)}."""
+def adaptive_window(full, fit, target, family, params, spec, settings):
+    """Adaptive runs for one scoring window (burn-in 120 days before it).
+
+    `settings` is a list of (gamma, on-time target). Returns (mu at target rows, {(gamma, on-time target): (promise, trace)}).
+    """
     days = full["purchase_day"].to_numpy()
     start, end = int(days[target].min()) - BURN_IN_DAYS, int(days[target].max())
     # Every cohort order purchased from the earliest calibration day to the window end needs a forecast.
@@ -435,15 +419,58 @@ def adaptive_window(full, fit, target, family, params, spec, gammas=GAMMAS):
     mu = forecast(full, fit, target, extra, family, params, spec)
     need, delivery = full["need"].to_numpy(), full["delivery_day"].to_numpy()
     out = {}
-    for gamma in gammas:
-        promise, trace = adaptive_promises(mu, need, days, delivery, start, end, gamma)
-        out[gamma] = (promise[target], trace)
+    for gamma, on_time_target in settings:
+        promise, trace = adaptive_promises(mu, need, days, delivery, start, end, gamma, alpha0=1 - on_time_target)
+        out[(gamma, on_time_target)] = (promise[target], trace)
     return mu[target], out
 
 
-def run_adaptive(root=ROOT):
+def matched_target(mean_on_time, targets, goal=TARGET_ONTIME):
+    """On-time target at which the window-mean on-time rate first reaches `goal`, linearly interpolated.
+
+    NaN when the goal is never reached on the grid or is already exceeded at its lowest target (cannot be bracketed).
+    """
+    on, t = np.asarray(mean_on_time, dtype=float), np.asarray(targets, dtype=float)
+    hit = np.flatnonzero(on >= goal)
+    if not len(hit):
+        return np.nan
+    i = hit[0]
+    if on[i] == goal:
+        return float(t[i])
+    if i == 0:
+        return np.nan
+    return float(t[i - 1] + (goal - on[i - 1]) * (t[i] - t[i - 1]) / (on[i] - on[i - 1]))
+
+
+def matched_scores(grid, targets=TARGETS, goal=TARGET_ONTIME):
+    """Per candidate: the gamma whose matched setting gives the shortest mean promise at `goal` on time.
+
+    `grid` has columns candidate, gamma, target, window, on_time, mean_promise. For each (candidate, gamma) the target
+    is matched on the window-mean on-time curve, and each window's promise is interpolated along the target grid at that
+    target. Returns {candidate: {"gamma", "target", "per_window"}} (None when no gamma reaches the goal).
+    """
+    result = {}
+    for name, g in grid.groupby("candidate", sort=False):
+        best = None
+        for gamma, h in g.groupby("gamma"):
+            curve = h.pivot(index="target", columns="window", values="mean_promise").reindex(targets)
+            on = h.pivot(index="target", columns="window", values="on_time").reindex(targets)
+            t_star = matched_target(on.mean(axis=1).to_numpy(), targets, goal)
+            if np.isnan(t_star):
+                continue
+            per_window = [float(np.interp(t_star, targets, curve[w].to_numpy())) for w in curve.columns]
+            if best is None or np.mean(per_window) < np.mean(best["per_window"]):
+                best = {"gamma": float(gamma), "target": t_star, "per_window": per_window}
+        result[name] = best
+    return result
+
+
+def run_adaptive(root=ROOT, out=RESULT_DIR, smoke=False):
+    """Validate every configuration with the adaptive buffer, select the engine model, score the test period."""
     started = time.monotonic()
-    out = Path(root) / "results" / "phase2" / "promise"
+    out = Path(out)
+    groups = SMOKE_GROUPS if smoke else GROUPS
+    gammas = [0.0, 0.05] if smoke else GAMMAS
     out.mkdir(parents=True, exist_ok=True)
     full, base_spec, train_rows = load_promise_table(root)
     spec = promise_spec(base_spec)
@@ -452,49 +479,75 @@ def run_adaptive(root=ROOT):
     algorithms = {n: (f, p) for n, f, p in CANDIDATES}
     need_all = full["need"].to_numpy()
 
-    rows, traces = [], {}
-    for name in SIMPLICITY + ["route_baseline"]:
-        label = "route" if name == "route_baseline" else "candidate"
+    grid_settings = [(g, t) for g in gammas for t in TARGETS]
+    targets_all = full[TARGET].to_numpy()
+    purchase_day = full["purchase_day"].to_numpy()
+
+    def validate_settings(name, settings, forecast_rows=None):
+        rows, traces = [], {}
         family, params = algorithms[name]
         for window, (fit, valid) in enumerate(folds):
             assert_fit_precedes(train, fit, valid)
             valid_rows = train_rows[valid]
-            _, runs = adaptive_window(full, train_rows[fit], valid_rows, family, params, spec)
-            for gamma, (promise, trace) in runs.items():
-                need = need_all[valid_rows]
-                rows.append({"model": label, "candidate": name, "gamma": gamma, "window": window,
-                             "on_time": float((promise >= need).mean()), "mean_promise": float(promise.mean()),
-                             "mean_level": float(trace.loc[trace["day"] >= full["purchase_day"].to_numpy()[valid_rows].min(), "level"].mean())})
-                traces[(name, gamma, "validation", window)] = trace
-        print(f"{name} adaptive validation done {time.monotonic() - started:.0f}s", flush=True)
-    validation = pd.DataFrame(rows)
-    mean = validation.groupby(["candidate", "gamma"]).agg(on_time=("on_time", "mean"), mean_promise=("mean_promise", "mean")).reset_index()
-    # Per candidate: the gamma with the shortest mean promise that reaches the target on time; none -> ineligible.
-    gamma_by_candidate = {}
-    for name in SIMPLICITY + ["route_baseline"]:
-        m = mean[mean["candidate"].eq(name) & (mean["on_time"] >= TARGET_ONTIME)]
-        gamma_by_candidate[name] = None if m.empty else float(m.loc[m["mean_promise"].idxmin(), "gamma"])
-    if gamma_by_candidate["route_baseline"] is None:
-        raise ValueError(f"No gamma reaches {TARGET_ONTIME:.0%} mean validation on-time for route_baseline")
-    eligible = {n: validation[validation["candidate"].eq(n) & np.isclose(validation["gamma"], g)]
-                .sort_values("window")["mean_promise"].tolist()
-                for n, g in gamma_by_candidate.items() if g is not None and n in SIMPLICITY}
-    if not eligible:
-        raise ValueError(f"No candidate reaches {TARGET_ONTIME:.0%} mean validation on-time")
-    chosen, reason = select_candidate(eligible)
+            mu, runs = adaptive_window(full, train_rows[fit], valid_rows, family, params, spec, settings)
+            if forecast_rows is not None:
+                forecast_rows.append({"candidate": name, "window": window,
+                                      **regression_metrics(targets_all[valid_rows], mu)})
+            for (gamma, target), (promise, trace) in runs.items():
+                rows.append({"candidate": name, "gamma": gamma, "target": target, "window": window,
+                             "on_time": float((promise >= need_all[valid_rows]).mean()),
+                             "mean_promise": float(promise.mean()),
+                             "mean_level": float(trace.loc[trace["day"] >= purchase_day[valid_rows].min(), "level"].mean())})
+                traces[(gamma, target, window)] = trace
+        return rows, traces
+
+    rows, forecast_rows = [], []
+    configs = [n for _, _, names in groups for n in names]
+    for name in configs + ["mean_baseline", "route_baseline"]:
+        rows += validate_settings(name, grid_settings, forecast_rows)[0]
+        print(f"{name} adaptive grid done {time.monotonic() - started:.0f}s", flush=True)
+    grid = pd.DataFrame(rows)
+    grid.to_csv(out / "adaptive_validation_grid.csv", index=False)
+    pd.DataFrame(forecast_rows).to_csv(out / "forecast_metrics_by_window.csv", index=False)
+
+    # Every candidate tuned to exactly 95% mean validation on-time; then the one-standard-error rule on promise length.
+    matched = matched_scores(grid, TARGETS)
+    if matched["route_baseline"] is None:
+        raise ValueError(f"route_baseline never reaches {TARGET_ONTIME:.0%} mean validation on-time")
+    eligible = {n: m["per_window"] for n, m in matched.items() if m is not None and n in configs}
+    chosen, details = two_stage_select(groups, eligible, higher_is_better=False)
+    reason = (f"best {details['best']} ({np.mean(eligible[details['best']]):.3f} days at 95% on time); "
+              f"chosen {chosen} ({np.mean(eligible[chosen]):.3f} days), the simplest line-up entry within one "
+              f"standard error of the best")
     models = {"engine": chosen, "route": "route_baseline"}
-    chosen_gamma = {"engine": gamma_by_candidate[chosen], "route": gamma_by_candidate["route_baseline"]}
-    validation.loc[validation["candidate"].eq(chosen), "model"] = "engine"
+    setting = {label: (matched[name]["gamma"], matched[name]["target"]) for label, name in models.items()}
+    pd.DataFrame([{"candidate": n, "gamma": m["gamma"], "target": m["target"], "window": w, "promise_at_95": v}
+                  for n, m in matched.items() if m is not None for w, v in enumerate(m["per_window"])]) \
+        .to_csv(out / "adaptive_matched.csv", index=False)
+
+    # Re-run the engine and the route baseline at their exact matched settings (not interpolated).
+    rows, traces = [], {}
+    for label, name in models.items():
+        r, t = validate_settings(name, [setting[label]])
+        rows += [dict(x, model=label) for x in r]
+        traces.update({(label, w): tr for (_, _, w), tr in t.items()})
+    validation = pd.DataFrame(rows)
     validation.to_csv(out / "adaptive_validation.csv", index=False)
+    mean = validation.groupby("model")[["on_time", "mean_promise"]].mean()
     (out / "adaptive_selection.json").write_text(json.dumps({
-        "rule": "per candidate, gamma with the shortest mean validation promise reaching the target on time; "
-                "then the one-standard-error rule on per-window mean promise among eligible candidates",
-        "selected": chosen, "reason": reason, "gamma_grid": GAMMAS,
-        "gamma_by_candidate": gamma_by_candidate, "eligible": sorted(eligible), "selected_gamma": chosen_gamma,
-        "mean_validation": {n: mean[mean["candidate"].eq(n)].set_index("gamma")[["on_time", "mean_promise"]].to_dict("index")
-                            for n in SIMPLICITY + ["route_baseline"]}},
+        "rule": "each candidate tuned (gamma, on-time target) to exactly 95% mean validation on-time; "
+                "then the one-standard-error rule on per-window mean promise at that reliability",
+        "selected": chosen, "reason": reason, "smoke": smoke, "gamma_grid": gammas, "target_grid": TARGETS.tolist(),
+        "groups": [{"group": g, "baseline": b, "configs": c} for g, b, c in groups],
+        "tuned": details["tuned"], "lineup": details["lineup"], "best": details["best"], "stage2": details["stage2"],
+        "matched": {n: (None if m is None else {"gamma": m["gamma"], "target": m["target"],
+                                                 "mean_promise_at_95": float(np.mean(m["per_window"]))})
+                    for n, m in matched.items()},
+        "eligible": sorted(eligible), "selected_gamma": {label: setting[label][0] for label in models},
+        "selected_target": {label: setting[label][1] for label in models},
+        "exact_validation": {label: mean.loc[label].to_dict() for label in models}},
         indent=2))
-    print(reason, "| gamma", chosen_gamma, flush=True)
+    print(reason, "| settings", setting, flush=True)
 
     # Test, once, with gamma fixed.
     test_rows = np.flatnonzero(full[base_spec["primary_split"]].eq("test").to_numpy())
@@ -502,11 +555,11 @@ def run_adaptive(root=ROOT):
     results, month_tables, test_traces = {}, [], []
     for label, name in models.items():
         family, params = algorithms[name]
-        mu, runs = adaptive_window(full, train_rows, test_rows, family, params, spec, gammas=[chosen_gamma[label]])
-        promise, trace = runs[chosen_gamma[label]]
+        mu, runs = adaptive_window(full, train_rows, test_rows, family, params, spec, [setting[label]])
+        promise, trace = runs[setting[label]]
         frame[f"mu_{label}"], frame[f"promise_adaptive_{label}"] = mu, promise
         on = promise >= frame["need"].to_numpy()
-        results[label] = {"gamma": chosen_gamma[label], "mean_promise": float(promise.mean()),
+        results[label] = {"gamma": setting[label][0], "target": setting[label][1], "mean_promise": float(promise.mean()),
                           "median_promise": float(np.median(promise)), "on_time": float(on.mean())}
         month = frame["order_purchase_timestamp"].dt.strftime("%Y-%m")
         day_level = trace.set_index("day")["level"]
@@ -520,8 +573,7 @@ def run_adaptive(root=ROOT):
     olist_month = frame.assign(month=frame["order_purchase_timestamp"].dt.strftime("%Y-%m")).groupby("month").agg(
         olist_on_time=("is_late", lambda s: 1 - s.mean()), olist_mean_promise=("olist_promise", "mean"), orders=("need", "size"))
     pd.concat(month_tables + [olist_month], axis=1).reset_index().to_csv(out / "adaptive_test_per_month.csv", index=False)
-    val_traces = [traces[(name, chosen_gamma[label], "validation", w)].assign(model=label, split="validation", window=w)
-                  for label, name in models.items() for w in range(len(folds))]
+    val_traces = [tr.assign(model=label, split="validation", window=w) for (label, w), tr in traces.items()]
     pd.concat(val_traces + test_traces).to_csv(out / "adaptive_level_trace.csv", index=False)
     frame.drop(columns=["order_purchase_timestamp", "olist_promise", "is_late"]).to_csv(out / "adaptive_test_predictions.csv", index=False)
     gate = {"engine_shorter_than_olist": results["engine"]["mean_promise"] < results["olist"]["mean_promise"],
@@ -535,6 +587,10 @@ def run_adaptive(root=ROOT):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--adaptive-only", action="store_true", help="skip the fixed-level comparison run")
-    run_adaptive()  # selects the engine model; the fixed-level run reuses that choice
-    if not parser.parse_args().adaptive_only:
-        run()
+    parser.add_argument("--smoke", action="store_true", help="one configuration per group; use with --out")
+    parser.add_argument("--out", default=str(RESULT_DIR), help="output directory")
+    args = parser.parse_args()
+    Path(args.out).mkdir(parents=True, exist_ok=True)
+    run_adaptive(out=args.out, smoke=args.smoke)  # selects the engine model; the fixed-level run reuses that choice
+    if not args.adaptive_only:
+        run(out=args.out)

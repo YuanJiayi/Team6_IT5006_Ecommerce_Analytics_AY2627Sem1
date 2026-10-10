@@ -28,17 +28,33 @@ from threadpoolctl import threadpool_limits
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT / "experiments"))
 
-from phase2_classification import CANDIDATES as ALL_CLASSIFIERS  # noqa: E402
 from phase2_classification import feature_columns, make_pipeline  # noqa: E402
 from phase2_eta import (CANDIDATES as ETA_CANDIDATES, chronological_folds, fit_predict,  # noqa: E402
                         load_stage_table, stage_spec)
 from phase2_recent_history_audit import asof_mean  # noqa: E402
+from phase2_selection import two_stage_select  # noqa: E402
 
 RESULT_DIR = ROOT / "results" / "phase2" / "handover"
 LABEL = "is_late"
 PROMISE = "promised_days"
-SIMPLICITY = ["logistic", "logistic_balanced", "tree_depth6", "forest_leaf20"]
-CLASSIFIER_SOURCE = {"logistic": "logistic_baseline"}  # declared name -> name in phase2_classification
+# Two families (Linear; Tree-based: single tree, forest, gradient boosting). Each group's first entry is its plain
+# baseline where the group has one; the rest is its tuning grid. Groups are listed from simplest to most complex.
+LOGISTIC = [(f"logistic_c{c:g}{'_bal' if w else ''}", "linear", {"C": c, "class_weight": w})
+            for c in (1.0, 0.01, 0.1, 10.0) for w in (None, "balanced")]  # first: sklearn default (C=1, unweighted)
+TREE = [("tree_plain", "tree", {"max_depth": None, "min_samples_leaf": 1})] + [
+    (f"tree_d{d}_l{l}", "tree", {"max_depth": d, "min_samples_leaf": l}) for d in (4, 6, 8, 12) for l in (20, 100)]
+FOREST = [(f"forest_l{l}_{'sqrt' if m == 'sqrt' else 'half'}", "forest", {"max_depth": None, "min_samples_leaf": l, "max_features": m})
+          for l in (5, 20, 50) for m in ("sqrt", 0.5)]
+BOOST = [(f"boost_lr{lr:g}_n{n}_l{l}", "boost", {"learning_rate": lr, "max_iter": n, "min_samples_leaf": l})
+         for lr in (0.03, 0.1) for n in (200, 500) for l in (20, 100)]
+CANDIDATES = LOGISTIC + TREE + FOREST + BOOST
+GROUPS = [("linear", "logistic_c1", [n for n, _, _ in LOGISTIC]),
+          ("tree", "tree_plain", [n for n, _, _ in TREE]),
+          ("forest", None, [n for n, _, _ in FOREST]),
+          ("boost", None, [n for n, _, _ in BOOST])]
+SMOKE_GROUPS = [("linear", "logistic_c1", ["logistic_c1"]), ("tree", None, ["tree_d6_l100"]),
+                ("forest", None, ["forest_l20_sqrt"]), ("boost", None, ["boost_lr0.1_n200_l100"])]
+ACTIVE = {"groups": GROUPS}  # switched to SMOKE_GROUPS by run(smoke=True)
 K_GRID = [k / 100 for k in range(1, 31)]
 BENEFIT = 5.0  # a caught late order is worth 5x the cost of acting on one order
 BENEFIT_SENSITIVITY = (2.0, 10.0, 20.0)
@@ -102,8 +118,9 @@ def variant_spec(spec, extra=(), handover=True):
 
 
 def candidate_table():
-    lookup = {name: (family, params) for name, family, params in ALL_CLASSIFIERS}
-    return [(name, *lookup[CLASSIFIER_SOURCE.get(name, name)]) for name in SIMPLICITY]
+    names = [n for _, _, configs in ACTIVE["groups"] for n in configs]
+    lookup = {name: (family, params) for name, family, params in CANDIDATES}
+    return [(name, *lookup[name]) for name in names]
 
 
 # -------------------------------------------------------------------------------------------- model fits
@@ -169,26 +186,15 @@ def ranking_metrics(y, scores):
 # --------------------------------------------------------------------------------------------- selection
 
 def select_candidate(pr_auc):
-    """One-standard-error rule on validation PR-AUC, per window.
+    """Tune within each group on mean validation PR-AUC, then the one-standard-error rule across the line-up.
 
-    `pr_auc` maps candidate -> per-window PR-AUC (higher is better). The best candidate has the highest mean; the
-    simplest candidate whose paired mean shortfall is within one standard error of that shortfall is chosen.
+    `pr_auc` maps configuration -> per-window PR-AUC. Returns (chosen, best, reason, details).
     """
-    if set(pr_auc) != set(SIMPLICITY):
-        raise ValueError("Scores must cover exactly the candidates")
-    scores = {n: np.asarray(v, dtype=float) for n, v in pr_auc.items()}
-    best = max(scores, key=lambda n: scores[n].mean())
-    for n in SIMPLICITY:
-        gap = scores[best] - scores[n]
-        se = gap.std(ddof=1) / np.sqrt(len(gap)) if len(gap) > 1 else 0.0
-        if gap.mean() <= se:
-            chosen = n
-            break
-    reason = f"{best} has the highest mean validation PR-AUC ({scores[best].mean():.4f})"
-    if chosen != best:
-        reason += (f"; {chosen} ({scores[chosen].mean():.4f}) is within one standard error of the paired gap and "
-                   "simpler, so it is chosen")
-    return chosen, best, reason
+    chosen, details = two_stage_select(ACTIVE["groups"], pr_auc, higher_is_better=True)
+    best = details["best"]
+    reason = (f"best {best} (mean validation PR-AUC {np.mean(pr_auc[best]):.4f}); chosen {chosen} "
+              f"({np.mean(pr_auc[chosen]):.4f}), the simplest line-up entry within one standard error of the best")
+    return chosen, best, reason, details
 
 
 def mean_net_benefit_per_order(windows, share, benefit):
@@ -316,9 +322,10 @@ def validate(train, folds, spec_v, log_features, label):
               f"recall@10%={part['recall_top10'].mean():.4f}; {time.monotonic() - started:.1f}s", flush=True)
     frame = pd.DataFrame(rows)
     summary = frame.groupby("candidate", sort=False)[["pr_auc", "roc_auc", "recall_top10", "precision_top10"]].mean()
-    chosen, best, reason = select_candidate(frame.pivot(index="window", columns="candidate", values="pr_auc").to_dict("list"))
+    chosen, best, reason, details = select_candidate(
+        frame.pivot(index="window", columns="candidate", values="pr_auc").to_dict("list"))
     return {"label": label, "windows": frame, "summary": summary, "scores": scores,
-            "selected": chosen, "best": best, "reason": reason}
+            "selected": chosen, "best": best, "reason": reason, "details": details}
 
 
 def operating_point(result, baselines, benefit=BENEFIT):
@@ -431,10 +438,11 @@ def score_test(table, spec, spec_v, log_features, result, k, regression_model, l
 
 # ------------------------------------------------------------------------------------------------- driver
 
-def run(root=ROOT):
+def run(root=ROOT, out_dir=RESULT_DIR, smoke=False):
     started = time.monotonic()
-    root = Path(root)
-    RESULT_DIR.mkdir(parents=True, exist_ok=True)
+    root, out_dir = Path(root), Path(out_dir)
+    ACTIVE["groups"] = SMOKE_GROUPS if smoke else GROUPS
+    out_dir.mkdir(parents=True, exist_ok=True)
     table, spec, coverage = load_cohort(root)
     train = table[table[spec["primary_split"]].eq("train")].reset_index(drop=True)
     folds = chronological_folds(train, spec)
@@ -471,37 +479,46 @@ def run(root=ROOT):
         test_rows.append(t), sens_rows.append(s), gains.append(g), monthly.append(m)
 
     pd.concat([r["windows"] for r in validated.values()] + [checkout["windows"]]).to_csv(
-        RESULT_DIR / "validation_windows.csv", index=False)
+        out_dir / "validation_windows.csv", index=False)
     pd.concat([r["summary"].assign(variant=r["label"]).reset_index() for r in [*validated.values(), checkout]]
-              ).to_csv(RESULT_DIR / "validation_summary.csv", index=False)
+              ).to_csv(out_dir / "validation_summary.csv", index=False)
     pd.concat([r["op"].assign(variant=r["label"]) for r in validated.values()]).to_csv(
-        RESULT_DIR / "validation_operating_point.csv", index=False)
+        out_dir / "validation_operating_point.csv", index=False)
     pd.concat([pd.DataFrame({"variant": r["label"], "k": K_GRID, "mean_net_benefit_per_order": r["curve"]})
-               for r in validated.values()]).to_csv(RESULT_DIR / "validation_k_curve.csv", index=False)
+               for r in validated.values()]).to_csv(out_dir / "validation_k_curve.csv", index=False)
     pd.concat([r["sens"].assign(variant=r["label"]) for r in validated.values()]).to_csv(
-        RESULT_DIR / "sensitivity_validation.csv", index=False)
-    pd.concat(test_rows).to_csv(RESULT_DIR / "test_metrics.csv", index=False)
-    pd.concat(sens_rows).to_csv(RESULT_DIR / "sensitivity_test.csv", index=False)
-    pd.concat(gains).to_csv(RESULT_DIR / "test_gains_curve.csv", index=False)
-    pd.concat(monthly).to_csv(RESULT_DIR / "test_monthly_counts.csv", index=False)
+        out_dir / "sensitivity_validation.csv", index=False)
+    pd.concat(test_rows).to_csv(out_dir / "test_metrics.csv", index=False)
+    pd.concat(sens_rows).to_csv(out_dir / "sensitivity_test.csv", index=False)
+    pd.concat(gains).to_csv(out_dir / "test_gains_curve.csv", index=False)
+    pd.concat(monthly).to_csv(out_dir / "test_monthly_counts.csv", index=False)
 
     for label, result in validated.items():
         importance(train, folds, variants[label], log_features, result["selected"], spec["random_state"]).to_csv(
-            RESULT_DIR / f"{label}_permutation_importance.csv", index=False)
+            out_dir / f"{label}_permutation_importance.csv", index=False)
 
     out = {"coverage": {**coverage, "train_orders": int(len(train))},
            "benefit_ratio": BENEFIT, "k_grid": [K_GRID[0], K_GRID[-1]],
+           "smoke": smoke, "groups": [{"group": g, "baseline": b, "configs": c} for g, b, c in ACTIVE["groups"]],
            "variants": {label: {"selected": r["selected"], "best_pr_auc_candidate": r["best"], "reason": r["reason"],
+                                "tuned": r["details"]["tuned"], "lineup": r["details"]["lineup"],
+                                "stage2": r["details"]["stage2"],
                                 "k": r["k"], "value_test": r["value"]} for label, r in validated.items()},
            "checkout_variant": {"selected": checkout["selected"], "reason": checkout["reason"],
+                                "tuned": checkout["details"]["tuned"], "stage2": checkout["details"]["stage2"],
                                 **checkout["summary"].loc[checkout["selected"]].to_dict()},
            "extension_run": "extension" in validated,
            "counterfactual_simulation": "not implemented in this run (depends on the promise engine output)",
            "runtime_seconds": round(time.monotonic() - started, 1)}
-    (RESULT_DIR / "selection.json").write_text(json.dumps(out, indent=2) + "\n")
+    (out_dir / "selection.json").write_text(json.dumps(out, indent=2) + "\n")
     print(f"Done in {out['runtime_seconds']}s", flush=True)
     return validated, checkout, pd.concat(test_rows)
 
 
 if __name__ == "__main__":
-    run()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--smoke", action="store_true", help="one configuration per group; use with --out")
+    parser.add_argument("--out", default=str(RESULT_DIR), help="output directory")
+    args = parser.parse_args()
+    run(out_dir=args.out, smoke=args.smoke)

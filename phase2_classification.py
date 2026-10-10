@@ -23,7 +23,7 @@ import pandas as pd
 import sklearn
 from sklearn.compose import ColumnTransformer
 from sklearn.dummy import DummyClassifier
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
 from sklearn.inspection import permutation_importance
@@ -33,7 +33,7 @@ from sklearn.metrics import (
 )
 from sklearn.model_selection import StratifiedKFold
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import FunctionTransformer, OneHotEncoder, StandardScaler
+from sklearn.preprocessing import FunctionTransformer, OneHotEncoder, OrdinalEncoder, StandardScaler
 from sklearn.tree import DecisionTreeClassifier
 from threadpoolctl import threadpool_limits
 
@@ -148,6 +148,17 @@ def make_pipeline(family, params, spec, include_payment=True, feature_set=None, 
     """Model Pipeline. `log_features` are log1p-transformed before scaling, for the linear family only."""
     numeric, categorical = feature_columns(spec, include_payment, feature_set)
     seed = spec["random_state"]
+    if family == "boost":
+        # Gradient boosting (LightGBM-style histogram trees); categories are ordinal codes handled natively, unseen -> NaN.
+        prepare = ColumnTransformer([
+            ("numeric", SimpleImputer(strategy="median", keep_empty_features=True), numeric),
+            ("category", OrdinalEncoder(handle_unknown="use_encoded_value", unknown_value=np.nan,
+                                        encoded_missing_value=np.nan), categorical),
+        ], remainder="drop")
+        mask = [False] * len(numeric) + [True] * len(categorical)
+        return Pipeline([("prepare", prepare),
+                         ("model", HistGradientBoostingClassifier(categorical_features=mask, early_stopping=False,
+                                      random_state=seed, **params))])
     branches = []
     logged = []
     if family == "linear":
@@ -174,8 +185,8 @@ def make_pipeline(family, params, spec, include_payment=True, feature_set=None, 
     elif family == "tree":
         model = DecisionTreeClassifier(random_state=seed, **params)
     elif family == "forest":
-        model = RandomForestClassifier(n_estimators=200, max_features="sqrt", n_jobs=4,
-                                       random_state=seed, **params)
+        model = RandomForestClassifier(n_estimators=200, n_jobs=4, random_state=seed,
+                                       **{"max_features": "sqrt", **params})
     else:
         raise ValueError(f"Unknown model family: {family}")
     return Pipeline([("prepare", preparation), ("model", model)])
