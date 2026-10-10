@@ -99,4 +99,44 @@ If either gate fails, stop and consult the team before writing the report.
 
 ## Changes after fitting
 
-(none yet)
+### 1. Adaptive buffer level (10 October 2026, after the test was scored once)
+
+**What we saw.** With L fixed on validation (L = 0.9775), the test promise was 27.3 days at 99.1% on time, against Olist's 22.1 days at 96.5%. The forecast itself was fine: at Olist's test on-time rate the engine needed 17.7 days.
+
+**Cause.** The buffer calibrates on orders purchased 45–90 days earlier, so it reacts to delivery shocks about two months late.
+
+- During the Nov–Dec 2017 peak it was too small: 88% on time.
+- In late Jan–Mar 2018 it was far too large: 98% on time with 38–40-day promises.
+- A single L that averages 95% across those swings over-covers in calm periods.
+
+**Change.** Keep the forecast, the score r and the calibration set. Replace the fixed L with a level updated daily from fresh outcomes. This is adaptive conformal inference (Gibbs and Candès, 2021).
+
+- α starts at 0.05.
+- The level used on day D is 1 − α_D, clipped to [0.50, 0.995].
+- After day D: α_{D+1} = α_D + γ · (0.05 − e_D).
+- e_D is the late share among orders whose promise date was D − 1. Their on-time status is known by day D, so no waiting for delivery is needed.
+- If no order's promise date was D − 1, α is unchanged.
+- The adaptive run starts 120 days before each validation window, and before the test start. It uses the same out-of-fold μ and the same promise rule.
+
+**γ selection.**
+
+- Grid: 0, 0.002, 0.005, 0.01, 0.02, 0.05 (γ = 0 is the plain nominal 95% buffer).
+- Chosen on validation only: the shortest mean promise among values with mean validation on-time ≥ 95%.
+- Applied to the selected model and to route + buffer alike.
+- The test is scored once with γ fixed.
+
+**Reporting.** Both the fixed-L result and the adaptive result are reported. This change was made after seeing the test result and is disclosed as such.
+
+### 2. Classifier baseline roles (10 October 2026, after validation and test were scored)
+
+**What changed.** The report's business baseline for the classifier is **no prioritisation**: acting on a random set of the same size. Nothing in the data suggests Olist ranks handed-over orders today.
+
+- **Gate 2 is re-read against that baseline.** Validation passes: PR-AUC 0.366 vs 0.107; 34% of late orders caught in the top 10% vs 10%. Test passes too: 56% vs 10%.
+- **The slack rule is no longer a report baseline.** It stays computed in `results/phase2/handover/`.
+
+**Questions to prepare for (not in the report).** "Could a hand-built remaining-slack formula do as well?"
+
+- Mostly, yes. Remaining slack is the model's top input.
+- The model beat the rule on validation: PR-AUC +0.038, 95% CI [0.031, 0.045].
+- The model lost on test: PR-AUC 0.43 vs 0.52; recall@10% 0.555 vs 0.592.
+- Its extra inputs help in disrupted periods and cost a little in calm ones: about 8 fewer late orders caught per month on test.
