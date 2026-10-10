@@ -24,6 +24,8 @@
 5. Business framing (from a reviewer, agreed): tie results to bad reviews (62% of late orders get 1–2 stars vs 9% on time) and be honest that the repeat-purchase link is weak (2.5% vs 3.0%) and that conversion cannot be measured in this data (cite Salari et al. 2022). Do not reuse the old "4 days sooner at same reliability" headline unless the new results support it.
 6. Commit and push. The report must still be compiled online (no LaTeX locally).
 
+**Not yet verified:** the smoke run was stopped before finishing on the original 2-core machine (the forest fit was slow), so the new pipelines have not run end to end yet. Do step 1 before step 2. On a machine with more cores, run the two full scripts in parallel (two terminals); the adaptive buffer loop is single-threaded, so it dominates the promise run time.
+
 **User preferences for this work:** avoid repeated work, so settle the design before running; everything must be defensible and aligned with the course brief (`ref/IT5006 Project Description - AY 2026_27 Semester 1.pdf`, Phase 2 on pp. 9–12, marking on p. 16). Phase 2 deadline: 11 October 2026, 23:59. The user asked that the report not contain a disclosure about when selection rules changed.
 
 **Environment:** `python -m venv it5006-proj && it5006-proj/bin/pip install -r requirements.txt`; tests: `it5006-proj/bin/python -m unittest discover tests`.
