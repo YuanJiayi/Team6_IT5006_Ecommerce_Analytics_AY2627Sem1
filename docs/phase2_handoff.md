@@ -1,10 +1,66 @@
 # Phase 2 handoff (10 October 2026)
 
-## RESUME HERE (10 October 2026, evening)
+## RESUME HERE (10 October 2026, late evening)
 
 **Read this section first.** Everything under "History" below describes the *previous* selection (tree_depth6 / forest_leaf20) and its numbers are stale. Keep it only as history.
 
 **Deadline:** Phase 2, 11 October 2026, 23:59. Brief: `ref/IT5006 Project Description - AY 2026_27 Semester 1.pdf` (Phase 2 pp. 9–12, marking p. 16).
+
+### NEW DIRECTION (agreed with the user, late 10 October): read this first
+The regression is now **Pratik's two-stage delivery-time estimate** (checkout estimate + handover update), not the promise engine. The handover late-warning classifier stays. The promise engine becomes a **stretch goal**, done only if time remains after the steps below. The remaining-slack rule is not a baseline or comparison; do not reintroduce it.
+
+**Story**
+- Business problem: late deliveries lead to bad reviews, and delivery conditions are unstable over time, so a fixed estimate often misses. Stakeholder: Olist's delivery operations team, who need to know when orders will arrive and which orders need attention before the promise is broken.
+- Regression, two stages. Checkout estimate: delivery days from order, route and seller information known at purchase; sets the customer's expected date. Handover update: re-predicts once the seller has handed the parcel to the carrier (adds time already used and recent route transit); gives a sharper updated arrival date.
+- Classifier at handover: probability of missing the promised date; ranks the day's handed-over orders by risk.
+- Both use the same two families (Linear, Tree-based), the simplest variant in each family as baseline, and the same tuning and one-SE selection.
+- How Olist applies them: (1) checkout estimate sets the expected date; (2) at handover, a daily ranked risk list, worked from the top; (3) for each flagged order the updated estimate shows how late it is likely to be: expedite with the carrier if recoverable, otherwise message the customer with the new date; (4) refit and monitor regularly because conditions shift. This is the brief's Example 4 (dual framing).
+- Stretch goal: a calibrated buffer on the checkout estimate turns it into a promise with a chosen on-time rate. Use a fixed coverage level with the daily rolling calibration, not the adaptive buffer (it lost on validation).
+
+**Facts checked in this session**
+- Pratik's code is already on `phase2-final` (commit `8e9a143`, identical to `origin/pratik` `c66c7be`): `phase2_eta.py`, `docs/phase2_two_stage_eta.md`, `results/phase2/eta/`, `tests/test_phase2_eta.py`. Nothing needs merging.
+- The classifier already uses Pratik's selected handover model for its "estimate − promise" ranking: `phase2_handover_classifier.py:450–451` reads `results/phase2/eta/selection.json` (`selected_candidate`). So the regression must be re-selected **before** the classifier is rerun.
+- Pratik's current selection uses a 0.05-day MAE tie margin (`TIE_MARGIN_DAYS`) and a fixed `SIMPLICITY` list, not our one-SE rule, and a smaller candidate set.
+- Pratik's 0.41 R² is a handover model on a **random** split (his doc labels it secondary). Chronological: checkout about 0.17, handover about 0.34 (validation). Do not quote 0.41 as the result.
+
+**Plan (steps before the stretch goal)**
+
+*Context*
+1. Read this section, `docs/phase2_two_stage_eta.md`, `phase2_eta.py`, `phase2_selection.py`, and the brief (Phase 2 pp. 9–12, marking p. 16).
+2. `it5006-proj/bin/python -m unittest discover tests` must pass (68 tests).
+
+*Decisions to confirm with the user before coding*
+3. Regression selection metric: recommend mean validation MAE over the five windows; RMSE and R² reported alongside.
+4. Checkout-stage inputs: recommend the promise engine's inputs (spec features minus `promised_days` and `promise_slack`, plus `route_transit_90d`) so the stretch goal can reuse the checkout model. Alternative: Pratik's frozen inputs, which include Olist's promise.
+5. Handover-stage inputs: keep Pratik's.
+
+*Align the regression with the agreed selection*
+6. In `phase2_eta.py`, replace `TIE_MARGIN_DAYS` and `SIMPLICITY` with the two-stage method: Stage 1, best mean validation MAE within each group (linear, tree, forest, boost); Stage 2, line-up of plain linear, tuned linear, plain tree, tuned tree, tuned forest, tuned boosting with the paired one-SE rule from `phase2_selection.py`. Reuse the grids in `phase2_promise.py` (`LINEAR`, `TREE`, `FOREST`, `BOOST`, `GROUPS`). Run the selection for the checkout and handover stages separately.
+7. Keep the baselines as reference rows, not candidates: training mean; for handover, Pratik's elapsed days + route transit rule.
+8. Keep the information ladder.
+9. Score test only after selection is recorded, once per stage, selected model only: MAE, RMSE, R², bias, overall and by month.
+10. `results/phase2/eta/selection.json` gets `tuned`, `lineup`, `stage2` (same structure as the classifier) and must keep `selected_candidate` naming the handover-stage model, because the classifier reads it.
+11. Update `tests/test_phase2_eta.py`; add a `--smoke` option like the other scripts; all tests pass.
+
+*Runs*
+12. Smoke run: `phase2_eta.py --smoke --out <scratch folder>`; check the JSON.
+13. Full run: `phase2_eta.py`.
+14. Rerun `phase2_handover_classifier.py` (about 25 min on 8 cores). Its selection should not change; its estimate − promise ranking will use the new handover model.
+15. Commit code and results.
+
+*Evidence*
+16. Update `reports/phase2_final_evidence.py`: regression from `results/phase2/eta/` (both stages' selection, ladder, test metrics); classifier from the new `results/phase2/handover/`; remove or set aside the promise-engine parts for the stretch goal.
+17. Rerun it to regenerate `reports/generated/numbers.tex`, figures and `results/phase2/final/`. Every report number must come from these files.
+
+*Report (`reports/phase2_report.tex`)*
+18. Rewrite to the story above: executive summary; business problem; data and validation design (mostly unchanged); regression section (checkout and handover, ladder, grids, baseline-vs-tuned per group, one-SE line-up, MAE/RMSE/R²); classifier section (logistic regression via one-SE, robustness sentence, imbalance metrics); how Olist applies the models; limitations; appendix table of every configuration.
+19. Apply the fixes in "Report: every section needs checking" below: ISLR p. 214 citation (ESL section unverified); validation-vs-validation checkout/handover PR-AUC comparison; feature-importance wording (top input `handover_days`); classifier validation→test drop explained by the late rate plus ROC-AUC; any negative checkout test R² explained as drift; leave the AI declaration placeholder for the team.
+20. Check length (6–8 pages main body) and reread the whole report against the regenerated numbers.
+
+*Wrap-up*
+21. Update this handoff, commit, push after the user confirms. The report is compiled online (no local LaTeX).
+
+Estimate: 2–3 h code and tests, about 1.5 h runs, 2–3 h evidence and report.
 
 ### State
 - The tuned two-stage selection has run end to end. Smoke runs and full runs finished cleanly; 68 tests pass. New outputs are in `results/phase2/handover/` and `results/phase2/promise/` (new files: `adaptive_matched.csv`, `adaptive_validation_grid.csv`, `forecast_metrics_by_window.csv`).
@@ -42,13 +98,15 @@
 ### Decisions agreed with the user today
 1. Keep the one-SE rule and the chosen models; do not change the selection rule after seeing test (that would be test-set selection).
 2. Defend the classifier's validation → test drop with the late-rate argument and ROC-AUC.
-3. The remaining-slack rule is not a baseline. Keep it as a short limitation (the user leaned this way; confirm).
+3. The remaining-slack rule is not a baseline or a comparison in the report (user decision, late 10 October). The current report draft still has a slack-rule section and table row: remove them.
 4. Cite the one-SE rule as ISLR (James, Witten, Hastie & Tibshirani, *An Introduction to Statistical Learning*, Sec. 6.1.3, p. 214, verified from the PDF). The current ESL Sec. 7.10 citation is **unverified**. Say "standard in statistical learning" (glmnet's default `lambda.1se`, verified), not "industry standard". State two caveats: we apply it across model types (our simplicity order is a judgment), and the SE comes from 5 non-independent windows. Add: "the gap is about a fifth of its standard error, so the choice is not sensitive to the tie-breaking rule."
 
-### OPEN DECISION (the user is asking a teammate to review this)
-How to present the promise engine. Options:
-- **A (recommended).** Fixed coverage level with a daily rolling-recalibrated buffer is the chosen method; adaptive is a tested alternative that lost on validation because of feedback lag. Deployment: daily forecast + buffer; monthly review of on-time against 95% and of the level; analyst raises the level ahead of known peaks (data lags about 6 weeks); late-warning list at handover as the second layer. Pitch: more reliable than Olist on test (98.5% vs 96.5%, and 98.2% vs 93.8% in August) at 2.5 days longer; the level is a reliability-vs-length dial; tie to reviews (62% of late orders get 1–2 stars vs 9%). Lag reduction goes under future work.
-- **B.** Try to reduce the lag tonight (newer calibration window with a censoring correction; the late warning as a leading signal; multi-γ ACI variants). Costs: redesign plus a ~1 h rerun, and it would be designed after seeing test results.
+### Promise engine: now the stretch goal (findings to keep)
+- Option A framing (fixed coverage level with daily rolling calibration; adaptive as a tested alternative that lost on validation) is the basis for the stretch goal.
+- Validation trade-off (ridge_a1000, γ = 0): at Olist's validation on-time (89.3%, 25.0 days) the engine gives about 24.8 days and the route average about 24.9, so it does not beat Olist at equal reliability; it does hit a chosen target (95.0% on validation).
+- A perfectly timed level would still not reach 95% in the Black Friday window (91% at the highest level tested, 0.98).
+- Lead-indicator check (training data only, script not in the repo): 14-day handover delay, 14-day transit, 7-day volume, orders in transit and awaiting handover do not lead the shocks once trend is removed (weekly-change correlations −0.09 to 0.18). Orders in transit peaked 2–5 weeks after Black Friday and stayed high after Feb–Mar 2018. So lag fixes based on these signals are not supported.
+- Untested ideas for shorter promises: buffers calibrated by segment (Mondrian conformal), or conformalized quantile regression. Test on validation only before building.
 
 ### Report: every section needs checking, not just the model sections
 - Executive summary: rewrite (old models, old 17.3 vs 22.05 headline).
@@ -64,10 +122,7 @@ How to present the promise engine. Options:
 96,470 delivered orders; handover cohort 96,272 (198 excluded); test 19,363 orders; late share about 4% normal, 14% Black Friday, 21% Feb–Mar 2018, 3.5% test; bad review 62% late vs 9% on time (95,824 rated orders); carrier leg 85% of delivery-time variance; repeat purchase 2.5% after late vs 3.0% after on time (3.0% of 93,350 customers ever reorder).
 
 ### Next steps
-1. Settle the open decision with the user.
-2. Update `reports/phase2_final_evidence.py` for the new outputs (`adaptive_selection.json`: `tuned`, `lineup`, `stage2`, `matched`; promise MAE/RMSE/R² from `forecast_metrics_by_window.csv`; classifier `selection.json`: `tuned`, `stage2`), rerun it.
-3. Rewrite the report as above, then reread it end to end against the regenerated numbers.
-4. Commit and push; the report is compiled online (no local LaTeX).
+Follow the plan in "NEW DIRECTION" above.
 
 **User preferences:** settle the design before running; everything defensible and aligned with the brief; no report disclosure about when selection rules changed (user's request).
 
