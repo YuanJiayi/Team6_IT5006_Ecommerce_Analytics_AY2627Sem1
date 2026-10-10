@@ -1,0 +1,51 @@
+{
+  "coverage": {
+    "orders": 96470,
+    "handover_cohort": 96272,
+    "excluded_no_valid_handover": 198,
+    "train_orders": 75039
+  },
+  "benefit_ratio": 5.0,
+  "k_grid": [
+    0.01,
+    0.3
+  ],
+  "variants": {
+    "primary": {
+      "selected": "forest_leaf20",
+      "best_pr_auc_candidate": "forest_leaf20",
+      "reason": "forest_leaf20 has the highest mean validation PR-AUC (0.3659)",
+      "k": 0.12,
+      "value_test": {
+        "variant": "primary",
+        "selected": "forest_leaf20",
+        "n_resamples": 1000,
+        "seed": 42,
+        "model_minus_slack_rule": {
+          "pr_auc": {
+            "difference": 0.03800286047016227,
+            "ci_low": 0.03113657911290895,
+            "ci_high": 0.04477183612558757
+          },
+          "recall_top10": {
+            "difference": 0.036460030705812045,
+            "ci_low": 0.023190097150264696,
+            "ci_high": 0.04805746523220445
+          }
+        },
+        "gate_2_pass": true
+      }
+    }
+  },
+  "checkout_variant": {
+    "selected": "forest_leaf20",
+    "reason": "forest_leaf20 has the highest mean validation PR-AUC (0.1997)",
+    "pr_auc": 0.1996571533782584,
+    "roc_auc": 0.6631291547490618,
+    "recall_top10": 0.2166180514525355,
+    "precision_top10": 0.24299467459713675
+  },
+  "extension_run": false,
+  "counterfactual_simulation": "not implemented in this run (depends on the promise engine output)",
+  "runtime_seconds": 131.1
+}
