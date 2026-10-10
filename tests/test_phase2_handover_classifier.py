@@ -76,11 +76,12 @@ class OperatingPointTests(unittest.TestCase):
 
 class SelectionAndBootstrapTests(unittest.TestCase):
     def test_simpler_within_margin_wins(self):
-        chosen, best, _ = select_candidate({"logistic": 0.30, "logistic_balanced": 0.29, "tree_depth6": 0.20,
-                                            "forest_leaf20": 0.303})
+        noisy = {"logistic": [0.30, 0.25, 0.35, 0.28, 0.32], "logistic_balanced": [0.2] * 5,
+                 "tree_depth6": [0.2] * 5, "forest_leaf20": [0.27, 0.30, 0.31, 0.33, 0.30]}
+        chosen, best, _ = select_candidate(noisy)
         self.assertEqual((chosen, best), ("logistic", "forest_leaf20"))
-        chosen, _, _ = select_candidate({"logistic": 0.30, "logistic_balanced": 0.29, "tree_depth6": 0.20,
-                                         "forest_leaf20": 0.40})
+        steady = noisy | {"forest_leaf20": [0.32, 0.27, 0.37, 0.30, 0.34]}  # +0.02 in every window
+        chosen, _, _ = select_candidate(steady)
         self.assertEqual(chosen, "forest_leaf20")
 
     def test_weighted_metrics_match_sklearn_at_unit_weights(self):

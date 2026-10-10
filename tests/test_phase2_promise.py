@@ -81,13 +81,15 @@ class SelectionTests(unittest.TestCase):
         self.assertAlmostEqual(interpolate(np.array([0.9, 1.0]), np.array([10.0, 20.0]), 0.95), 15.0)
         self.assertTrue(np.isnan(interpolate(np.array([0.9, 0.93]), np.array([10.0, 12.0]), 0.95)))
 
-    def test_simpler_within_margin_wins(self):
-        scores = {n: 20.0 for n in SIMPLICITY} | {n: 25.0 for n in BASELINES}
-        scores["forest_leaf20"] = 19.0
-        scores["ridge_10"] = 19.05
+    def test_simpler_within_one_standard_error_wins(self):
+        base = np.array([20.0, 22.0, 24.0, 26.0, 28.0])
+        scores = {n: base + 2.0 for n in SIMPLICITY} | {n: base + 5.0 for n in BASELINES}
+        scores["forest_leaf20"] = base
+        # ridge_10 is 0.2 days longer on average but the gap swings across windows: within one SE
+        scores["ridge_10"] = base + np.array([1.0, -0.6, 0.8, -0.4, 0.2])
         self.assertEqual(select_candidate(scores)[0], "ridge_10")
-        scores["ridge_10"] = 19.2
-        scores["linear_baseline"] = 19.9
+        # a steady 0.2-day gap has a tiny SE, so the forest wins
+        scores["ridge_10"] = base + np.array([0.21, 0.19, 0.2, 0.2, 0.2])
         self.assertEqual(select_candidate(scores)[0], "forest_leaf20")
 
 

@@ -1,5 +1,5 @@
 variant,benefit_ratio,k,ranking,test_net_benefit_per_order
-primary,5.0,0.12,model,-0.018408736349453978
+primary,5.0,0.12,model,-0.018668746749869996
 primary,5.0,0.12,slack_rule,-0.011908476339053562
 primary,5.0,0.12,regression_gap,-0.006448257930317213
 primary,2.0,0.01,model,0.0026521060842433697

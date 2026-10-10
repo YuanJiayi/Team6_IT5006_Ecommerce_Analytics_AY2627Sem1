@@ -1,9 +1,9 @@
 {
   "engine": {
     "gamma": 0.05,
-    "mean_promise": 17.793781955275527,
-    "median_promise": 17.0,
-    "on_time": 0.9629189691680008
+    "mean_promise": 17.275009037855703,
+    "median_promise": 16.0,
+    "on_time": 0.9541393379125136
   },
   "route": {
     "gamma": 0.05,

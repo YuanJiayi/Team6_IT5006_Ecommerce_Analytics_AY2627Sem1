@@ -96,3 +96,8 @@ If either gate fails, stop and consult the team before writing the report.
 
 1. Selected model + buffer beats route + buffer on validation promise days at 95%. On test at the fixed L, its mean promise is shorter than Olist's at comparable on-time.
 2. The classifier beats the slack rule under the value test.
+
+## Amendment (10 October 2026, after the first test runs)
+
+The tie margins above (0.1 day; 0.005 PR-AUC) are replaced by the paired one-standard-error rule over the validation windows, and the promise engine's model is selected with the adaptive buffer rather than the fixed level. Details and the disclosure are in `docs/phase2_handoff.md` ("Selection-rule change").
+

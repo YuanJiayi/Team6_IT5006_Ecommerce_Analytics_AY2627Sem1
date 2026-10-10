@@ -1,0 +1,170 @@
+% IT5006 Phase 2 final report. Every number comes from generated/numbers.tex, which
+% reports/phase2_final_evidence.py writes. Upload the reports/ folder (with generated/) to compile online.
+\documentclass[12pt,a4paper]{article}
+\usepackage[margin=0.8in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.16}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue,urlcolor=blue}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.4em}
+\renewcommand{\arraystretch}{1.1}
+\input{generated/numbers}
+
+\begin{document}
+\begin{center}
+{\Large\bfseries Keeping delivery promises at Olist}\\[3pt]
+{\small IT5006 Phase 2 --- promise engine (regression) and late warning (classification)}\\[2pt]
+{\footnotesize Code: \url{https://github.com/YuanJiayi/Team6_IT5006_Ecommerce_Analytics_AY2627Sem1}}
+\end{center}
+\vspace{-0.6em}
+
+\section*{Executive summary}
+Olist's delivery operations team makes two decisions about every order. At \textbf{checkout} it must choose the delivery date to promise: a short promise may help the sale, and a broken promise leads to bad reviews. At \textbf{carrier handover}, when the parcel leaves the seller, it must choose which orders to act on because they are likely to miss that promise. Both decisions concern one quantity, delivery time, so we answer them with one regression model and one classification model.
+
+\begin{itemize}\setlength{\itemsep}{0pt}
+\item \textbf{Promise engine (regression).} A depth-6 decision tree forecasts delivery days from route, seller and order details, deliberately ignoring Olist's own estimate. A buffer that corrects itself every day is added on top. On the test period (June--August 2018) its promises averaged \EngineTestPromise{} days against Olist's \OlistTestPromise{}, with \EngineTestOnTime{}\% delivered on time against \OlistTestOnTime{}\%.
+\item \textbf{Late warning (classification).} A random forest scores each order's risk of missing Olist's promise once the parcel is handed to the carrier, giving operations a ranked daily list. On the test period the top 10\% of the list contained \GainTenModel{}\% of all late orders; a random list contains 10\%.
+\end{itemize}
+
+\textbf{Delivery conditions swing, and that is the real difficulty.} Normally about \NormalLate{}\% of orders are late. In the Black Friday window (\WinBStart{} to \WinBEnd{}) \BlackFridayLate{}\% were late, and in the window \WinEStart{} to \WinEEnd{} \FebMarLate{}\% were. Over the five validation windows, which include these periods, the engine's average promise was \EngineValPromise{} days with \EngineValOnTime{}\% on time; Olist's was \OlistValPromise{} days with \OlistValOnTime{}\% on time. The engine bought reliability through long promises, reaching about \PeakPromise{} days in early 2018, and promised longer than Olist in every validation window. Its advantage over Olist appears only in the calm test period, not under stress.
+
+\textbf{Decision.} We recommend piloting both tools with monitoring, not replacing Olist's process: run the promise engine alongside Olist's estimate and review its buffer before and after peak periods, and size the warning list to the current late rate. At the test period's late rate, acting on \ActShare{}\% of orders had negative net benefit; acting on the top 5\% was worthwhile.
+
+\section*{Business problem and why it matters}
+Delivery time dominates the customer experience. The carrier leg (handover to customer) accounts for \CarrierShare{}\% of the variance in total delivery time. Among \RatedOrders{} delivered orders with a review, \BadReviewLate{}\% of late orders received a bad review (score 1 or 2), against \BadReviewOnTime{}\% of on-time orders, a ratio of \BadReviewRatio{}. A broken promise is therefore costly. Promise setting is an established problem in online retail: at JD.com, promising too early or too late both reduced sales, and a better promise policy raised simulated sales volume by 6.1\%~\cite{salari2022}. Customer retention is low overall: only \RepeatShare{}\% of the \UniqueCustomers{} customers ordered more than once, and the repeat rate after a late first order (\RepeatAfterLate{}\%) was close to that after an on-time one (\RepeatAfterOnTime{}\%), so we do not claim an effect on repeat purchase.
+
+The two decisions need different information. At checkout only the order details and past deliveries are known, which is enough for a forecast. At handover we also know how long the seller took, which tells us how much of the promised time is left. Since the carrier leg drives \CarrierShare{}\% of the variance, knowing the order has reached the carrier, and how much time is left, should help; this is consistent with the late warning's PR-AUC rising from \CheckoutPR{} at checkout to \ClsTestPR{} at handover.
+
+\section*{Data, cohort and validation design}
+We use the Olist tables supplied for the course. Of 99,441 orders, \AllOrders{} were delivered with both an actual and an estimated delivery date; these form the modelling cohort. An order is \emph{late} if it arrives after the promised calendar date. For the late warning we keep orders whose handover is after purchase and before delivery: \CohortOrders{} orders, excluding \ExcludedOrders{} without a valid handover time.
+
+\textbf{Temporal split, not random.} The test set is every order purchased from 26 May 2018 (\TestOrders{} orders). Training and validation use earlier orders only. Validation uses five chronological windows from 22 September 2017 to 26 March 2018, and each window is fitted only on orders purchased \emph{and delivered} before it starts. A random split would let the model learn from orders that were still in transit when the predicted order was placed, and would hide the fact that conditions change over time; in an earlier checkout-stage experiment a shuffled split gave a PR-AUC of 0.303 against 0.200 for the chronological one. Time-ordered evaluation is standard for forecasting~\cite{bergmeir2012}, and several public Olist models with higher scores use random splits or information from after checkout (our audit is in \texttt{docs/phase2\_external\_olist\_comparison.md}). Because the late rate itself changes over time, the temporal split is the honest test of how the tools would perform going forward.
+
+\textbf{Why the handover timestamp is legitimate.} The late warning is scored at the moment the carrier takes the parcel, so the handover time is known then, and only information available at that moment is used: approval time, days from purchase to handover, remaining slack (the promise minus days already used), and route history from deliveries that had already arrived. Delivery and review data are never used. The checkout version of the classifier, without handover information, scores a validation PR-AUC of only \CheckoutPR{}.
+
+\begin{figure}[ht]
+\centering
+\input{generated/fig_monthly}
+\caption{Share of orders late by purchase month (bars) and the engine's mean buffer level (line). Black Friday (November 2017) and February--March 2018 stand out. The line has no points from April 2018 because the scored periods are the validation windows and the test period.}
+\label{fig:monthly}
+\end{figure}
+
+\section*{Model 1: the promise engine (regression)}
+\textbf{Method.} The forecast $\mu$ is a decision tree of depth 6 (at least 50 orders per leaf) predicting delivery days. Its inputs are the order, route and seller features, \emph{minus} Olist's promise and slack, \emph{plus} the route's recent transit time (\texttt{route\_transit\_90d}). The promise is $\max(1,\lceil \mu + q \cdot \max(\mu,3)\rceil)$, where $q$ is a quantile of recent forecast errors on orders delivered before the purchase day. The quantile level is the buffer level. In the adaptive version the level is adjusted every day: if recent promises were kept less often than the 95\% target, the level rises, otherwise it falls (step size \SelectedGamma{}, chosen on validation as the step with the shortest mean promise that reaches 95\% on time; larger steps oscillated and lost coverage). This update is adaptive conformal inference~\cite{gibbs2021}. Ordinary conformal prediction assumes past and future orders are exchangeable, which fails when delivery conditions drift; the adaptive version drops that assumption but only guarantees that the \emph{long-run average} on-time rate approaches the target, not the rate in any given month. Its guarantee also assumes each outcome is known before the next update, whereas we learn whether a promise was kept only when it falls due, weeks later. Both limits explain the lag and overshoot around Black Friday shown below. Forecasting a distribution with tree models and promising a quantile of it follows published retail practice~\cite{salari2022,ye2025}.
+
+\textbf{Choosing the model on promise length, not MAE.} The business question is how short a promise can be while still being kept 95\% of the time, so we compared candidates on promise length, not forecast error. Industry work treats the two errors asymmetrically for the same reason: a late promise costs the sale, a broken one costs the customer~\cite{v2021}. Each candidate forecast (linear, three ridge, two trees, a forest) was run with the adaptive buffer on the five validation windows, because that is the system we would deploy. A candidate was eligible if some step size reached 95\% mean on time. Among eligible candidates we used the one-standard-error rule~\cite{hastie2009}: the simplest model whose mean promise is within one standard error of the best, using the per-window paired gap.
+
+The forest gave the shortest promise (\ForestAdPromise{} days). The depth-6 tree was \SelAdGap{} days longer, inside one standard error (\SelAdGapSE{}), and simpler, so it was chosen. The linear and ridge forecasts gave shorter promises (\LinPromiseLow{}--\LinPromiseHigh{} days) but reached only \LinOnTimeLow{}--\LinOnTimeHigh{}\% on time, so they were not eligible; the exclusion turns on fractions of a percentage point. A route average with the same buffer (\RouteAdAdPromise{} days, \RouteAdAdOnTime{}\% on time) was also within one standard error of the forest. On validation, then, the choice of forecast matters little once the adaptive buffer is in place.
+
+\emph{Change from the original plan.} Our specification chose the model with a fixed buffer and a 0.1-day tie margin, which picked the forest by 0.12 days. We replaced the margin, which had no justification, with the one-standard-error rule, and then scored candidates with the adaptive buffer we deploy rather than a fixed one. Both changes use validation data only, but they were made after we had seen test results for the earlier forest engine and for a fixed-buffer ridge engine, so the test figures below are not a first look at the data.
+
+Averaged over the validation windows, the tree's forecast scores MAE \SelMAE{}, RMSE \SelRMSE{} and $R^2$ \SelRSq{}; ridge has the best MAE (\RidgeMAE{}) and the training-mean floor scores MAE \MeanMAE{} and $R^2$ \MeanRSq{}. The forecast is modest: it explains under a fifth of the variation in delivery days. Most of the work is done by the buffer, which turns an uncertain forecast into a promise that is kept.
+
+\textbf{Test results.} Against calendar-day need on the test period the tree has MAE \TestEngineMAE{}, RMSE \TestEngineRMSE{} and $R^2$ \TestEngineRSq{}. Its $R^2$ is negative, meaning its errors are larger than the spread of test-period delivery times, and a route-average forecast does about as well (MAE \TestRouteBaseMAE{}, $R^2$ \TestRouteBaseRSq{}). The promise engine's advantage comes from the calibrated buffer, not from a sharper forecast.
+
+\begin{table}[ht]
+\centering\small
+\caption{Promise engine on the test period.}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+& Mean promise (days) & Delivered on time \\
+\midrule
+Olist's promise & \OlistTestPromise{} & \OlistTestOnTime{}\% \\
+Promise engine, adaptive buffer & \EngineTestPromise{} & \EngineTestOnTime{}\% \\
+Promise engine, fixed buffer level \FixedLevel{} & \FixedTestPromise{} & \FixedTestOnTime{}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+A \emph{fixed} buffer level, chosen on validation to give 95\% on time, over-covers in calm weeks: \FixedTestOnTime{}\% on time at \FixedTestPromise{} days. Setting the fixed-buffer engine to Olist's test on-time rate gives \MatchedEngine{} days, \MatchedGap{} days shorter than Olist. We present fixed and adaptive buffers as a method comparison: a fixed level over-covers in calm periods, so we recommend the adaptive level. The engine's on-time rate is about one point below Olist's on test (\EngineTestOnTime{}\% against \OlistTestOnTime{}\%), and it fell to \TestJulEngineOnTime{}\% in July.
+
+\begin{figure}[ht]
+\centering
+\input{generated/fig_windows}
+\caption{Mean promise in each validation window, Olist against the promise engine. W2 is the Black Friday window; W5 is February--March 2018.}
+\label{fig:windows}
+\end{figure}
+
+\textbf{Where it does not perform well.} Figure~\ref{fig:windows} is the main caveat. In window W2 (\WinBStart{} to \WinBEnd{}, \WinBLate{}\% of orders late) the engine promised \WinBEngine{} days and was on time for only \WinBEngineOnTime{}\% of orders, close to Olist (\WinBOlistOnTime{}\%): the buffer could not react before the peak. Afterwards it overreacted. In W4 and W5 it promised \WinDEngine{} and \WinEEngine{} days against Olist's \WinDOlist{} and \WinEOlist{}, with about 99\% on time. In every validation window the engine promised longer than Olist, even in the calm first window (\WinAEngine{} against \WinAOlist{} days). The adaptive buffer therefore needs monitoring around peaks, and a cap on promise length would be a sensible safeguard.
+
+\section*{Model 2: the late warning (classification)}
+\textbf{Method.} The classifier is a random forest (\texttt{forest\_leaf20}) that outputs the probability of missing the promise. It had the highest mean validation PR-AUC (\ValForestPR{}) among four candidates: logistic regression (\ValLogitPR{}), class-weighted logistic regression (\ValLogitBalPR{}) and a depth-6 tree. Under the same one-standard-error rule it is kept: it beat logistic regression in \ClsBestWins{} of 5 windows by \ClsGap{} PR-AUC, about four times the standard error (\ClsGapSE{}). Here the added complexity earns its place. PR-AUC is the headline metric because late orders are rare. The product is a ranking: each day operations works down the list from the top.
+
+\textbf{Imbalance.} Only \ClsTestLate{}\% of test orders are late, so accuracy is meaningless (predicting ``never late'' is 96.5\% accurate) and a fixed 0.5 threshold would flag almost nothing. We report PR-AUC, which is more informative than ROC-AUC when positives are rare~\cite{saito2015}, against the late rate as the baseline, recall for a fixed share of orders acted on, and the action metrics below. Class weighting changes fitting, not the underlying scarcity, and did not improve validation PR-AUC (\ValLogitBalPR{} against \ValLogitPR{}).
+
+\begin{table}[ht]
+\centering\small
+\caption{Late warning on the test period, acting on the top \ActShare{}\% of orders by risk.}
+\begin{tabular}{@{}lccccccc@{}}
+\toprule
+& PR-AUC & ROC-AUC & Precision & Recall & F1 & MCC \\
+\midrule
+Late-warning model & \ClsTestPR{} & \ClsTestROC{} & \ClsTestPrec{}\% & \ClsTestRec{}\% & \ClsTestFone{} & \ClsTestMCC{} \\
+Remaining-slack rule & \SlackTestPR{} & \SlackTestROC{} & --- & --- & --- & --- \\
+Random list & \ClsTestLate{}\% & 0.50 & \ClsTestLate{}\% & \ActShare{}\% & --- & 0.00 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Ranking quality.} The top 1\%, 5\%, 10\% and 20\% of the daily list contain \GainOneModel{}\%, \GainFiveModel{}\%, \GainTenModel{}\% and \GainTwentyModel{}\% of the late orders (Figure~\ref{fig:gains}). A random list contains 1\%, 5\%, 10\% and 20\%. On validation the top 10\% contained \ValForestRecallTen{}\% of late orders against 10\% for a random list, and the model's PR-AUC was \ValForestPR{} against a late rate of about 11\%.
+
+\begin{figure}[ht]
+\centering
+\input{generated/fig_gains}
+\caption{Cumulative share of late orders caught as operations works down the list, test period.}
+\label{fig:gains}
+\end{figure}
+
+\textbf{What drives the score.} Permutation importance~\cite{breiman2001} (the drop in validation PR-AUC when a column is shuffled) is led by \texttt{\ImpAName{}} (\ImpADrop{}), then \texttt{\ImpBName{}} (\ImpBDrop{}) and \texttt{\ImpCName{}} (\ImpCDrop{}); all other inputs contribute under 0.01 each. The model is essentially reading how much of the promise has already been used.
+
+\textbf{Could a hand-built rule do as well?} Mostly, yes. A rule that ranks orders by remaining slack alone scored a test PR-AUC of \SlackTestPR{}, above the model's \ClsTestPR{}. On validation the model was better, by \ValDiffPR{} PR-AUC (95\% bootstrap interval \ValDiffLow{} to \ValDiffHigh{}). We therefore describe the model as a good ranker whose edge over a simple slack rule is not established.
+
+\textbf{Is acting worth it?} We value a caught late order at five times the cost of acting on one order, a net-benefit calculation in the spirit of decision curve analysis~\cite{vickers2006}. Acting pays off only if precision exceeds 1/5, or 20\%. On the test period precision was \PrecOneModel{}\% for the top 1\%, \PrecFiveModel{}\% for the top 5\%, \PrecTenModel{}\% for the top 10\% and \ClsTestPrec{}\% at the \ActShare{}\% share chosen on validation. The net benefit at \ActShare{}\% was therefore negative (\ClsNetBenefit{} per order), because the test period was calm. The list should be sized to the current late rate: roughly the top 5\% in a calm period, and wider only when lateness rises. The five-to-one value is an assumption, not a measured cost.
+
+\begin{table}[ht]
+\centering\small
+\caption{Monthly test results for the late warning at the \ActShare{}\% share.}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Month & Orders & Late orders & Orders acted on & Late orders caught \\
+\midrule
+May (from the 26th) & \TestMayOrders{} & \TestMayLateCount{} & \TestMayActed{} & \TestMayCaught{} \\
+June & \TestJunOrders{} & \TestJunLateCount{} & \TestJunActed{} & \TestJunCaught{} \\
+July & \TestJulOrders{} & \TestJulLateCount{} & \TestJulActed{} & \TestJulCaught{} \\
+August & \TestAugOrders{} & \TestAugLateCount{} & \TestAugActed{} & \TestAugCaught{} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section*{Limitations and what we would do next}
+\begin{itemize}\setlength{\itemsep}{0pt}
+\item \textbf{Peaks are the weak point.} Both models were trained largely on calm months. The engine's buffer lagged at Black Friday and overreacted after it; we would monitor it through peaks and cap promise length.
+\item \textbf{Test period.} The test months were calm (\ClsTestLate{}\% late), so test results show behaviour in good conditions. We do not claim the settings were fixed before any look at test results, and the test period was used to compare buffer methods.
+\item \textbf{Cohort.} Results describe orders that were eventually delivered. Cancelled and open orders have no outcome.
+\item \textbf{No causal claim.} We show that late orders can be ranked and that promises can be calibrated, not that acting on the list prevents delays or raises sales. The promise engine's effect on conversion is untested. A pilot with a control group would measure it.
+\item \textbf{Next step.} Compare the late warning's ranking against the engine's promise instead of Olist's, as a clearly labelled simulation.
+\end{itemize}
+
+\begin{thebibliography}{9}\small\setlength{\itemsep}{0pt}
+\bibitem{bergmeir2012} C.~Bergmeir and J.~M.~Ben\'itez. On the use of cross-validation for time series predictor evaluation. \emph{Information Sciences}, 2012. doi:10.1016/j.ins.2011.12.028.
+\bibitem{breiman2001} L.~Breiman. Random forests. \emph{Machine Learning}, 45(1):5--32, 2001.
+\bibitem{gibbs2021} I.~Gibbs and E.~Cand\`es. Adaptive conformal inference under distribution shift. \emph{Advances in Neural Information Processing Systems 34}, 2021.
+\bibitem{hastie2009} T.~Hastie, R.~Tibshirani and J.~Friedman. \emph{The Elements of Statistical Learning}, 2nd ed., Sec.~7.10. Springer, 2009.
+\bibitem{saito2015} T.~Saito and M.~Rehmsmeier. The precision-recall plot is more informative than the ROC plot when evaluating binary classifiers on imbalanced datasets. \emph{PLOS ONE}, 10(3):e0118432, 2015.
+\bibitem{salari2022} N.~Salari, S.~Liu and Z.-J.~M.~Shen. Real-time delivery time forecasting and promising in online retailing: when will your package arrive? \emph{Manufacturing \& Service Operations Management}, 24(3):1421--1436, 2022.
+\bibitem{v2021} Preethi~V, N.~Sundaram and R.~B.~Tallamraju. Online fashion commerce: modelling customer promise date. SDM Workshop on Data Science for Retail and E-Commerce, 2021. arXiv:2105.00315.
+\bibitem{vickers2006} A.~J.~Vickers and E.~B.~Elkin. Decision curve analysis: a novel method for evaluating prediction models. \emph{Medical Decision Making}, 26(6):565--574, 2006.
+\bibitem{ye2025} T.~Ye, A.~Hijazi and P.~Van~Hentenryck. Conformal predictive distributions for order fulfillment time forecasting. arXiv:2505.17340, 2025.
+\end{thebibliography}
+
+\section*{Declaration on the use of AI}
+We used Claude (Anthropic) as a coding and writing assistant for the Phase 2 analysis code, the figures and the first draft of this report. All numbers in this report are generated by \texttt{reports/phase2\_final\_evidence.py} from the saved results in \texttt{results/phase2/}. [Team to confirm before submission: that the team specified the design, reviewed the outputs, and takes responsibility for the content.]
+
+\end{document}

@@ -1,4 +1,7 @@
 {
+  "rule": "per candidate, gamma with the shortest mean validation promise reaching the target on time; then the one-standard-error rule on per-window mean promise among eligible candidates",
+  "selected": "tree_depth6",
+  "reason": "forest_leaf20 has the lowest mean promise at 95% on time (38.877 days); tree_depth6 (40.051) is 1.174 days longer, within one standard error (1.333) of the paired gap, and simpler, so it is chosen",
   "gamma_grid": [
     0.0,
     0.002,
@@ -9,12 +12,231 @@
     0.1,
     0.2
   ],
+  "gamma_by_candidate": {
+    "linear_baseline": null,
+    "ridge_1": null,
+    "ridge_10": null,
+    "ridge_100": null,
+    "tree_depth6": 0.05,
+    "tree_baseline": 0.2,
+    "forest_leaf20": 0.05,
+    "route_baseline": 0.05
+  },
+  "eligible": [
+    "forest_leaf20",
+    "tree_baseline",
+    "tree_depth6"
+  ],
   "selected_gamma": {
     "engine": 0.05,
     "route": 0.05
   },
   "mean_validation": {
-    "engine": {
+    "linear_baseline": {
+      "0.0": {
+        "on_time": 0.9151690567030654,
+        "mean_promise": 26.679147480594658
+      },
+      "0.002": {
+        "on_time": 0.9194579660570976,
+        "mean_promise": 27.80434153400868
+      },
+      "0.005": {
+        "on_time": 0.924641494540192,
+        "mean_promise": 30.00565715037495
+      },
+      "0.01": {
+        "on_time": 0.9322720694645442,
+        "mean_promise": 34.42460202604921
+      },
+      "0.02": {
+        "on_time": 0.940034206025523,
+        "mean_promise": 36.07804236284699
+      },
+      "0.05": {
+        "on_time": 0.948848835679516,
+        "mean_promise": 35.198289698723855
+      },
+      "0.1": {
+        "on_time": 0.9253256150506513,
+        "mean_promise": 33.375766346533354
+      },
+      "0.2": {
+        "on_time": 0.8992500986712274,
+        "mean_promise": 35.98552821997106
+      }
+    },
+    "ridge_1": {
+      "0.0": {
+        "on_time": 0.9150374950664386,
+        "mean_promise": 26.648362057623995
+      },
+      "0.002": {
+        "on_time": 0.9191422181291935,
+        "mean_promise": 27.774240231548482
+      },
+      "0.005": {
+        "on_time": 0.9245888698855413,
+        "mean_promise": 29.99628996184713
+      },
+      "0.01": {
+        "on_time": 0.9321668201552427,
+        "mean_promise": 34.35190106564926
+      },
+      "0.02": {
+        "on_time": 0.9396921457702934,
+        "mean_promise": 35.98413366662281
+      },
+      "0.05": {
+        "on_time": 0.946770161820813,
+        "mean_promise": 34.91316931982634
+      },
+      "0.1": {
+        "on_time": 0.9204052098408104,
+        "mean_promise": 32.612866728062095
+      },
+      "0.2": {
+        "on_time": 0.8971977371398501,
+        "mean_promise": 35.75105907117485
+      }
+    },
+    "ridge_10": {
+      "0.0": {
+        "on_time": 0.9141955005920274,
+        "mean_promise": 26.59360610445994
+      },
+      "0.002": {
+        "on_time": 0.9184580976187343,
+        "mean_promise": 27.721536639915804
+      },
+      "0.005": {
+        "on_time": 0.9240889356663597,
+        "mean_promise": 29.963162741744508
+      },
+      "0.01": {
+        "on_time": 0.9317195105907118,
+        "mean_promise": 34.394527035916326
+      },
+      "0.02": {
+        "on_time": 0.9395868964609919,
+        "mean_promise": 36.018471253782394
+      },
+      "0.05": {
+        "on_time": 0.9474016576766214,
+        "mean_promise": 35.07104328377845
+      },
+      "0.1": {
+        "on_time": 0.9299039600052625,
+        "mean_promise": 33.42710169714511
+      },
+      "0.2": {
+        "on_time": 0.8915405867648994,
+        "mean_promise": 35.053045651887906
+      }
+    },
+    "ridge_100": {
+      "0.0": {
+        "on_time": 0.9153006183396922,
+        "mean_promise": 26.67896329430338
+      },
+      "0.002": {
+        "on_time": 0.9202999605315091,
+        "mean_promise": 27.92493093014077
+      },
+      "0.005": {
+        "on_time": 0.9259307985791343,
+        "mean_promise": 30.258176555716354
+      },
+      "0.01": {
+        "on_time": 0.9325088804104723,
+        "mean_promise": 34.12806209709249
+      },
+      "0.02": {
+        "on_time": 0.9386659650046048,
+        "mean_promise": 34.529825023023285
+      },
+      "0.05": {
+        "on_time": 0.9387975266412314,
+        "mean_promise": 34.35632153663992
+      },
+      "0.1": {
+        "on_time": 0.9166425470332851,
+        "mean_promise": 32.84717800289435
+      },
+      "0.2": {
+        "on_time": 0.8811998421260361,
+        "mean_promise": 33.506407051703725
+      }
+    },
+    "tree_depth6": {
+      "0.0": {
+        "on_time": 0.9162478621234047,
+        "mean_promise": 27.35321668201552
+      },
+      "0.002": {
+        "on_time": 0.919852650966978,
+        "mean_promise": 28.62523352190501
+      },
+      "0.005": {
+        "on_time": 0.9257729246151822,
+        "mean_promise": 31.067912116826733
+      },
+      "0.01": {
+        "on_time": 0.9352190501249836,
+        "mean_promise": 36.679226417576636
+      },
+      "0.02": {
+        "on_time": 0.9430338113406131,
+        "mean_promise": 38.72082620707802
+      },
+      "0.05": {
+        "on_time": 0.9592422049730299,
+        "mean_promise": 40.05112485199316
+      },
+      "0.1": {
+        "on_time": 0.9255624259965793,
+        "mean_promise": 36.69285620313117
+      },
+      "0.2": {
+        "on_time": 0.878884357321405,
+        "mean_promise": 32.32411524799368
+      }
+    },
+    "tree_baseline": {
+      "0.0": {
+        "on_time": 0.9094592816734639,
+        "mean_promise": 36.50540718326536
+      },
+      "0.002": {
+        "on_time": 0.9169846072885146,
+        "mean_promise": 38.36721484015261
+      },
+      "0.005": {
+        "on_time": 0.9243257466122878,
+        "mean_promise": 40.91024865149323
+      },
+      "0.01": {
+        "on_time": 0.9308512037889752,
+        "mean_promise": 43.707406920142084
+      },
+      "0.02": {
+        "on_time": 0.9322983817918695,
+        "mean_promise": 45.0394421786607
+      },
+      "0.05": {
+        "on_time": 0.934350743323247,
+        "mean_promise": 46.887251677410866
+      },
+      "0.1": {
+        "on_time": 0.9486120247335877,
+        "mean_promise": 52.715721615576896
+      },
+      "0.2": {
+        "on_time": 0.9599789501381396,
+        "mean_promise": 58.14798052887778
+      }
+    },
+    "forest_leaf20": {
       "0.0": {
         "on_time": 0.9093540323641627,
         "mean_promise": 26.125430864359952
@@ -48,7 +270,7 @@
         "mean_promise": 34.846493882383896
       }
     },
-    "route": {
+    "route_baseline": {
       "0.0": {
         "on_time": 0.9165899223786343,
         "mean_promise": 27.310643336403103

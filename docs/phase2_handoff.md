@@ -7,7 +7,7 @@ Status of branch `phase2-final`, for the next agent. The design is in `docs/phas
 Olist makes two delivery decisions per order. One problem, two model types (brief Example 4):
 
 1. **Checkout: the promise engine (regression).**
-   - `forest_leaf20` forecasts delivery days.
+   - `tree_depth6` (depth-6 decision tree) forecasts delivery days. Chosen with the adaptive buffer and the one-standard-error rule; see the selection-rule change below.
    - Inputs: the spec features minus `promised_days` and `promise_slack`, plus `route_transit_90d`.
    - A self-correcting buffer is added to the forecast to give the promised date. The buffer level adapts daily to whether promises that just fell due were kept.
    - Code: `phase2_promise.py`, results in `results/phase2/promise/`.
@@ -31,7 +31,7 @@ Both models beat their baselines. The hard part of deployment is keeping the buf
 
 | Model | Status quo | Simple heuristic | Simplest in family |
 |---|---|---|---|
-| Regression | Olist's promise | Route average + same buffer | LinearRegression / DecisionTree variants |
+| Regression | Olist's promise | — | LinearRegression / DecisionTree variants |
 | Classifier | No prioritisation (random list of the same size) | — | Logistic / decision tree variants |
 
 The remaining-slack rule is **not** a report baseline. Prepare for the question "could a hand-built slack formula do as well?":
@@ -46,16 +46,15 @@ The remaining-slack rule is **not** a report baseline. Prepare for the question 
 
 | | Mean promise | On time |
 |---|---|---|
-| Forest + adaptive buffer (γ = 0.05) | 17.79 days | 96.29% |
-| Route + adaptive buffer | 18.86 days | 96.01% |
+| Tree + adaptive buffer (γ = 0.05) | 17.28 days | 95.41% |
 | Olist | 22.05 days | 96.52% |
-| Fixed buffer level (L = 0.9775) | 27.3 days | 99.1% |
+| Fixed buffer level (L = 0.975) | 26.8 days | 98.9% |
 
 **Promise engine, validation and buffer behaviour**
 
-- At matched reliability on validation, the engine and Olist are about equal: 24.5 vs 24.4 days. The forest beats the route average in both periods.
+- On validation the engine promised longer than Olist in all five windows (mean 40.1 vs 25.0 days; on time 95.9% vs 89.3%).
 - Faster γ (0.1, 0.2) oscillates and loses coverage.
-- Even at γ = 0.05, the adaptive buffer overreacted after Black Friday: about 52-day promises in Jan–Mar 2018. Treat this as a limitation that needs monitoring.
+- Even at γ = 0.05, the adaptive buffer overreacted after Black Friday: about 57-day promises in Jan–Mar 2018. Treat this as a limitation that needs monitoring.
 
 **Classifier**
 
@@ -106,3 +105,26 @@ Present the fixed and adaptive buffers as a method comparison: "a fixed level ov
 - Data CSVs are tracked in `data/`.
 - Tests: `it5006-proj/bin/python -m unittest discover tests` (59 pass).
 - Rerun: `it5006-proj/bin/python phase2_promise.py`, about 7 minutes, and `it5006-proj/bin/python phase2_handover_classifier.py`, about 2 minutes.
+
+## Parked: decide later whether to include in the report
+
+**Route average + same buffer** (simple-heuristic baseline for the promise engine). It separates the gain from the buffer approach from the gain from the forest.
+
+| | Mean promise | On time |
+|---|---|---|
+| Route + adaptive buffer (test) | 18.86 days | 96.01% |
+
+- Decomposition of the mean test promise: Olist 22.05 → route + buffer 18.86 → forest + buffer 17.79 days.
+- The forest beats the route average in both validation and test.
+- The course brief asks for a simple heuristic as well as the status quo. Check whether the report needs it before dropping it for good.
+- Still in `docs/phase2_final_spec.md` and the results folders.
+
+## Selection-rule change (10 October 2026)
+
+- The spec's tie margins (0.1 day, 0.005 PR-AUC) had no justification. Both models now use the paired one-standard-error rule over the five validation windows: the simplest candidate whose mean gap to the best is within one standard error of that gap.
+- The promise engine is now chosen with the adaptive buffer, the deployed system, not the fixed one. Per candidate, γ is the shortest-promise step reaching 95% mean validation on-time; candidates with none are ineligible.
+- Result: `tree_depth6` (40.1 days, 95.9%), 1.17 ± 1.33 days behind the forest (38.9 days). Linear and ridge reach only 93.9–94.9% on time, so they are ineligible. The route average with the same buffer (39.6 days, 95.8%) is also within one SE of the forest.
+- The classifier is unchanged: the forest beats logistic in 5/5 windows by 0.023 ± 0.006 PR-AUC.
+- Disclosed in the report: the change was made after test results for the earlier forest engine and a fixed-buffer ridge engine had been seen.
+- Evidence and report: `reports/phase2_final_evidence.py` → `reports/generated/`, `results/phase2/final/`; report `reports/phase2_report.tex` (not yet compiled).
+

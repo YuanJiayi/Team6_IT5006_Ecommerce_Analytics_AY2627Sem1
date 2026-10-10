@@ -1,0 +1,6 @@
+fact,value
+carrier_share_of_variance,0.8503647348686303
+bad_review_on_time,0.0930648569480004
+bad_review_late,0.6246669800971635
+repeat_after_on_time_first,0.030391503252948343
+repeat_after_late_first,0.02471662468513854

@@ -39,7 +39,6 @@ LABEL = "is_late"
 PROMISE = "promised_days"
 SIMPLICITY = ["logistic", "logistic_balanced", "tree_depth6", "forest_leaf20"]
 CLASSIFIER_SOURCE = {"logistic": "logistic_baseline"}  # declared name -> name in phase2_classification
-TIE_MARGIN = 0.005
 K_GRID = [k / 100 for k in range(1, 31)]
 BENEFIT = 5.0  # a caught late order is worth 5x the cost of acting on one order
 BENEFIT_SENSITIVITY = (2.0, 10.0, 20.0)
@@ -169,15 +168,26 @@ def ranking_metrics(y, scores):
 
 # --------------------------------------------------------------------------------------------- selection
 
-def select_candidate(mean_pr_auc):
-    """Highest mean validation PR-AUC; a simpler candidate within TIE_MARGIN wins."""
-    if set(mean_pr_auc) != set(SIMPLICITY):
+def select_candidate(pr_auc):
+    """One-standard-error rule on validation PR-AUC, per window.
+
+    `pr_auc` maps candidate -> per-window PR-AUC (higher is better). The best candidate has the highest mean; the
+    simplest candidate whose paired mean shortfall is within one standard error of that shortfall is chosen.
+    """
+    if set(pr_auc) != set(SIMPLICITY):
         raise ValueError("Scores must cover exactly the candidates")
-    best = max(mean_pr_auc, key=mean_pr_auc.get)
-    chosen = next(n for n in SIMPLICITY if mean_pr_auc[best] - mean_pr_auc[n] <= TIE_MARGIN)
-    reason = (f"{best} has the highest mean validation PR-AUC ({mean_pr_auc[best]:.4f})"
-              + ("" if chosen == best else f"; {chosen} ({mean_pr_auc[chosen]:.4f}) is within {TIE_MARGIN} and "
-                                           "simpler, so it is chosen"))
+    scores = {n: np.asarray(v, dtype=float) for n, v in pr_auc.items()}
+    best = max(scores, key=lambda n: scores[n].mean())
+    for n in SIMPLICITY:
+        gap = scores[best] - scores[n]
+        se = gap.std(ddof=1) / np.sqrt(len(gap)) if len(gap) > 1 else 0.0
+        if gap.mean() <= se:
+            chosen = n
+            break
+    reason = f"{best} has the highest mean validation PR-AUC ({scores[best].mean():.4f})"
+    if chosen != best:
+        reason += (f"; {chosen} ({scores[chosen].mean():.4f}) is within one standard error of the paired gap and "
+                   "simpler, so it is chosen")
     return chosen, best, reason
 
 
@@ -306,7 +316,7 @@ def validate(train, folds, spec_v, log_features, label):
               f"recall@10%={part['recall_top10'].mean():.4f}; {time.monotonic() - started:.1f}s", flush=True)
     frame = pd.DataFrame(rows)
     summary = frame.groupby("candidate", sort=False)[["pr_auc", "roc_auc", "recall_top10", "precision_top10"]].mean()
-    chosen, best, reason = select_candidate(summary["pr_auc"].to_dict())
+    chosen, best, reason = select_candidate(frame.pivot(index="window", columns="candidate", values="pr_auc").to_dict("list"))
     return {"label": label, "windows": frame, "summary": summary, "scores": scores,
             "selected": chosen, "best": best, "reason": reason}
 
