@@ -61,3 +61,14 @@ Don't jump straight to your most complex model. Within each family, start with i
 - Technical report as PDF with GitHub repository link
 - GitHub repository with Jupyter notebooks and Python scripts
 - Model performance summary tables (in report)
+
+
+## Phase 2 data validation (Great Expectations)
+
+`milestone2/ge_validation.py` validates the prepared modelling table (`data/phase2_order_table.csv`; schema v1 on main, schema v2 on josh) with Great Expectations (GX Core 1.24) before any model is fitted: cohort contract, an exact column-set leakage guard, plausibility ranges, category sets, and per-month feature-drift checks against the training envelope. Results are saved to `results/ge_validation.json`; report text and the Appendix C table are in `milestone2/ge_report_snippets.md`.
+
+```
+pip install -r milestone2/requirements-ge.txt
+python milestone2/ge_validation.py          # add 2>/dev/null to hide progress bars
+```
+GX checks schema and values only; the as-of timing of historical route and seller features is tested separately in the modelling code.

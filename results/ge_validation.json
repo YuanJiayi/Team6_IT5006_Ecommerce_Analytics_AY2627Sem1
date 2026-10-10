@@ -1,0 +1,1691 @@
+{
+  "gx_core_version": "1.24.0",
+  "table": "data/phase2_order_table.csv (branch josh, schema_version 2)",
+  "rows": 96470,
+  "contract_success": true,
+  "contract_expectations": [
+    {
+      "expectation": "expect_table_row_count_to_equal",
+      "column": "table-level",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 96470
+    },
+    {
+      "expectation": "expect_table_columns_to_match_set",
+      "column": "table-level",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": [
+        "customer_state",
+        "cv_fold",
+        "delivery_days",
+        "distance_km",
+        "furthest_seller_id",
+        "is_late",
+        "max_installments",
+        "n_items",
+        "n_products",
+        "n_sellers",
+        "order_id",
+        "order_purchase_timestamp",
+        "outcome_available_at",
+        "payment_type",
+        "product_category",
+        "promise_slack",
+        "promised_days",
+        "purchase_dayofweek",
+        "purchase_hour",
+        "purchase_month",
+        "random_cv_fold",
+        "random_split",
+        "route_typical_days",
+        "same_state",
+        "seller_ship_days",
+        "seller_state",
+        "split",
+        "total_freight",
+        "total_price",
+        "total_volume_cm3",
+        "total_weight_g"
+      ]
+    },
+    {
+      "expectation": "expect_column_values_to_be_unique",
+      "column": "order_id",
+      "success": true,
+      "unexpected_count": 0,
+      "observed_value": null
+    },
+    {
+      "expectation": "expect_column_values_to_not_be_null",
+      "column": "order_id",
+      "success": true,
+      "unexpected_count": 0,
+      "observed_value": null
+    },
+    {
+      "expectation": "expect_column_values_to_not_be_null",
+      "column": "order_purchase_timestamp",
+      "success": true,
+      "unexpected_count": 0,
+      "observed_value": null
+    },
+    {
+      "expectation": "expect_column_values_to_not_be_null",
+      "column": "is_late",
+      "success": true,
+      "unexpected_count": 0,
+      "observed_value": null
+    },
+    {
+      "expectation": "expect_column_values_to_be_in_set",
+      "column": "is_late",
+      "success": true,
+      "unexpected_count": 0,
+      "observed_value": null
+    },
+    {
+      "expectation": "expect_column_values_to_not_be_null",
+      "column": "delivery_days",
+      "success": true,
+      "unexpected_count": 0,
+      "observed_value": null
+    },
+    {
+      "expectation": "expect_column_values_to_be_between",
+      "column": "delivery_days",
+      "success": true,
+      "unexpected_count": 0,
+      "observed_value": null
+    },
+    {
+      "expectation": "expect_column_values_to_be_in_set",
+      "column": "split",
+      "success": true,
+      "unexpected_count": 0,
+      "observed_value": null
+    },
+    {
+      "expectation": "expect_column_values_to_be_between",
+      "column": "promised_days",
+      "success": true,
+      "unexpected_count": 0,
+      "observed_value": null
+    },
+    {
+      "expectation": "expect_column_values_to_be_between",
+      "column": "distance_km",
+      "success": true,
+      "unexpected_count": 0,
+      "observed_value": null
+    },
+    {
+      "expectation": "expect_column_values_to_not_be_null",
+      "column": "distance_km",
+      "success": true,
+      "unexpected_count": 477,
+      "observed_value": null
+    },
+    {
+      "expectation": "expect_column_values_to_be_in_set",
+      "column": "same_state",
+      "success": true,
+      "unexpected_count": 0,
+      "observed_value": null
+    },
+    {
+      "expectation": "expect_column_values_to_be_between",
+      "column": "purchase_hour",
+      "success": true,
+      "unexpected_count": 0,
+      "observed_value": null
+    },
+    {
+      "expectation": "expect_column_values_to_be_between",
+      "column": "n_items",
+      "success": true,
+      "unexpected_count": 0,
+      "observed_value": null
+    },
+    {
+      "expectation": "expect_column_values_to_be_between",
+      "column": "n_products",
+      "success": true,
+      "unexpected_count": 0,
+      "observed_value": null
+    },
+    {
+      "expectation": "expect_column_values_to_be_between",
+      "column": "n_sellers",
+      "success": true,
+      "unexpected_count": 0,
+      "observed_value": null
+    },
+    {
+      "expectation": "expect_column_values_to_be_between",
+      "column": "total_price",
+      "success": true,
+      "unexpected_count": 0,
+      "observed_value": null
+    },
+    {
+      "expectation": "expect_column_values_to_be_between",
+      "column": "total_freight",
+      "success": true,
+      "unexpected_count": 0,
+      "observed_value": null
+    },
+    {
+      "expectation": "expect_column_values_to_be_between",
+      "column": "total_weight_g",
+      "success": true,
+      "unexpected_count": 0,
+      "observed_value": null
+    },
+    {
+      "expectation": "expect_column_values_to_not_be_null",
+      "column": "total_weight_g",
+      "success": true,
+      "unexpected_count": 16,
+      "observed_value": null
+    },
+    {
+      "expectation": "expect_column_values_to_be_between",
+      "column": "total_volume_cm3",
+      "success": true,
+      "unexpected_count": 0,
+      "observed_value": null
+    },
+    {
+      "expectation": "expect_column_values_to_be_between",
+      "column": "max_installments",
+      "success": true,
+      "unexpected_count": 0,
+      "observed_value": null
+    },
+    {
+      "expectation": "expect_column_values_to_be_in_set",
+      "column": "customer_state",
+      "success": true,
+      "unexpected_count": 0,
+      "observed_value": null
+    },
+    {
+      "expectation": "expect_column_values_to_be_in_set",
+      "column": "seller_state",
+      "success": true,
+      "unexpected_count": 0,
+      "observed_value": null
+    },
+    {
+      "expectation": "expect_column_values_to_be_in_set",
+      "column": "payment_type",
+      "success": true,
+      "unexpected_count": 0,
+      "observed_value": null
+    },
+    {
+      "expectation": "expect_column_values_to_be_in_set",
+      "column": "purchase_dayofweek",
+      "success": true,
+      "unexpected_count": 0,
+      "observed_value": null
+    },
+    {
+      "expectation": "expect_column_values_to_not_be_null",
+      "column": "product_category",
+      "success": true,
+      "unexpected_count": 0,
+      "observed_value": null
+    },
+    {
+      "expectation": "expect_column_values_to_be_in_set",
+      "column": "purchase_month",
+      "success": true,
+      "unexpected_count": 0,
+      "observed_value": null
+    },
+    {
+      "expectation": "expect_column_values_to_be_between",
+      "column": "route_typical_days",
+      "success": true,
+      "unexpected_count": 0,
+      "observed_value": null
+    },
+    {
+      "expectation": "expect_column_values_to_not_be_null",
+      "column": "route_typical_days",
+      "success": true,
+      "unexpected_count": 266,
+      "observed_value": null
+    },
+    {
+      "expectation": "expect_column_values_to_be_between",
+      "column": "seller_ship_days",
+      "success": true,
+      "unexpected_count": 0,
+      "observed_value": null
+    },
+    {
+      "expectation": "expect_column_values_to_not_be_null",
+      "column": "seller_ship_days",
+      "success": true,
+      "unexpected_count": 186,
+      "observed_value": null
+    },
+    {
+      "expectation": "expect_column_values_to_be_between",
+      "column": "promise_slack",
+      "success": true,
+      "unexpected_count": 0,
+      "observed_value": null
+    }
+  ],
+  "n_contract_passed": 35,
+  "n_contract_total": 35,
+  "custom_checks": {
+    "forbidden_substring_columns": [],
+    "train_all_before_cutoff": true,
+    "test_all_on_or_after_cutoff": true,
+    "n_train": 75099,
+    "n_test": 19363,
+    "n_unavailable_at_cutoff": 2008,
+    "late_rate_train": 0.071,
+    "late_rate_test": 0.0348,
+    "train_outcomes_known_by_cutoff": true,
+    "unavailable_outcomes_after_cutoff": true,
+    "outcome_after_purchase": true,
+    "outcome_available_at_in_features": false
+  },
+  "drift_envelope_training_months": {
+    "promised_days": [
+      19.775,
+      31.849
+    ],
+    "distance_km": [
+      464.566,
+      679.682
+    ],
+    "same_state": [
+      0.303,
+      0.469
+    ],
+    "total_price": [
+      124.381,
+      147.924
+    ],
+    "total_freight": [
+      20.596,
+      23.866
+    ],
+    "route_typical_days": [
+      11.431,
+      12.821
+    ],
+    "seller_ship_days": [
+      3.082,
+      4.404
+    ]
+  },
+  "drift_envelope_min_month_orders": 1000,
+  "drift_months_skipped_too_few_orders": [
+    {
+      "month": "2016-09",
+      "split": "train",
+      "n_orders": 1
+    },
+    {
+      "month": "2016-10",
+      "split": "train",
+      "n_orders": 265
+    },
+    {
+      "month": "2016-12",
+      "split": "train",
+      "n_orders": 1
+    },
+    {
+      "month": "2017-01",
+      "split": "train",
+      "n_orders": 750
+    },
+    {
+      "month": "2018-05",
+      "split": "test",
+      "n_orders": 760
+    }
+  ],
+  "drift_results": [
+    {
+      "month": "2017-02",
+      "split": "train",
+      "n_orders": 1653,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "promised_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 31.848929478669533
+    },
+    {
+      "month": "2017-02",
+      "split": "train",
+      "n_orders": 1653,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "distance_km",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 649.3594769221877
+    },
+    {
+      "month": "2017-02",
+      "split": "train",
+      "n_orders": 1653,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "same_state",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 0.31276467029643074
+    },
+    {
+      "month": "2017-02",
+      "split": "train",
+      "n_orders": 1653,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "total_price",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 141.69594676346037
+    },
+    {
+      "month": "2017-02",
+      "split": "train",
+      "n_orders": 1653,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "total_freight",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 22.39317604355717
+    },
+    {
+      "month": "2017-02",
+      "split": "train",
+      "n_orders": 1653,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "route_typical_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 11.821205411700518
+    },
+    {
+      "month": "2017-02",
+      "split": "train",
+      "n_orders": 1653,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "seller_ship_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 4.404215067731542
+    },
+    {
+      "month": "2017-03",
+      "split": "train",
+      "n_orders": 2546,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "promised_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 24.73238647769922
+    },
+    {
+      "month": "2017-03",
+      "split": "train",
+      "n_orders": 2546,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "distance_km",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 640.5841081573215
+    },
+    {
+      "month": "2017-03",
+      "split": "train",
+      "n_orders": 2546,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "same_state",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 0.302827965435978
+    },
+    {
+      "month": "2017-03",
+      "split": "train",
+      "n_orders": 2546,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "total_price",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 141.0836017282011
+    },
+    {
+      "month": "2017-03",
+      "split": "train",
+      "n_orders": 2546,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "total_freight",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 21.654399057344854
+    },
+    {
+      "month": "2017-03",
+      "split": "train",
+      "n_orders": 2546,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "route_typical_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 11.431420363239678
+    },
+    {
+      "month": "2017-03",
+      "split": "train",
+      "n_orders": 2546,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "seller_ship_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 3.5824849237397562
+    },
+    {
+      "month": "2017-04",
+      "split": "train",
+      "n_orders": 2303,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "promised_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 27.349810201267267
+    },
+    {
+      "month": "2017-04",
+      "split": "train",
+      "n_orders": 2303,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "distance_km",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 679.6822306244594
+    },
+    {
+      "month": "2017-04",
+      "split": "train",
+      "n_orders": 2303,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "same_state",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 0.3052540165002171
+    },
+    {
+      "month": "2017-04",
+      "split": "train",
+      "n_orders": 2303,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "total_price",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 147.9243074250977
+    },
+    {
+      "month": "2017-04",
+      "split": "train",
+      "n_orders": 2303,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "total_freight",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 21.772783326096395
+    },
+    {
+      "month": "2017-04",
+      "split": "train",
+      "n_orders": 2303,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "route_typical_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 11.67772418648315
+    },
+    {
+      "month": "2017-04",
+      "split": "train",
+      "n_orders": 2303,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "seller_ship_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 3.360427012483551
+    },
+    {
+      "month": "2017-05",
+      "split": "train",
+      "n_orders": 3545,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "promised_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 24.284783553387662
+    },
+    {
+      "month": "2017-05",
+      "split": "train",
+      "n_orders": 3545,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "distance_km",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 636.7725307717845
+    },
+    {
+      "month": "2017-05",
+      "split": "train",
+      "n_orders": 3545,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "same_state",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 0.3170662905500705
+    },
+    {
+      "month": "2017-05",
+      "split": "train",
+      "n_orders": 3545,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "total_price",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 137.98568406205925
+    },
+    {
+      "month": "2017-05",
+      "split": "train",
+      "n_orders": 3545,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "total_freight",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 21.86125528913963
+    },
+    {
+      "month": "2017-05",
+      "split": "train",
+      "n_orders": 3545,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "route_typical_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 12.130233884130412
+    },
+    {
+      "month": "2017-05",
+      "split": "train",
+      "n_orders": 3545,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "seller_ship_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 3.290221731759195
+    },
+    {
+      "month": "2017-06",
+      "split": "train",
+      "n_orders": 3135,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "promised_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 24.021864407968575
+    },
+    {
+      "month": "2017-06",
+      "split": "train",
+      "n_orders": 3135,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "distance_km",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 587.5731978846947
+    },
+    {
+      "month": "2017-06",
+      "split": "train",
+      "n_orders": 3135,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "same_state",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 0.3419457735247209
+    },
+    {
+      "month": "2017-06",
+      "split": "train",
+      "n_orders": 3135,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "total_price",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 134.58480701754385
+    },
+    {
+      "month": "2017-06",
+      "split": "train",
+      "n_orders": 3135,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "total_freight",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 21.7311004784689
+    },
+    {
+      "month": "2017-06",
+      "split": "train",
+      "n_orders": 3135,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "route_typical_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 11.829642250650126
+    },
+    {
+      "month": "2017-06",
+      "split": "train",
+      "n_orders": 3135,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "seller_ship_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 3.131025513079281
+    },
+    {
+      "month": "2017-07",
+      "split": "train",
+      "n_orders": 3872,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "promised_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 23.317316061299547
+    },
+    {
+      "month": "2017-07",
+      "split": "train",
+      "n_orders": 3872,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "distance_km",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 615.7412415281578
+    },
+    {
+      "month": "2017-07",
+      "split": "train",
+      "n_orders": 3872,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "same_state",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 0.34168388429752067
+    },
+    {
+      "month": "2017-07",
+      "split": "train",
+      "n_orders": 3872,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "total_price",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 124.3813326446281
+    },
+    {
+      "month": "2017-07",
+      "split": "train",
+      "n_orders": 3872,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "total_freight",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 21.873595041322314
+    },
+    {
+      "month": "2017-07",
+      "split": "train",
+      "n_orders": 3872,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "route_typical_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 11.808451655494032
+    },
+    {
+      "month": "2017-07",
+      "split": "train",
+      "n_orders": 3872,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "seller_ship_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 3.2566343341522117
+    },
+    {
+      "month": "2017-08",
+      "split": "train",
+      "n_orders": 4193,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "promised_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 23.480602743439242
+    },
+    {
+      "month": "2017-08",
+      "split": "train",
+      "n_orders": 4193,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "distance_km",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 632.6048268891197
+    },
+    {
+      "month": "2017-08",
+      "split": "train",
+      "n_orders": 4193,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "same_state",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 0.34414500357739086
+    },
+    {
+      "month": "2017-08",
+      "split": "train",
+      "n_orders": 4193,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "total_price",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 132.29184354877174
+    },
+    {
+      "month": "2017-08",
+      "split": "train",
+      "n_orders": 4193,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "total_freight",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 21.734476508466493
+    },
+    {
+      "month": "2017-08",
+      "split": "train",
+      "n_orders": 4193,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "route_typical_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 11.65467202890226
+    },
+    {
+      "month": "2017-08",
+      "split": "train",
+      "n_orders": 4193,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "seller_ship_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 3.1609131857978636
+    },
+    {
+      "month": "2017-09",
+      "split": "train",
+      "n_orders": 4150,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "promised_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 22.43736633478358
+    },
+    {
+      "month": "2017-09",
+      "split": "train",
+      "n_orders": 4150,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "distance_km",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 646.1069352159604
+    },
+    {
+      "month": "2017-09",
+      "split": "train",
+      "n_orders": 4150,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "same_state",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 0.3183132530120482
+    },
+    {
+      "month": "2017-09",
+      "split": "train",
+      "n_orders": 4150,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "total_price",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 146.36136626506024
+    },
+    {
+      "month": "2017-09",
+      "split": "train",
+      "n_orders": 4150,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "total_freight",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 22.572968674698796
+    },
+    {
+      "month": "2017-09",
+      "split": "train",
+      "n_orders": 4150,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "route_typical_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 11.704264982077015
+    },
+    {
+      "month": "2017-09",
+      "split": "train",
+      "n_orders": 4150,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "seller_ship_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 3.104444855660766
+    },
+    {
+      "month": "2017-10",
+      "split": "train",
+      "n_orders": 4478,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "promised_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 23.01953581708104
+    },
+    {
+      "month": "2017-10",
+      "split": "train",
+      "n_orders": 4478,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "distance_km",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 642.7883420327959
+    },
+    {
+      "month": "2017-10",
+      "split": "train",
+      "n_orders": 4478,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "same_state",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 0.3278249218401072
+    },
+    {
+      "month": "2017-10",
+      "split": "train",
+      "n_orders": 4478,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "total_price",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 144.76276239392587
+    },
+    {
+      "month": "2017-10",
+      "split": "train",
+      "n_orders": 4478,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "total_freight",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 22.97216614560071
+    },
+    {
+      "month": "2017-10",
+      "split": "train",
+      "n_orders": 4478,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "route_typical_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 11.70424000322002
+    },
+    {
+      "month": "2017-10",
+      "split": "train",
+      "n_orders": 4478,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "seller_ship_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 3.1668184157396535
+    },
+    {
+      "month": "2017-11",
+      "split": "train",
+      "n_orders": 7288,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "promised_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 22.560752014663883
+    },
+    {
+      "month": "2017-11",
+      "split": "train",
+      "n_orders": 7288,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "distance_km",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 610.0322240698875
+    },
+    {
+      "month": "2017-11",
+      "split": "train",
+      "n_orders": 7288,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "same_state",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 0.33411086717892424
+    },
+    {
+      "month": "2017-11",
+      "split": "train",
+      "n_orders": 7288,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "total_price",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 135.5170238748628
+    },
+    {
+      "month": "2017-11",
+      "split": "train",
+      "n_orders": 7288,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "total_freight",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 22.719717343578484
+    },
+    {
+      "month": "2017-11",
+      "split": "train",
+      "n_orders": 7288,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "route_typical_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 11.581514656188356
+    },
+    {
+      "month": "2017-11",
+      "split": "train",
+      "n_orders": 7288,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "seller_ship_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 3.2026947412453097
+    },
+    {
+      "month": "2017-12",
+      "split": "train",
+      "n_orders": 5513,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "promised_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 27.6813399641252
+    },
+    {
+      "month": "2017-12",
+      "split": "train",
+      "n_orders": 5513,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "distance_km",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 592.6462683790013
+    },
+    {
+      "month": "2017-12",
+      "split": "train",
+      "n_orders": 5513,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "same_state",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 0.36187193905314713
+    },
+    {
+      "month": "2017-12",
+      "split": "train",
+      "n_orders": 5513,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "total_price",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 131.69475603119898
+    },
+    {
+      "month": "2017-12",
+      "split": "train",
+      "n_orders": 5513,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "total_freight",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 21.230745510611282
+    },
+    {
+      "month": "2017-12",
+      "split": "train",
+      "n_orders": 5513,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "route_typical_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 11.579007605364735
+    },
+    {
+      "month": "2017-12",
+      "split": "train",
+      "n_orders": 5513,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "seller_ship_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 3.1825131259713086
+    },
+    {
+      "month": "2018-01",
+      "split": "train",
+      "n_orders": 7067,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "promised_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 26.303646264065115
+    },
+    {
+      "month": "2018-01",
+      "split": "train",
+      "n_orders": 7067,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "distance_km",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 595.3911006131793
+    },
+    {
+      "month": "2018-01",
+      "split": "train",
+      "n_orders": 7067,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "same_state",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 0.35616244516768075
+    },
+    {
+      "month": "2018-01",
+      "split": "train",
+      "n_orders": 7067,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "total_price",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 130.49625017687848
+    },
+    {
+      "month": "2018-01",
+      "split": "train",
+      "n_orders": 7067,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "total_freight",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 21.66750672138107
+    },
+    {
+      "month": "2018-01",
+      "split": "train",
+      "n_orders": 7067,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "route_typical_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 12.27169005360005
+    },
+    {
+      "month": "2018-01",
+      "split": "train",
+      "n_orders": 7067,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "seller_ship_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 3.2897245039756475
+    },
+    {
+      "month": "2018-02",
+      "split": "train",
+      "n_orders": 6549,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "promised_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 24.529211003022795
+    },
+    {
+      "month": "2018-02",
+      "split": "train",
+      "n_orders": 6549,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "distance_km",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 619.7907256760714
+    },
+    {
+      "month": "2018-02",
+      "split": "train",
+      "n_orders": 6549,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "same_state",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 0.32554588486791874
+    },
+    {
+      "month": "2018-02",
+      "split": "train",
+      "n_orders": 6549,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "total_price",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 125.98050847457628
+    },
+    {
+      "month": "2018-02",
+      "split": "train",
+      "n_orders": 6549,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "total_freight",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 21.315261872041532
+    },
+    {
+      "month": "2018-02",
+      "split": "train",
+      "n_orders": 6549,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "route_typical_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 12.639466712848042
+    },
+    {
+      "month": "2018-02",
+      "split": "train",
+      "n_orders": 6549,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "seller_ship_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 3.319232087933928
+    },
+    {
+      "month": "2018-03",
+      "split": "train",
+      "n_orders": 6994,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "promised_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 22.025041296971477
+    },
+    {
+      "month": "2018-03",
+      "split": "train",
+      "n_orders": 6994,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "distance_km",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 594.3274762977225
+    },
+    {
+      "month": "2018-03",
+      "split": "train",
+      "n_orders": 6994,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "same_state",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 0.36788676008006865
+    },
+    {
+      "month": "2018-03",
+      "split": "train",
+      "n_orders": 6994,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "total_price",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 136.0700643408636
+    },
+    {
+      "month": "2018-03",
+      "split": "train",
+      "n_orders": 6994,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "total_freight",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 23.865617672290536
+    },
+    {
+      "month": "2018-03",
+      "split": "train",
+      "n_orders": 6994,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "route_typical_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 12.702651113557758
+    },
+    {
+      "month": "2018-03",
+      "split": "train",
+      "n_orders": 6994,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "seller_ship_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 3.4303535024510796
+    },
+    {
+      "month": "2018-04",
+      "split": "train",
+      "n_orders": 6688,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "promised_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 23.53810624923855
+    },
+    {
+      "month": "2018-04",
+      "split": "train",
+      "n_orders": 6688,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "distance_km",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 559.527987486383
+    },
+    {
+      "month": "2018-04",
+      "split": "train",
+      "n_orders": 6688,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "same_state",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 0.3944377990430622
+    },
+    {
+      "month": "2018-04",
+      "split": "train",
+      "n_orders": 6688,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "total_price",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 142.71890849282298
+    },
+    {
+      "month": "2018-04",
+      "split": "train",
+      "n_orders": 6688,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "total_freight",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 23.257760167464113
+    },
+    {
+      "month": "2018-04",
+      "split": "train",
+      "n_orders": 6688,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "route_typical_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 12.821193057875924
+    },
+    {
+      "month": "2018-04",
+      "split": "train",
+      "n_orders": 6688,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "seller_ship_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 3.278483372921739
+    },
+    {
+      "month": "2018-05",
+      "split": "train",
+      "n_orders": 4108,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "promised_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 19.77534091677486
+    },
+    {
+      "month": "2018-05",
+      "split": "train",
+      "n_orders": 4108,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "distance_km",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 464.5659722828389
+    },
+    {
+      "month": "2018-05",
+      "split": "train",
+      "n_orders": 4108,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "same_state",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 0.4690847127555988
+    },
+    {
+      "month": "2018-05",
+      "split": "train",
+      "n_orders": 4108,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "total_price",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 136.6300559883155
+    },
+    {
+      "month": "2018-05",
+      "split": "train",
+      "n_orders": 4108,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "total_freight",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 20.59567429406037
+    },
+    {
+      "month": "2018-05",
+      "split": "train",
+      "n_orders": 4108,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "route_typical_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 12.120729669970595
+    },
+    {
+      "month": "2018-05",
+      "split": "train",
+      "n_orders": 4108,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "seller_ship_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 3.0820667719523573
+    },
+    {
+      "month": "2018-06",
+      "split": "test",
+      "n_orders": 6096,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "promised_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 27.772740093686206
+    },
+    {
+      "month": "2018-06",
+      "split": "test",
+      "n_orders": 6096,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "distance_km",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 581.8403447392192
+    },
+    {
+      "month": "2018-06",
+      "split": "test",
+      "n_orders": 6096,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "same_state",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 0.3851706036745407
+    },
+    {
+      "month": "2018-06",
+      "split": "test",
+      "n_orders": 6096,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "total_price",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 140.3530134514436
+    },
+    {
+      "month": "2018-06",
+      "split": "test",
+      "n_orders": 6096,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "total_freight",
+      "success": false,
+      "unexpected_count": null,
+      "observed_value": 25.567091535433068
+    },
+    {
+      "month": "2018-06",
+      "split": "test",
+      "n_orders": 6096,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "route_typical_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 12.803431973093106
+    },
+    {
+      "month": "2018-06",
+      "split": "test",
+      "n_orders": 6096,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "seller_ship_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 3.10608057469065
+    },
+    {
+      "month": "2018-07",
+      "split": "test",
+      "n_orders": 6156,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "promised_days",
+      "success": false,
+      "unexpected_count": null,
+      "observed_value": 19.690126530801024
+    },
+    {
+      "month": "2018-07",
+      "split": "test",
+      "n_orders": 6156,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "distance_km",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 619.3913456606494
+    },
+    {
+      "month": "2018-07",
+      "split": "test",
+      "n_orders": 6156,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "same_state",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 0.3765432098765432
+    },
+    {
+      "month": "2018-07",
+      "split": "test",
+      "n_orders": 6156,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "total_price",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 140.91723034437948
+    },
+    {
+      "month": "2018-07",
+      "split": "test",
+      "n_orders": 6156,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "total_freight",
+      "success": false,
+      "unexpected_count": null,
+      "observed_value": 25.958422677063027
+    },
+    {
+      "month": "2018-07",
+      "split": "test",
+      "n_orders": 6156,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "route_typical_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 12.711725759093293
+    },
+    {
+      "month": "2018-07",
+      "split": "test",
+      "n_orders": 6156,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "seller_ship_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 3.128241587456654
+    },
+    {
+      "month": "2018-08",
+      "split": "test",
+      "n_orders": 6351,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "promised_days",
+      "success": false,
+      "unexpected_count": null,
+      "observed_value": 15.186330203904898
+    },
+    {
+      "month": "2018-08",
+      "split": "test",
+      "n_orders": 6351,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "distance_km",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 513.4823844165624
+    },
+    {
+      "month": "2018-08",
+      "split": "test",
+      "n_orders": 6351,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "same_state",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 0.44481184065501495
+    },
+    {
+      "month": "2018-08",
+      "split": "test",
+      "n_orders": 6351,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "total_price",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 132.03851991812311
+    },
+    {
+      "month": "2018-08",
+      "split": "test",
+      "n_orders": 6351,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "total_freight",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 23.132577546843017
+    },
+    {
+      "month": "2018-08",
+      "split": "test",
+      "n_orders": 6351,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "route_typical_days",
+      "success": true,
+      "unexpected_count": null,
+      "observed_value": 11.769774373895588
+    },
+    {
+      "month": "2018-08",
+      "split": "test",
+      "n_orders": 6351,
+      "expectation": "expect_column_mean_to_be_between",
+      "column": "seller_ship_days",
+      "success": false,
+      "unexpected_count": null,
+      "observed_value": 2.887209040176589
+    }
+  ]
+}
