@@ -8,6 +8,7 @@
 \usepackage{booktabs}
 \usepackage{array}
 \usepackage{tikz}
+\usepackage{float}
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.16}
 \usepackage{hyperref}
@@ -20,98 +21,100 @@
 \begin{document}
 \begin{center}
 {\Large\bfseries Keeping delivery promises at Olist}\\[3pt]
-{\small IT5006 Phase 2 --- promise engine (regression) and late warning (classification)}\\[2pt]
+{\small IT5006 Phase 2 --- a two-stage delivery-time estimate (regression) and a late warning at carrier handover (classification)}\\[2pt]
 {\footnotesize Code: \url{https://github.com/YuanJiayi/Team6_IT5006_Ecommerce_Analytics_AY2627Sem1}}
 \end{center}
 \vspace{-0.6em}
 
 \section*{Executive summary}
-Olist's delivery operations team makes two decisions about every order. At \textbf{checkout} it must choose the delivery date to promise: a short promise may help the sale, and a broken promise leads to bad reviews. At \textbf{carrier handover}, when the parcel leaves the seller, it must choose which orders to act on because they are likely to miss that promise. Both decisions concern one quantity, delivery time, so we answer them with one regression model and one classification model.
+Olist's delivery operations team needs to know, for every order, how long it will take and which orders need attention. We answer this one question twice, at two points operations actually acts: at \textbf{checkout}, to set the customer's expected date, and again at \textbf{carrier handover}, when the parcel leaves the seller, to sharpen that estimate and flag orders at risk of missing it. Both decisions concern one quantity, delivery time (brief Example 4's dual framing), so we reuse the same two model families -- Linear and Tree-based -- for both.
 
 \begin{itemize}\setlength{\itemsep}{0pt}
-\item \textbf{Promise engine (regression).} A depth-6 decision tree forecasts delivery days from route, seller and order details, deliberately ignoring Olist's own estimate. A buffer that corrects itself every day is added on top. On the test period (June--August 2018) its promises averaged \EngineTestPromise{} days against Olist's \OlistTestPromise{}, with \EngineTestOnTime{}\% delivered on time against \OlistTestOnTime{}\%.
-\item \textbf{Late warning (classification).} A random forest scores each order's risk of missing Olist's promise once the parcel is handed to the carrier, giving operations a ranked daily list. On the test period the top 10\% of the list contained \GainTenModel{}\% of all late orders; a random list contains 10\%.
+\item \textbf{Two-stage delivery-time estimate (regression).} Ridge regression (\(\alpha=100\)) predicts \texttt{delivery\_days} at checkout from order, route and seller details (mean validation MAE \CheckoutSelMAE{} days, \(R^2\) \CheckoutSelRSq{}). The same model, refitted with what is known at handover (time already elapsed, recent route transit), cuts mean validation MAE to \HandoverSelMAE{} days and raises \(R^2\) to \HandoverSelRSq{} -- the handover update beats the checkout estimate in every validation window.
+\item \textbf{Late warning (classification).} Logistic regression (\(C=0.01\)) scores each order's risk of missing Olist's promise once it reaches the carrier, giving operations a ranked daily list (mean validation PR-AUC \ValSelPR{}, against a late rate of 4--21\% across the five windows). On the test period the top 10\% of the list contained \GainTenModel{}\% of all late orders; a random list contains 10\%.
 \end{itemize}
 
-\textbf{Delivery conditions swing, and that is the real difficulty.} Normally about \NormalLate{}\% of orders are late. In the Black Friday window (\WinBStart{} to \WinBEnd{}) \BlackFridayLate{}\% were late, and in the window \WinEStart{} to \WinEEnd{} \FebMarLate{}\% were. Over the five validation windows, which include these periods, the engine's average promise was \EngineValPromise{} days with \EngineValOnTime{}\% on time; Olist's was \OlistValPromise{} days with \OlistValOnTime{}\% on time. The engine bought reliability through long promises, reaching about \PeakPromise{} days in early 2018, and promised longer than Olist in every validation window. Its advantage over Olist appears only in the calm test period, not under stress.
+\textbf{Delivery conditions swing, and that is the real difficulty.} Normally about \NormalLate{}\% of orders are late; in the Black Friday window it was about \BlackFridayLate{}\%, and in February--March 2018 about \FebMarLate{}\%. Figure~\ref{fig:monthly} shows this across the full period we model. Both tools are trained to be useful through these swings: the handover update's gain over the checkout estimate holds in every validation window, not just calm ones, and the late-warning model's ranking lift over random selection is larger, not smaller, in the high-lateness windows (Section ``Model 2'').
 
-\textbf{Decision.} We recommend piloting both tools with monitoring, not replacing Olist's process: run the promise engine alongside Olist's estimate and review its buffer before and after peak periods, and size the warning list to the current late rate. At the test period's late rate, acting on \ActShare{}\% of orders had negative net benefit; acting on the top 5\% was worthwhile.
+\textbf{Decision.} We recommend piloting both tools alongside Olist's current process, with monitoring: use the checkout estimate as the customer-facing date, re-issue it at handover, and size the daily warning list to the current late rate rather than a fixed share -- acting on a large fixed share was not worthwhile when the test period was unusually calm (\ClsTestLate{}\% late).
 
 \section*{Business problem and why it matters}
-Delivery time dominates the customer experience. The carrier leg (handover to customer) accounts for \CarrierShare{}\% of the variance in total delivery time. Among \RatedOrders{} delivered orders with a review, \BadReviewLate{}\% of late orders received a bad review (score 1 or 2), against \BadReviewOnTime{}\% of on-time orders, a ratio of \BadReviewRatio{}. A broken promise is therefore costly. Promise setting is an established problem in online retail: at JD.com, promising too early or too late both reduced sales, and a better promise policy raised simulated sales volume by 6.1\%~\cite{salari2022}. Customer retention is low overall: only \RepeatShare{}\% of the \UniqueCustomers{} customers ordered more than once, and the repeat rate after a late first order (\RepeatAfterLate{}\%) was close to that after an on-time one (\RepeatAfterOnTime{}\%), so we do not claim an effect on repeat purchase.
+Delivery time dominates the customer experience. The carrier leg (handover to customer) accounts for \CarrierShare{}\% of the variance in total delivery time, averaging \CarrierMean{} of the \TotalMean{} mean total days. Among \RatedOrders{} delivered orders with a review, \BadReviewLate{}\% of late orders received a bad review (score 1 or 2), against \BadReviewOnTime{}\% of on-time orders, a ratio of \BadReviewRatio{}. Forecasting delivery time well enough to set and update a customer-facing estimate, and flagging orders at risk once they reach the carrier, is therefore directly tied to customer experience. Real-time delivery-time forecasting is an established problem in online retail, where a better forecast and promise policy measurably raised simulated sales~\cite{salari2022}. Customer retention is low overall: only \RepeatShare{}\% of the \UniqueCustomers{} customers ordered more than once, and the repeat rate after a late first order (\RepeatAfterLate{}\%) was close to that after an on-time one (\RepeatAfterOnTime{}\%), so we do not claim an effect on repeat purchase.
 
-The two decisions need different information. At checkout only the order details and past deliveries are known, which is enough for a forecast. At handover we also know how long the seller took, which tells us how much of the promised time is left. Since the carrier leg drives \CarrierShare{}\% of the variance, knowing the order has reached the carrier, and how much time is left, should help; this is consistent with the late warning's PR-AUC rising from \CheckoutPR{} at checkout to \ClsTestPR{} at handover.
+The two predictions use different information. At checkout only the order, route and seller details are known. At handover we also know how long the seller took to ship and the carrier's recent transit speed on the route, which should sharpen the estimate and tell us how much of the promised time is already used. Since the carrier leg drives \CarrierShare{}\% of the variance, knowing the order has reached the carrier should help both tasks: the regression's \(R^2\) rises from \CheckoutSelRSq{} at checkout to \HandoverSelRSq{} at handover, and the late-warning classifier's validation PR-AUC rises from \CheckoutPR{} at checkout to \ValSelPR{} at handover.
 
 \section*{Data, cohort and validation design}
-We use the Olist tables supplied for the course. Of 99,441 orders, \AllOrders{} were delivered with both an actual and an estimated delivery date; these form the modelling cohort. An order is \emph{late} if it arrives after the promised calendar date. For the late warning we keep orders whose handover is after purchase and before delivery: \CohortOrders{} orders, excluding \ExcludedOrders{} without a valid handover time.
+We use the Olist tables supplied for the course. Of 99,441 orders, \AllOrders{} were delivered with both an actual and an estimated delivery date; these form the modelling cohort. An order is \emph{late} if it arrives after the promised calendar date. Both models are scored on the same population: orders whose carrier handover is after purchase and before delivery, \CohortOrders{} orders, excluding \ExcludedOrders{} without a valid handover time; training uses \EtaTrainOrders{} orders and the test period has \EtaTestOrders{} orders.
 
-\textbf{Temporal split, not random.} The test set is every order purchased from 26 May 2018 (\TestOrders{} orders). Training and validation use earlier orders only. Validation uses five chronological windows from 22 September 2017 to 26 March 2018, and each window is fitted only on orders purchased \emph{and delivered} before it starts. A random split would let the model learn from orders that were still in transit when the predicted order was placed, and would hide the fact that conditions change over time; in an earlier checkout-stage experiment a shuffled split gave a PR-AUC of 0.303 against 0.200 for the chronological one. Time-ordered evaluation is standard for forecasting~\cite{bergmeir2012}, and several public Olist models with higher scores use random splits or information from after checkout (our audit is in \texttt{docs/phase2\_external\_olist\_comparison.md}). Because the late rate itself changes over time, the temporal split is the honest test of how the tools would perform going forward.
+\textbf{Temporal split, not random.} The test set is every order purchased from 26 May 2018 (\TestOrders{} orders). Training and validation use earlier orders only. Validation uses five chronological windows from 22 September 2017 to 26 March 2018, and each window is fitted only on orders purchased \emph{and delivered} before it starts. A random split would let the model learn from orders that were still in transit when the predicted order was placed, and would hide the fact that conditions change over time -- a checkout-stage classifier experiment with a shuffled split scored materially higher than the chronological one for exactly this reason. Time-ordered evaluation is standard for forecasting~\cite{bergmeir2012}, and because the late rate itself changes over time, the temporal split is the honest test of how the tools would perform going forward. As a secondary check we also score a same-period random split (Section ``Model 1''); it is not used for selection because it measures interpolation within the observed period, not forecasting.
 
-\textbf{Why the handover timestamp is legitimate.} The late warning is scored at the moment the carrier takes the parcel, so the handover time is known then, and only information available at that moment is used: approval time, days from purchase to handover, remaining slack (the promise minus days already used), and route history from deliveries that had already arrived. Delivery and review data are never used. The checkout version of the classifier, without handover information, scores a validation PR-AUC of only \CheckoutPR{}.
+\textbf{Why the handover timestamp is legitimate.} Both the handover update and the late-warning classifier are scored at the moment the carrier takes the parcel, so only information available at that moment is used: approval time, days from purchase to handover, remaining slack (the promise minus days already used), and route transit history built only from deliveries already completed by that moment. Delivery and review data are never used as inputs.
 
 \begin{figure}[ht]
 \centering
 \input{generated/fig_monthly}
-\caption{Share of orders late by purchase month (bars) and the engine's mean buffer level (line). Black Friday (November 2017) and February--March 2018 stand out. The line has no points from April 2018 because the scored periods are the validation windows and the test period.}
+\caption{Share of orders late by purchase month. Black Friday (November 2017) and February--March 2018 stand out as the clearest swings in delivery conditions; the test period (June--August 2018, not shown) was calmer at \ClsTestLate{}\% late.}
 \label{fig:monthly}
 \end{figure}
 
-\section*{Model 1: the promise engine (regression)}
-\textbf{Method.} The forecast $\mu$ is a decision tree of depth 6 (at least 50 orders per leaf) predicting delivery days. Its inputs are the order, route and seller features, \emph{minus} Olist's promise and slack, \emph{plus} the route's recent transit time (\texttt{route\_transit\_90d}). The promise is $\max(1,\lceil \mu + q \cdot \max(\mu,3)\rceil)$, where $q$ is a quantile of recent forecast errors on orders delivered before the purchase day. The quantile level is the buffer level. In the adaptive version the level is adjusted every day: if recent promises were kept less often than the 95\% target, the level rises, otherwise it falls (step size \SelectedGamma{}, chosen on validation as the step with the shortest mean promise that reaches 95\% on time; larger steps oscillated and lost coverage). This update is adaptive conformal inference~\cite{gibbs2021}. Ordinary conformal prediction assumes past and future orders are exchangeable, which fails when delivery conditions drift; the adaptive version drops that assumption but only guarantees that the \emph{long-run average} on-time rate approaches the target, not the rate in any given month. Its guarantee also assumes each outcome is known before the next update, whereas we learn whether a promise was kept only when it falls due, weeks later. Both limits explain the lag and overshoot around Black Friday shown below. Forecasting a distribution with tree models and promising a quantile of it follows published retail practice~\cite{salari2022,ye2025}.
-
-\textbf{Choosing the model on promise length, not MAE.} The business question is how short a promise can be while still being kept 95\% of the time, so we compared candidates on promise length, not forecast error. Industry work treats the two errors asymmetrically for the same reason: a late promise costs the sale, a broken one costs the customer~\cite{v2021}. Each candidate forecast (linear, three ridge, two trees, a forest) was run with the adaptive buffer on the five validation windows, because that is the system we would deploy. A candidate was eligible if some step size reached 95\% mean on time. Among eligible candidates we used the one-standard-error rule~\cite{hastie2009}: the simplest model whose mean promise is within one standard error of the best, using the per-window paired gap.
-
-The forest gave the shortest promise (\ForestAdPromise{} days). The depth-6 tree was \SelAdGap{} days longer, inside one standard error (\SelAdGapSE{}), and simpler, so it was chosen. The linear and ridge forecasts gave shorter promises (\LinPromiseLow{}--\LinPromiseHigh{} days) but reached only \LinOnTimeLow{}--\LinOnTimeHigh{}\% on time, so they were not eligible; the exclusion turns on fractions of a percentage point. A route average with the same buffer (\RouteAdAdPromise{} days, \RouteAdAdOnTime{}\% on time) was also within one standard error of the forest. On validation, then, the choice of forecast matters little once the adaptive buffer is in place.
-
-Averaged over the validation windows, the tree's forecast scores MAE \SelMAE{}, RMSE \SelRMSE{} and $R^2$ \SelRSq{}; ridge has the best MAE (\RidgeMAE{}) and the training-mean floor scores MAE \MeanMAE{} and $R^2$ \MeanRSq{}. The forecast is modest: it explains under a fifth of the variation in delivery days. Most of the work is done by the buffer, which turns an uncertain forecast into a promise that is kept.
-
-\textbf{Test results.} Against calendar-day need on the test period the tree has MAE \TestEngineMAE{}, RMSE \TestEngineRMSE{} and $R^2$ \TestEngineRSq{}. Its $R^2$ is negative, meaning its errors are larger than the spread of test-period delivery times, and a route-average forecast does about as well (MAE \TestRouteBaseMAE{}, $R^2$ \TestRouteBaseRSq{}). The promise engine's advantage comes from the calibrated buffer, not from a sharper forecast.
+\section*{Model 1: the two-stage delivery-time estimate (regression)}
+\textbf{Method.} Both stages predict the same target, \texttt{delivery\_days}, so they are directly comparable and so a single success criterion applies: the handover update must beat the checkout estimate on the same orders in every validation window. The \textbf{checkout} stage uses the order, route and seller features known at purchase (20 inputs). The \textbf{handover} stage adds three inputs known once the carrier has the parcel: \texttt{handover\_days} (elapsed time), \texttt{approval\_days} (used only when approval was recorded by handover), and \texttt{route\_transit\_90d\_at\_handover} (the route's mean carrier-to-customer days over the previous 90 days, built only from deliveries already recorded, shrunk toward the all-route mean). Table~\ref{tab:ladder} shows each input's contribution with one fixed model (ridge, \(\alpha=100\)) so the gain is not confounded with model choice: most of the improvement comes from the elapsed time itself, consistent with the carrier leg's \CarrierShare{}\% share of delivery-time variance.
 
 \begin{table}[ht]
 \centering\small
-\caption{Promise engine on the test period.}
-\begin{tabular}{@{}lcc@{}}
+\caption{Information ladder: ridge regression (\(\alpha=100\)) throughout, same orders at every rung, mean over five validation windows.}
+\label{tab:ladder}
+\begin{tabular}{@{}lrrr@{}}
 \toprule
-& Mean promise (days) & Delivered on time \\
+Rung & MAE (days) & \(R^2\) & Lowest-window \(R^2\) \\
 \midrule
-Olist's promise & \OlistTestPromise{} & \OlistTestOnTime{}\% \\
-Promise engine, adaptive buffer & \EngineTestPromise{} & \EngineTestOnTime{}\% \\
-Promise engine, fixed buffer level \FixedLevel{} & \FixedTestPromise{} & \FixedTestOnTime{}\% \\
+Checkout (20 frozen inputs) & \LadderCheckoutMAE{} & \LadderCheckoutRSq{} & \LadderCheckoutMinRSq{} \\
++ recent route transit history & \LadderTransitMAE{} & \LadderTransitRSq{} & \LadderTransitMinRSq{} \\
++ elapsed days to handover and approval & \LadderElapsedMAE{} & \LadderElapsedRSq{} & \LadderElapsedMinRSq{} \\
+Handover (history as of handover) & \LadderHandoverMAE{} & \LadderHandoverRSq{} & \LadderHandoverMinRSq{} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-A \emph{fixed} buffer level, chosen on validation to give 95\% on time, over-covers in calm weeks: \FixedTestOnTime{}\% on time at \FixedTestPromise{} days. Setting the fixed-buffer engine to Olist's test on-time rate gives \MatchedEngine{} days, \MatchedGap{} days shorter than Olist. We present fixed and adaptive buffers as a method comparison: a fixed level over-covers in calm periods, so we recommend the adaptive level. The engine's on-time rate is about one point below Olist's on test (\EngineTestOnTime{}\% against \OlistTestOnTime{}\%), and it fell to \TestJulEngineOnTime{}\% in July.
+\textbf{Candidates and selection.} At each stage we compared the same line-up: a training-mean floor, Linear (plain, then ridge at three strengths) and Tree-based (plain decision tree, then depth-6 tree, random forest and two gradient-boosting settings) -- the handover stage also compares a rule baseline (elapsed days plus the route's recent transit average, no fitted model). We select the candidate with the lowest mean validation MAE, with ties broken by the paired one-standard-error rule: the simplest candidate whose mean gap to the best, over the five validation windows, is within one standard error of that gap~\cite{james2013}. This is standard in statistical learning (it is glmnet's default \texttt{lambda.1se}); the caveats are that we apply it across model families rather than within one penalty path (our simplicity order -- linear, then tree-based -- is a judgment call) and that the standard error comes from five non-independent windows.
+
+At \textbf{checkout}, the random forest (\CheckoutBestName{}) has the lowest mean MAE (\CheckoutBestMAE{} days), but ridge \(\alpha=100\) is within one standard error (gap \CheckoutSelGap{} days, SE \CheckoutSelGapSE{}) and simpler, so it is selected (MAE \CheckoutSelMAE{}, RMSE \CheckoutSelRMSE{}, \(R^2\) \CheckoutSelRSq{}). At \textbf{handover}, ridge \(\alpha=100\) is both the lowest-MAE candidate and the one-SE selection (MAE \HandoverSelMAE{}, RMSE \HandoverSelRMSE{}, \(R^2\) \HandoverSelRSq{}); no simpler candidate's gap to it falls within one standard error. For reference, the handover rule baseline (elapsed days plus route average, no fitted model) scores MAE \HandoverRuleMAE{} and \(R^2\) \HandoverRuleRSq{}, close to the selected model: most of the signal is the elapsed time itself, and the fitted model adds a modest refinement. The training-mean floor scores MAE \CheckoutMeanMAE{} ($R^2$ \CheckoutMeanRSq{}) at both stages. The full candidate table is in Appendix~\ref{app:regression}.
 
 \begin{figure}[ht]
 \centering
-\input{generated/fig_windows}
-\caption{Mean promise in each validation window, Olist against the promise engine. W2 is the Black Friday window; W5 is February--March 2018.}
-\label{fig:windows}
+\input{generated/fig_ladder}
+\caption{Mean validation MAE by window, checkout estimate against the handover update (selected models). The handover update beats the checkout estimate in every window, including the higher-lateness windows.}
+\label{fig:ladder}
 \end{figure}
 
-\textbf{Where it does not perform well.} Figure~\ref{fig:windows} is the main caveat. In window W2 (\WinBStart{} to \WinBEnd{}, \WinBLate{}\% of orders late) the engine promised \WinBEngine{} days and was on time for only \WinBEngineOnTime{}\% of orders, close to Olist (\WinBOlistOnTime{}\%): the buffer could not react before the peak. Afterwards it overreacted. In W4 and W5 it promised \WinDEngine{} and \WinEEngine{} days against Olist's \WinDOlist{} and \WinEOlist{}, with about 99\% on time. In every validation window the engine promised longer than Olist, even in the calm first window (\WinAEngine{} against \WinAOlist{} days). The adaptive buffer therefore needs monitoring around peaks, and a cap on promise length would be a sensible safeguard.
+\textbf{Test results (post hoc).} The later test period was already open when the handover stage was designed, so these scores are reported as a post hoc check, not as the basis for selection. Checkout: MAE \CheckoutTestMAE{}, RMSE \CheckoutTestRMSE{}, \(R^2\) \CheckoutTestRSq{} (bias \CheckoutTestBias{} days, i.e.\ the model over-predicts, since the test period delivered faster than training). Handover: MAE \HandoverTestMAE{}, RMSE \HandoverTestRMSE{}, \(R^2\) \HandoverTestRSq{} (bias \HandoverTestBias{} days). The handover update's test \(R^2\) is positive while the checkout estimate's is negative, so moving the prediction point to handover also makes the estimate more robust to the regime shift between training and test, though it does not remove it.
+
+\textbf{Same-period benchmark (secondary).} A random 5-fold validation and a random 20\% test from the saved secondary split give checkout \(R^2\) \CheckoutRandValRSq{} (validation) / \CheckoutRandTestRSq{} (test, MAE \CheckoutRandTestMAE{}) and handover \(R^2\) \HandoverRandValRSq{} (validation) / \HandoverRandTestRSq{} (test, MAE \HandoverRandTestMAE{}). These line up with public Olist models that use a held-out random split, which suggests the gap between our chronological \(R^2\) and higher published figures is mainly the evaluation design, not the model.
+
+\textbf{What drives the estimate.} \CheckoutImpKind{}. At checkout the largest numeric/engineered coefficient is \texttt{\CheckoutImpAName{}} (\CheckoutImpAVal{}), then \texttt{\CheckoutImpBName{}} (\CheckoutImpBVal{}) and \texttt{\CheckoutImpCName{}} (\CheckoutImpCVal{}); customer-state dummies also carry large weights but are not individually interpretable as a ranked list. At handover, \texttt{\HandoverImpAName{}} (\HandoverImpAVal{}) is now the largest numeric/engineered coefficient -- the elapsed time itself -- ahead of \texttt{\HandoverImpBName{}} (\HandoverImpBVal{}) and \texttt{\HandoverImpCName{}} (\HandoverImpCVal{}), matching the ladder: once elapsed time is available, it dominates.
 
 \section*{Model 2: the late warning (classification)}
-\textbf{Method.} The classifier is a random forest (\texttt{forest\_leaf20}) that outputs the probability of missing the promise. It had the highest mean validation PR-AUC (\ValForestPR{}) among four candidates: logistic regression (\ValLogitPR{}), class-weighted logistic regression (\ValLogitBalPR{}) and a depth-6 tree. Under the same one-standard-error rule it is kept: it beat logistic regression in \ClsBestWins{} of 5 windows by \ClsGap{} PR-AUC, about four times the standard error (\ClsGapSE{}). Here the added complexity earns its place. PR-AUC is the headline metric because late orders are rare. The product is a ranking: each day operations works down the list from the top.
+\textbf{Method.} The classifier outputs the probability that an order misses Olist's promise, scored the moment the carrier takes the parcel. Candidates follow the same two families as the regression, tuned within each group (Linear: logistic regression over four regularisation strengths, with and without class weighting; Tree-based: a single tree, a random forest and gradient boosting, each over several depth/leaf settings), then compared with the plain-baseline-first line-up and the same paired one-standard-error rule~\cite{james2013}, scored by mean validation PR-AUC. The tuned forest (\ClsBestName{}) has the highest mean validation PR-AUC (\ValBestPR{}), but tuned logistic regression (\ClsSelName{}) is within one standard error (gap \ClsSelGap{}, SE \ClsSelGapSE{}) and simpler, so it is selected; it also clearly beats its own group's plain baseline (\ClsPlainName{}, PR-AUC \ClsPlainPR{}), so the tuning, not just the family choice, earns its place. The product is a ranking: each day operations works down the list from the top. The full candidate table is in Appendix~\ref{app:classifier}.
 
-\textbf{Imbalance.} Only \ClsTestLate{}\% of test orders are late, so accuracy is meaningless (predicting ``never late'' is 96.5\% accurate) and a fixed 0.5 threshold would flag almost nothing. We report PR-AUC, which is more informative than ROC-AUC when positives are rare~\cite{saito2015}, against the late rate as the baseline, recall for a fixed share of orders acted on, and the action metrics below. Class weighting changes fitting, not the underlying scarcity, and did not improve validation PR-AUC (\ValLogitBalPR{} against \ValLogitPR{}).
+\textbf{Imbalance.} Only \ClsTestLate{}\% of test orders are late (4--21\% across the five validation windows), so accuracy is meaningless and a fixed 0.5 threshold would flag almost nothing. We report PR-AUC, which is more informative than ROC-AUC when positives are rare~\cite{saito2015}, against the late rate as the baseline, plus ROC-AUC, precision, recall, F1 and MCC at the chosen operating point.
+
+\textbf{Operating point.} Because risk scores are not stable across periods, operations acts on a \emph{share} of each period's handovers rather than a fixed probability threshold. The share \(k\) is chosen on validation to maximise mean net benefit, valuing a caught late order at \BenefitRatio{} times the cost of acting on one order (a net-benefit calculation in the spirit of decision curve analysis~\cite{vickers2006}; this value is an assumption, not a measured cost). This gives \(k=\)\ActShare{}\%.
 
 \begin{table}[ht]
 \centering\small
 \caption{Late warning on the test period, acting on the top \ActShare{}\% of orders by risk.}
-\begin{tabular}{@{}lccccccc@{}}
+\label{tab:classifier-test}
+\begin{tabular}{@{}lcccccc@{}}
 \toprule
 & PR-AUC & ROC-AUC & Precision & Recall & F1 & MCC \\
 \midrule
 Late-warning model & \ClsTestPR{} & \ClsTestROC{} & \ClsTestPrec{}\% & \ClsTestRec{}\% & \ClsTestFone{} & \ClsTestMCC{} \\
-Remaining-slack rule & \SlackTestPR{} & \SlackTestROC{} & --- & --- & --- & --- \\
 Random list & \ClsTestLate{}\% & 0.50 & \ClsTestLate{}\% & \ActShare{}\% & --- & 0.00 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Ranking quality.} The top 1\%, 5\%, 10\% and 20\% of the daily list contain \GainOneModel{}\%, \GainFiveModel{}\%, \GainTenModel{}\% and \GainTwentyModel{}\% of the late orders (Figure~\ref{fig:gains}). A random list contains 1\%, 5\%, 10\% and 20\%. On validation the top 10\% contained \ValForestRecallTen{}\% of late orders against 10\% for a random list, and the model's PR-AUC was \ValForestPR{} against a late rate of about 11\%.
+Validation PR-AUC (\ValSelPR{}) is noticeably higher than test PR-AUC (\ClsTestPR{}); this tracks the late rate, not a validity problem: per-window PR-AUC rises and falls with the late rate (highest in the Black Friday and Feb--Mar windows, lowest in the calmest ones), and the test period was unusually calm (\ClsTestLate{}\% late, against 4--21\% in validation). ROC-AUC, which is less sensitive to the base rate, is \ClsTestROC{} on test against \ValSelROC{} on validation -- a smaller, more expected gap, and evidence that the ranking itself holds up; the net benefit at the validation-chosen \ActShare{}\% share was negative on the calm test period (\ClsNetBenefit{} per order), so the list should be sized to the current late rate rather than fixed in advance.
 
 \begin{figure}[ht]
 \centering
@@ -120,15 +123,14 @@ Random list & \ClsTestLate{}\% & 0.50 & \ClsTestLate{}\% & \ActShare{}\% & --- &
 \label{fig:gains}
 \end{figure}
 
-\textbf{What drives the score.} Permutation importance~\cite{breiman2001} (the drop in validation PR-AUC when a column is shuffled) is led by \texttt{\ImpAName{}} (\ImpADrop{}), then \texttt{\ImpBName{}} (\ImpBDrop{}) and \texttt{\ImpCName{}} (\ImpCDrop{}); all other inputs contribute under 0.01 each. The model is essentially reading how much of the promise has already been used.
+\textbf{Ranking quality.} The top 1\%, 5\%, 10\% and 20\% of the daily list contain \GainOneModel{}\%, \GainFiveModel{}\%, \GainTenModel{}\% and \GainTwentyModel{}\% of the late orders (Figure~\ref{fig:gains}); a random list contains 1\%, 5\%, 10\% and 20\%. On validation the top 10\% contained \ValSelRecallTen{}\% of late orders.
 
-\textbf{Could a hand-built rule do as well?} Mostly, yes. A rule that ranks orders by remaining slack alone scored a test PR-AUC of \SlackTestPR{}, above the model's \ClsTestPR{}. On validation the model was better, by \ValDiffPR{} PR-AUC (95\% bootstrap interval \ValDiffLow{} to \ValDiffHigh{}). We therefore describe the model as a good ranker whose edge over a simple slack rule is not established.
-
-\textbf{Is acting worth it?} We value a caught late order at five times the cost of acting on one order, a net-benefit calculation in the spirit of decision curve analysis~\cite{vickers2006}. Acting pays off only if precision exceeds 1/5, or 20\%. On the test period precision was \PrecOneModel{}\% for the top 1\%, \PrecFiveModel{}\% for the top 5\%, \PrecTenModel{}\% for the top 10\% and \ClsTestPrec{}\% at the \ActShare{}\% share chosen on validation. The net benefit at \ActShare{}\% was therefore negative (\ClsNetBenefit{} per order), because the test period was calm. The list should be sized to the current late rate: roughly the top 5\% in a calm period, and wider only when lateness rises. The five-to-one value is an assumption, not a measured cost.
+\textbf{What drives the score.} Permutation importance~\cite{breiman2001} (the drop in validation PR-AUC when a column is shuffled) is led by \texttt{\ImpAName{}} (\ImpADrop{}), then \texttt{\ImpBName{}} (\ImpBDrop{}) and \texttt{\ImpCName{}} (\ImpCDrop{}); all other inputs contribute under 0.02 each. The model is reading mainly how much of the promised time has already elapsed.
 
 \begin{table}[ht]
 \centering\small
 \caption{Monthly test results for the late warning at the \ActShare{}\% share.}
+\label{tab:classifier-monthly}
 \begin{tabular}{@{}lrrrr@{}}
 \toprule
 Month & Orders & Late orders & Orders acted on & Late orders caught \\
@@ -141,25 +143,38 @@ August & \TestAugOrders{} & \TestAugLateCount{} & \TestAugActed{} & \TestAugCaug
 \end{tabular}
 \end{table}
 
+\section*{How Olist applies the models}
+\begin{enumerate}\setlength{\itemsep}{0pt}
+\item \textbf{At checkout}, the checkout-stage estimate sets the customer's expected delivery date.
+\item \textbf{At handover}, every order gets an updated delivery-time estimate and a risk score; operations works down the day's ranked list from the top.
+\item \textbf{For each flagged order}, the updated estimate shows how late it is likely to run: expedite with the carrier if there is still time to recover, otherwise proactively message the customer with a revised date.
+\item \textbf{Ongoing}, both models are refit and the operating point (\(k\)) and candidate line-up are reviewed regularly, because delivery conditions shift (Figure~\ref{fig:monthly}) and a stale model or a fixed action share will drift out of step with them.
+\end{enumerate}
+
 \section*{Limitations and what we would do next}
 \begin{itemize}\setlength{\itemsep}{0pt}
-\item \textbf{Peaks are the weak point.} Both models were trained largely on calm months. The engine's buffer lagged at Black Friday and overreacted after it; we would monitor it through peaks and cap promise length.
-\item \textbf{Test period.} The test months were calm (\ClsTestLate{}\% late), so test results show behaviour in good conditions.
-\item \textbf{Cohort.} Results describe orders that were eventually delivered. Cancelled and open orders have no outcome.
-\item \textbf{No causal claim.} We show that late orders can be ranked and that promises can be calibrated, not that acting on the list prevents delays or raises sales. The promise engine's effect on conversion is untested. A pilot with a control group would measure it.
-\item \textbf{Next step.} Compare the late warning's ranking against the engine's promise instead of Olist's, as a clearly labelled simulation.
+\item \textbf{Peaks are the hard case.} Both models were trained mostly on calmer months; validation includes the Black Friday and Feb--Mar 2018 windows specifically to test this, and the handover update and the classifier's ranking lift both hold up there, but with wider errors than in calm periods.
+\item \textbf{Test period was calm.} At \ClsTestLate{}\% late, the test period understates how the late-warning model's net benefit behaves in a high-lateness month; operations should expect the \(k\) share and net benefit to need revisiting as conditions change, not treat the test numbers as a steady state.
+\item \textbf{Cohort.} Results describe orders that were eventually delivered with a recorded carrier handover; cancelled and still-open orders have no outcome and are not covered.
+\item \textbf{No causal claim.} We show that delivery time can be estimated and refined, and that late orders can be ranked, not that acting on either output improves customer experience or sales; a pilot with a control group would measure that.
+\item \textbf{A calibrated promise buffer} (turning the checkout estimate into a promise with a chosen on-time rate, deployment detail only) was explored as a stretch goal; it is not part of this report's headline results.
+\item \textbf{Next step.} Compare the late-warning ranking against the handover estimate's own implied lateness instead of only Olist's promise, as a clearly labelled simulation.
 \end{itemize}
+
+\appendix
+\section{Full configuration tables}
+\input{generated/fig_appendix_regression}
+\label{app:regression}
+\input{generated/fig_appendix_classifier}
+\label{app:classifier}
 
 \begin{thebibliography}{9}\small\setlength{\itemsep}{0pt}
 \bibitem{bergmeir2012} C.~Bergmeir and J.~M.~Ben\'itez. On the use of cross-validation for time series predictor evaluation. \emph{Information Sciences}, 2012. doi:10.1016/j.ins.2011.12.028.
 \bibitem{breiman2001} L.~Breiman. Random forests. \emph{Machine Learning}, 45(1):5--32, 2001.
-\bibitem{gibbs2021} I.~Gibbs and E.~Cand\`es. Adaptive conformal inference under distribution shift. \emph{Advances in Neural Information Processing Systems 34}, 2021.
-\bibitem{hastie2009} T.~Hastie, R.~Tibshirani and J.~Friedman. \emph{The Elements of Statistical Learning}, 2nd ed., Sec.~7.10. Springer, 2009.
+\bibitem{james2013} G.~James, D.~Witten, T.~Hastie and R.~Tibshirani. \emph{An Introduction to Statistical Learning}, Sec.~6.1.3, p.~214. Springer, 2013.
 \bibitem{saito2015} T.~Saito and M.~Rehmsmeier. The precision-recall plot is more informative than the ROC plot when evaluating binary classifiers on imbalanced datasets. \emph{PLOS ONE}, 10(3):e0118432, 2015.
 \bibitem{salari2022} N.~Salari, S.~Liu and Z.-J.~M.~Shen. Real-time delivery time forecasting and promising in online retailing: when will your package arrive? \emph{Manufacturing \& Service Operations Management}, 24(3):1421--1436, 2022.
-\bibitem{v2021} Preethi~V, N.~Sundaram and R.~B.~Tallamraju. Online fashion commerce: modelling customer promise date. SDM Workshop on Data Science for Retail and E-Commerce, 2021. arXiv:2105.00315.
 \bibitem{vickers2006} A.~J.~Vickers and E.~B.~Elkin. Decision curve analysis: a novel method for evaluating prediction models. \emph{Medical Decision Making}, 26(6):565--574, 2006.
-\bibitem{ye2025} T.~Ye, A.~Hijazi and P.~Van~Hentenryck. Conformal predictive distributions for order fulfillment time forecasting. arXiv:2505.17340, 2025.
 \end{thebibliography}
 
 \section*{Declaration on the use of AI}

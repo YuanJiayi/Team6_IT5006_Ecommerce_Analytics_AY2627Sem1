@@ -1,0 +1,42 @@
+\begin{table}[H]
+\centering\small
+\caption{Every classifier candidate, mean over five validation windows (handover stage).}
+\label{tab:app-classifier}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Candidate & PR-AUC & ROC-AUC & Recall at top 10\% \\
+\midrule
+logistic\_c1 & 0.343 & 0.739 & 0.349 \\
+logistic\_c1\_bal & 0.328 & 0.734 & 0.338 \\
+logistic\_c0.01 & 0.367 & 0.769 & 0.363 \\
+logistic\_c0.01\_bal & 0.350 & 0.761 & 0.350 \\
+logistic\_c0.1 & 0.354 & 0.755 & 0.355 \\
+logistic\_c0.1\_bal & 0.337 & 0.743 & 0.343 \\
+logistic\_c10 & 0.338 & 0.733 & 0.345 \\
+logistic\_c10\_bal & 0.325 & 0.730 & 0.335 \\
+tree\_plain & 0.138 & 0.561 & 0.213 \\
+tree\_d4\_l20 & 0.283 & 0.667 & 0.287 \\
+tree\_d4\_l100 & 0.280 & 0.667 & 0.286 \\
+tree\_d6\_l20 & 0.302 & 0.692 & 0.313 \\
+tree\_d6\_l100 & 0.306 & 0.700 & 0.321 \\
+tree\_d8\_l20 & 0.306 & 0.694 & 0.297 \\
+tree\_d8\_l100 & 0.308 & 0.684 & 0.322 \\
+tree\_d12\_l20 & 0.290 & 0.632 & 0.294 \\
+tree\_d12\_l100 & 0.302 & 0.663 & 0.309 \\
+forest\_l5\_sqrt & 0.360 & 0.735 & 0.338 \\
+forest\_l5\_half & 0.344 & 0.723 & 0.319 \\
+forest\_l20\_sqrt & 0.366 & 0.745 & 0.341 \\
+forest\_l20\_half & 0.354 & 0.733 & 0.339 \\
+forest\_l50\_sqrt & 0.369 & 0.747 & 0.343 \\
+forest\_l50\_half & 0.357 & 0.737 & 0.344 \\
+boost\_lr0.03\_n200\_l20 & 0.354 & 0.741 & 0.333 \\
+boost\_lr0.03\_n200\_l100 & 0.345 & 0.739 & 0.329 \\
+boost\_lr0.03\_n500\_l20 & 0.344 & 0.731 & 0.320 \\
+boost\_lr0.03\_n500\_l100 & 0.333 & 0.729 & 0.318 \\
+boost\_lr0.1\_n200\_l20 & 0.334 & 0.722 & 0.312 \\
+boost\_lr0.1\_n200\_l100 & 0.330 & 0.719 & 0.309 \\
+boost\_lr0.1\_n500\_l20 & 0.318 & 0.702 & 0.299 \\
+boost\_lr0.1\_n500\_l100 & 0.318 & 0.703 & 0.300 \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -34,10 +34,10 @@ sys.path.insert(0, str(ROOT / "experiments"))
 from phase2_classification import feature_columns, load_primary_training, temporal_folds  # noqa: E402
 from phase2_recent_history_audit import asof_mean  # noqa: E402
 from phase2_regression import assert_fit_precedes, make_regression_pipeline, regression_metrics  # noqa: E402
+from phase2_selection import one_se_choice  # noqa: E402
 
 RESULT_DIR = ROOT / "results" / "phase2" / "eta"
 TARGET = "delivery_days"
-TIE_MARGIN_DAYS = 0.05
 TRANSIT_WINDOW_DAYS = 90
 ROUTE_PRIOR_STRENGTH = 20
 SECONDS_PER_DAY = 86400
@@ -202,17 +202,19 @@ def summarize(rows, keys):
                  min_r2=("r2", "min"), mean_signed_error=("mean_signed_error", "mean")).reset_index())
 
 
-def select_candidate(mean_mae):
-    """Same rule as the checkout regression: lowest mean validation MAE; within 0.05 days the simplest wins."""
-    scores = {n: v for n, v in mean_mae.items() if n in SIMPLICITY}
+def select_candidate(per_window_mae):
+    """Same rule as the handover classifier: lowest mean validation MAE; the simplest within one SE wins.
+
+    `per_window_mae` maps candidate -> per-window MAE values (lower is better).
+    """
+    scores = {n: v for n, v in per_window_mae.items() if n in SIMPLICITY}
     if set(scores) != set(SIMPLICITY):
         raise ValueError("Scores must cover exactly the selectable candidates")
-    best = min(scores, key=scores.get)
-    chosen = next(n for n in SIMPLICITY if scores[n] - scores[best] < TIE_MARGIN_DAYS)
-    reason = (f"{best} has the lowest mean validation MAE ({scores[best]:.4f})"
-              + ("" if chosen == best else f"; {chosen} ({scores[chosen]:.4f}) is within {TIE_MARGIN_DAYS} days "
-                                           "and simpler, so it is chosen"))
-    return chosen, best, reason
+    chosen, best, rows = one_se_choice(SIMPLICITY, scores, higher_is_better=False)
+    reason = (f"{best} has the lowest mean validation MAE ({np.mean(scores[best]):.4f})"
+              + ("" if chosen == best else f"; {chosen} ({np.mean(scores[chosen]):.4f}) is within one standard "
+                                           "error and simpler, so it is chosen"))
+    return chosen, best, reason, rows
 
 
 def score_later_test(table, spec, entries):
@@ -287,64 +289,90 @@ def run(root=ROOT):
     ladder = summarize(ladder_rows, ["stage", "model"])
     ladder.to_csv(output / "ladder_summary.csv", index=False)
 
-    # 2. Model comparison at the handover stage.
-    handover_spec = stage_spec(spec, HANDOVER_STAGE)
-    cv_rows = []
-    for name, family, params in CANDIDATES:
-        cv_rows += cross_validate(train, handover_spec, folds, family, params,
-                                  {"candidate": name, "algorithm": family})
-    summary = summarize(cv_rows, ["candidate", "algorithm"])
-    scores = summary.set_index("candidate")["mean_mae"].to_dict()
-    selected, lowest, reason = select_candidate(scores)
+    # 2. Model comparison, run separately for the checkout and the handover stage. The elapsed-plus-route rule
+    # baseline needs handover-stage inputs (elapsed days, route transit at handover), so it is handover only.
     lookup = {name: (family, params) for name, family, params in CANDIDATES}
+    stage_specs = {stage: stage_spec(spec, stage) for stage in (CHECKOUT_STAGE, HANDOVER_STAGE)}
+    cv_rows, stages = [], {}
+    for stage, spec_s in stage_specs.items():
+        stage_candidates = [c for c in CANDIDATES if stage == HANDOVER_STAGE or c[1] != "rule"]
+        stage_rows = []
+        for name, family, params in stage_candidates:
+            stage_rows += cross_validate(train, spec_s, folds, family, params,
+                                         {"stage": stage, "candidate": name, "algorithm": family})
+        cv_rows += stage_rows
+        frame = pd.DataFrame(stage_rows)
+        per_window_mae = frame.pivot(index="window", columns="candidate", values="mae").to_dict("list")
+        selected, lowest, reason, stage2 = select_candidate(per_window_mae)
+        stages[stage] = {"selected": selected, "lowest_mae_candidate": lowest, "reason": reason, "stage2": stage2}
+
+    handover_scores = (pd.DataFrame([r for r in cv_rows if r["stage"] == HANDOVER_STAGE])
+                       .groupby("candidate")["mae"].mean().to_dict())
     winners = {}
     for group in ("linear", "tree_based"):
         members = [n for n in SIMPLICITY if FAMILY_OF[lookup[n][0]] == group]
-        winners[group] = min(members, key=scores.get)
+        winners[group] = min(members, key=handover_scores.get)
 
-    # 3. Optional ensemble: equal-weight average of the best linear and best tree-based candidate.
+    # 3. Optional ensemble: equal-weight average of the best linear and best tree-based candidate (handover stage).
     voting = {"members": [(n, *lookup[n]) for n in winners.values()]}
-    cv_rows += cross_validate(train, handover_spec, folds, "voting", voting,
-                              {"candidate": "voting_family_winners", "algorithm": "voting"})
+    cv_rows += cross_validate(train, stage_specs[HANDOVER_STAGE], folds, "voting", voting,
+                              {"stage": HANDOVER_STAGE, "candidate": "voting_family_winners", "algorithm": "voting"})
     pd.DataFrame(cv_rows).to_csv(output / "cv_metrics.csv", index=False)
-    summary = summarize(cv_rows, ["candidate", "algorithm"])
+    summary = summarize(cv_rows, ["stage", "candidate", "algorithm"])
     summary.to_csv(output / "cv_summary.csv", index=False)
-    best_r2 = summary.loc[summary["mean_r2"].idxmax(), "candidate"]
+    handover_summary = summary[summary["stage"] == HANDOVER_STAGE]
+    best_r2 = handover_summary.loc[handover_summary["mean_r2"].idxmax(), "candidate"]
 
-    # 4. Later period (post hoc) and the random same-period benchmark, for both stages.
-    selected_model = lookup[selected]
+    # 4. Later period (post hoc) and the random same-period benchmark, each stage's own selected model.
+    checkout_selected, handover_selected = stages[CHECKOUT_STAGE]["selected"], stages[HANDOVER_STAGE]["selected"]
+    checkout_model, selected_model = lookup[checkout_selected], lookup[handover_selected]
     tree_model = lookup[winners["tree_based"]]
     entries = [
-        ({"stage": CHECKOUT_STAGE, "candidate": "ridge_100"}, *LADDER_MODEL, stage_spec(spec, CHECKOUT_STAGE)),
-        ({"stage": CHECKOUT_STAGE, "candidate": winners["tree_based"]}, *tree_model, stage_spec(spec, CHECKOUT_STAGE)),
-        ({"stage": HANDOVER_STAGE, "candidate": selected}, *selected_model, handover_spec),
-        ({"stage": HANDOVER_STAGE, "candidate": winners["tree_based"]}, *tree_model, handover_spec),
-        ({"stage": HANDOVER_STAGE, "candidate": "voting_family_winners"}, "voting", voting, handover_spec),
+        ({"stage": CHECKOUT_STAGE, "candidate": "ridge_100"}, *LADDER_MODEL, stage_specs[CHECKOUT_STAGE]),
+        ({"stage": CHECKOUT_STAGE, "candidate": checkout_selected}, *checkout_model, stage_specs[CHECKOUT_STAGE]),
+        ({"stage": CHECKOUT_STAGE, "candidate": winners["tree_based"]}, *tree_model, stage_specs[CHECKOUT_STAGE]),
+        ({"stage": HANDOVER_STAGE, "candidate": handover_selected}, *selected_model, stage_specs[HANDOVER_STAGE]),
+        ({"stage": HANDOVER_STAGE, "candidate": winners["tree_based"]}, *tree_model, stage_specs[HANDOVER_STAGE]),
+        ({"stage": HANDOVER_STAGE, "candidate": "voting_family_winners"}, "voting", voting,
+         stage_specs[HANDOVER_STAGE]),
     ]
     entries = [e for i, e in enumerate(entries) if e[0] not in [x[0] for x in entries[:i]]]
     pd.DataFrame(score_later_test(table, spec, entries)).to_csv(output / "test_metrics.csv", index=False)
     pd.DataFrame(score_random_benchmark(table, spec, entries)).to_csv(output / "random_benchmark.csv", index=False)
 
-    # 5. Interpretation on validation windows.
-    files = [interpret(train, handover_spec, folds, *selected_model, output, "selected")]
-    if winners["tree_based"] != selected:
-        files.append(interpret(train, handover_spec, folds, *tree_model, output, "tree_winner"))
+    # 5. Interpretation on validation windows, each stage's own selected model.
+    files = {
+        CHECKOUT_STAGE: [interpret(train, stage_specs[CHECKOUT_STAGE], folds, *checkout_model, output,
+                                   "checkout_selected")],
+        HANDOVER_STAGE: [interpret(train, stage_specs[HANDOVER_STAGE], folds, *selected_model, output, "selected")],
+    }
+    if winners["tree_based"] != handover_selected:
+        files[HANDOVER_STAGE].append(interpret(train, stage_specs[HANDOVER_STAGE], folds, *tree_model, output,
+                                                "tree_winner"))
 
     selection = {
         "prediction_points": {"checkout": spec["prediction_point"],
                               "handover": "when the carrier records receiving the parcel from the seller"},
         "target": TARGET, "population": "delivered orders with a carrier handover after purchase and before delivery",
         "coverage": coverage, "stage_features": STAGE_FEATURES,
-        "selected_candidate": selected, "lowest_mae_candidate": lowest, "highest_r2_candidate": best_r2,
-        "reason": reason,
-        "rule": f"lowest mean validation MAE over {spec['n_folds']} chronological windows; candidates within "
-                f"{TIE_MARGIN_DAYS} days of the lowest lose to the simplest; baselines and the ensemble are reference only",
+        # Kept for the classifier, which reads this key for its "estimate - promise" baseline ranking.
+        "selected_candidate": handover_selected,
+        "checkout_selected_candidate": checkout_selected,
+        "lowest_mae_candidate": {stage: stages[stage]["lowest_mae_candidate"] for stage in stages},
+        "highest_r2_candidate": best_r2,
+        "reason": {stage: stages[stage]["reason"] for stage in stages},
+        "rule": f"lowest mean validation MAE over {spec['n_folds']} chronological windows; the simplest candidate "
+                "within one standard error of the lowest wins (ISLR, James, Witten, Hastie and Tibshirani, Sec. "
+                "6.1.3, p. 214); baselines and the ensemble are reference only",
+        "stage2": {stage: stages[stage]["stage2"] for stage in stages},
         "family_winners": winners, "simplicity_order": SIMPLICITY,
         "interpretation_files": files, "random_state": spec["random_state"],
         "test_status": "post hoc: the later period was opened before the handover stage was designed",
     }
     (output / "selection.json").write_text(json.dumps(selection, indent=2) + "\n")
-    print(f"\nSelected {selected}: {reason}. Highest mean validation R2: {best_r2}.", flush=True)
+    print(f"\nCheckout selected {checkout_selected}: {stages[CHECKOUT_STAGE]['reason']}", flush=True)
+    print(f"Handover selected {handover_selected}: {stages[HANDOVER_STAGE]['reason']}. "
+          f"Highest mean validation R2 (handover): {best_r2}.", flush=True)
     return ladder, summary, selection
 
 

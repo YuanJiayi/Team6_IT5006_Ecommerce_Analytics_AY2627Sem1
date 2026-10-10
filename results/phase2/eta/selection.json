@@ -28,11 +28,150 @@
       "route_transit_90d_at_handover"
     ]
   },
-  "selected_candidate": "linear_baseline",
-  "lowest_mae_candidate": "ridge_100",
+  "selected_candidate": "ridge_100",
+  "checkout_selected_candidate": "ridge_100",
+  "lowest_mae_candidate": {
+    "checkout": "forest_leaf20",
+    "handover": "ridge_100"
+  },
   "highest_r2_candidate": "ridge_100",
-  "reason": "ridge_100 has the lowest mean validation MAE (5.0985); linear_baseline (5.1462) is within 0.05 days and simpler, so it is chosen",
-  "rule": "lowest mean validation MAE over 5 chronological windows; candidates within 0.05 days of the lowest lose to the simplest; baselines and the ensemble are reference only",
+  "reason": {
+    "checkout": "forest_leaf20 has the lowest mean validation MAE (5.7829); ridge_100 (5.8085) is within one standard error and simpler, so it is chosen",
+    "handover": "ridge_100 has the lowest mean validation MAE (5.0985)"
+  },
+  "rule": "lowest mean validation MAE over 5 chronological windows; the simplest candidate within one standard error of the lowest wins (ISLR, James, Witten, Hastie and Tibshirani, Sec. 6.1.3, p. 214); baselines and the ensemble are reference only",
+  "stage2": {
+    "checkout": [
+      {
+        "candidate": "linear_baseline",
+        "mean": 5.860297020433897,
+        "gap_to_best": 0.07744561927162526,
+        "se_of_gap": 0.03230968460634013,
+        "within_one_se": false
+      },
+      {
+        "candidate": "ridge_1",
+        "mean": 5.858297274087174,
+        "gap_to_best": 0.07544587292490182,
+        "se_of_gap": 0.03267830068336817,
+        "within_one_se": false
+      },
+      {
+        "candidate": "ridge_10",
+        "mean": 5.848387149974313,
+        "gap_to_best": 0.06553574881204031,
+        "se_of_gap": 0.033175013909736685,
+        "within_one_se": false
+      },
+      {
+        "candidate": "ridge_100",
+        "mean": 5.80852834762576,
+        "gap_to_best": 0.025676946463487928,
+        "se_of_gap": 0.027990678212474106,
+        "within_one_se": true
+      },
+      {
+        "candidate": "tree_depth6",
+        "mean": 5.932524868421388,
+        "gap_to_best": 0.1496734672591158,
+        "se_of_gap": 0.017034868970882338,
+        "within_one_se": false
+      },
+      {
+        "candidate": "tree_baseline",
+        "mean": 7.7865133303717755,
+        "gap_to_best": 2.0036619292095024,
+        "se_of_gap": 0.0566882756496095,
+        "within_one_se": false
+      },
+      {
+        "candidate": "forest_leaf20",
+        "mean": 5.782851401162271,
+        "gap_to_best": 0.0,
+        "se_of_gap": 0.0,
+        "within_one_se": true
+      },
+      {
+        "candidate": "boost_baseline",
+        "mean": 5.830217609859458,
+        "gap_to_best": 0.04736620869718618,
+        "se_of_gap": 0.01706251973716195,
+        "within_one_se": false
+      },
+      {
+        "candidate": "boost_slow",
+        "mean": 5.81612017598771,
+        "gap_to_best": 0.03326877482543846,
+        "se_of_gap": 0.01722656302146876,
+        "within_one_se": false
+      }
+    ],
+    "handover": [
+      {
+        "candidate": "linear_baseline",
+        "mean": 5.146210909161235,
+        "gap_to_best": 0.047671406181090246,
+        "se_of_gap": 0.00404538301744772,
+        "within_one_se": false
+      },
+      {
+        "candidate": "ridge_1",
+        "mean": 5.1448492598750155,
+        "gap_to_best": 0.046309756894869644,
+        "se_of_gap": 0.003599517724150448,
+        "within_one_se": false
+      },
+      {
+        "candidate": "ridge_10",
+        "mean": 5.135970562901798,
+        "gap_to_best": 0.03743105992165274,
+        "se_of_gap": 0.002912101947425153,
+        "within_one_se": false
+      },
+      {
+        "candidate": "ridge_100",
+        "mean": 5.098539502980145,
+        "gap_to_best": 0.0,
+        "se_of_gap": 0.0,
+        "within_one_se": true
+      },
+      {
+        "candidate": "tree_depth6",
+        "mean": 5.313429607237533,
+        "gap_to_best": 0.21489010425738816,
+        "se_of_gap": 0.02751772085646204,
+        "within_one_se": false
+      },
+      {
+        "candidate": "tree_baseline",
+        "mean": 6.839975770797077,
+        "gap_to_best": 1.741436267816931,
+        "se_of_gap": 0.0828327929505494,
+        "within_one_se": false
+      },
+      {
+        "candidate": "forest_leaf20",
+        "mean": 5.3457976168995,
+        "gap_to_best": 0.2472581139193542,
+        "se_of_gap": 0.053030272716395724,
+        "within_one_se": false
+      },
+      {
+        "candidate": "boost_baseline",
+        "mean": 5.214455231887597,
+        "gap_to_best": 0.11591572890745239,
+        "se_of_gap": 0.02960237990073459,
+        "within_one_se": false
+      },
+      {
+        "candidate": "boost_slow",
+        "mean": 5.215336436637951,
+        "gap_to_best": 0.1167969336578059,
+        "se_of_gap": 0.05191046230659455,
+        "within_one_se": false
+      }
+    ]
+  },
   "family_winners": {
     "linear": "ridge_100",
     "tree_based": "boost_baseline"
@@ -48,10 +187,15 @@
     "boost_baseline",
     "boost_slow"
   ],
-  "interpretation_files": [
-    "selected_coefficients.csv",
-    "tree_winner_permutation_importance.csv"
-  ],
+  "interpretation_files": {
+    "checkout": [
+      "checkout_selected_coefficients.csv"
+    ],
+    "handover": [
+      "selected_coefficients.csv",
+      "tree_winner_permutation_importance.csv"
+    ]
+  },
   "random_state": 42,
   "test_status": "post hoc: the later period was opened before the handover stage was designed"
 }

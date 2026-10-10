@@ -77,22 +77,30 @@ class StageFeatureTests(unittest.TestCase):
 
 class SelectionTests(unittest.TestCase):
     def scores(self, **overrides):
-        base = {name: 5.0 for name in SIMPLICITY}
-        base.update({"mean_baseline": 1.0, "elapsed_plus_route_baseline": 1.0, "voting_family_winners": 1.0})
+        base = {name: [5.0, 5.0, 5.0] for name in SIMPLICITY}
+        base.update({"mean_baseline": [1.0, 1.0, 1.0], "elapsed_plus_route_baseline": [1.0, 1.0, 1.0],
+                     "voting_family_winners": [1.0, 1.0, 1.0]})
         base.update(overrides)
         return base
 
-    def test_simpler_model_wins_within_margin(self):
-        chosen, lowest, _ = select_candidate(self.scores(boost_slow=4.0, ridge_10=4.049))
-        self.assertEqual((chosen, lowest), ("ridge_10", "boost_slow"))
+    def test_simpler_model_wins_within_one_se(self):
+        # boost_slow is steadily a bit ahead, but the gap is noisy relative to its own standard error.
+        chosen, best, _, _ = select_candidate(self.scores(boost_slow=[3.8, 4.2, 4.0], ridge_10=[4.0, 4.3, 3.9]))
+        self.assertEqual((chosen, best), ("ridge_10", "boost_slow"))
 
-    def test_lowest_mae_wins_beyond_margin(self):
-        chosen, _, _ = select_candidate(self.scores(boost_slow=4.0, ridge_10=4.06))
+    def test_lowest_mae_wins_beyond_one_se(self):
+        chosen, _, _, _ = select_candidate(self.scores(boost_slow=[3.9, 4.0, 4.1], ridge_10=[4.9, 5.0, 5.1]))
         self.assertEqual(chosen, "boost_slow")
 
     def test_baselines_and_ensemble_are_not_selectable(self):
-        chosen, _, _ = select_candidate(self.scores())
+        chosen, _, _, _ = select_candidate(self.scores())
         self.assertIn(chosen, SIMPLICITY)
+
+    def test_rejects_incomplete_scores(self):
+        scores = self.scores()
+        del scores[SIMPLICITY[0]]
+        with self.assertRaises(ValueError):
+            select_candidate(scores)
 
 
 if __name__ == "__main__":

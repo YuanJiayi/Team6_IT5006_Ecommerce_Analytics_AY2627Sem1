@@ -4,7 +4,9 @@ Stage 1 (tuning): within each model group, the configuration with the best mean 
 Stage 2 (selection): the line-up "plain baseline, tuned" for each group in order of complexity, and the paired
 one-standard-error rule: the first (simplest) entry whose mean gap to the best entry is within one standard error of
 that gap across the validation windows. A more complex model is chosen only if it beats every simpler one by more than
-the window-to-window noise (Hastie, Tibshirani and Friedman, The Elements of Statistical Learning, Sec. 7.10).
+the window-to-window noise (James, Witten, Hastie and Tibshirani, An Introduction to Statistical Learning, Sec.
+6.1.3, p. 214). Standard in statistical learning (it is glmnet's default `lambda.1se`), applied here across model
+types rather than within one penalty path; the standard error comes from 5 non-independent validation windows.
 """
 
 from __future__ import annotations

@@ -27,7 +27,7 @@ The [Phase 2 data preparation notebook](notebooks/phase2/data_prep.ipynb) explai
 
 The [Phase 2 assumptions log](docs/phase2_assumptions.md) records business scope, checkout-time feature assumptions, and preprocessing choices.
 
-For the completed Phase 2 story, start with the [joint report PDF](reports/Team6_Phase2_IT5006_AY2627Sem1.pdf), its [editable source](reports/phase2_joint_report.tex), and the [evidence index](docs/phase2_evidence_index.md). The [older classification handover](docs/phase2_classification_handover.md) preserves the development history; its dated next-step lists are superseded by the evidence index.
+For the submitted Phase 2 story, start with the [report PDF](reports/Team6_Phase2_IT5006_AY2627Sem1.pdf), its [editable source](reports/phase2_report.tex), and [docs/phase2_handoff.md](docs/phase2_handoff.md). The final models are a two-stage delivery-time estimate, [`phase2_eta.py`](phase2_eta.py) (checkout regression, updated at carrier handover), and a handover late-warning classifier, [`phase2_handover_classifier.py`](phase2_handover_classifier.py); [`reports/phase2_final_evidence.py`](reports/phase2_final_evidence.py) regenerates every number and figure in the report from their saved results. Earlier notebooks, the promise-engine stretch goal ([`phase2_promise.py`](phase2_promise.py)) and the older joint report preserve development history and are superseded for submission purposes.
 
 Deadline: Sunday, 11 October 2026 at 23:59 (end of Week 8)
 Weight: 40%

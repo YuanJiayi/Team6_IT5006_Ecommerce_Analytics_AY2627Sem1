@@ -9,10 +9,10 @@ To rerun the notebook from a fresh kernel, open it from the repository root or t
 ## Review sequence
 
 1. Shared preparation and feature contract: complete.
-2. Classification validation review and the frozen-model later-period test: complete. See the [classification handover](../../docs/phase2_classification_handover.md) for the report and subsequent post hoc diagnostics.
-3. Delivery-time regression: complete in [phase2_regression.py](../../phase2_regression.py), with saved selection and test results under `results/phase2/regression/`.
+2. Classification validation review and the frozen-model later-period test: complete (checkout-stage experiment, kept for its development history).
+3. Delivery-time regression: complete in [phase2_regression.py](../../phase2_regression.py), with saved selection and test results under `results/phase2/regression/` (frozen checkout-stage model, reused as the first rung of the final two-stage estimate below).
 4. Classification voting comparison: complete; its small validation gain did not change the selected checkout model.
-5. Joint report and completed exploratory checks: see the [evidence index](../../docs/phase2_evidence_index.md) and [joint report](../../reports/phase2_joint_report.tex).
+5. **Final submitted models.** The checkout-only classifier above and the plain checkout regression were superseded by [`phase2_eta.py`](../../phase2_eta.py) (a two-stage delivery-time estimate: the frozen checkout regression, then an updated forecast at carrier handover) and [`phase2_handover_classifier.py`](../../phase2_handover_classifier.py) (the late-warning classifier at handover, scored against this two-stage estimate's output). See [docs/phase2_handoff.md](../../docs/phase2_handoff.md) for the full story and [reports/phase2_report.tex](../../reports/phase2_report.tex) / [reports/Team6_Phase2_IT5006_AY2627Sem1.pdf](../../reports/Team6_Phase2_IT5006_AY2627Sem1.pdf) for the submitted report. The notebooks above remain exploratory development history and are not the final models.
 
 ## Changes from the original data-preparation notebook
 

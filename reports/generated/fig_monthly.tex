@@ -1,14 +1,7 @@
 \begin{tikzpicture}
-\begin{axis}[width=\linewidth,height=6.2cm,ybar,bar width=7pt,ymin=0,ymax=26,ylabel={Orders late (\%)},
+\begin{axis}[width=0.95\linewidth,height=5.6cm,ybar,bar width=7pt,ymin=0,ymax=26,ylabel={Orders late (\%)},
  symbolic x coords={Mar17,Apr17,May17,Jun17,Jul17,Aug17,Sep17,Oct17,Nov17,Dec17,Jan18,Feb18,Mar18,Apr18,May18,Jun18,Jul18,Aug18},xtick=data,x tick label style={rotate=60,anchor=east,font=\scriptsize},
- enlarge x limits=0.04,legend style={at={(0.02,0.97)},anchor=north west,font=\scriptsize},
- axis y line*=left]
-\addplot[fill=gray!55,draw=none] coordinates {(Mar17,4.556) (Apr17,6.557) (May17,2.990) (Jun17,3.030) (Jul17,2.789) (Aug17,2.910) (Sep17,4.386) (Oct17,4.176) (Nov17,12.404) (Dec17,7.455) (Jan18,5.701) (Feb18,14.127) (Mar18,18.963) (Apr18,4.501) (May18,6.564) (Jun18,1.165) (Jul18,3.379) (Aug18,6.188)};
-\addlegendentry{Orders late (left axis)}
-\end{axis}
-\begin{axis}[width=\linewidth,height=6.2cm,ymin=80,ymax=100,axis y line*=right,axis x line=none,ylabel={Buffer level (\%)},
- symbolic x coords={Mar17,Apr17,May17,Jun17,Jul17,Aug17,Sep17,Oct17,Nov17,Dec17,Jan18,Feb18,Mar18,Apr18,May18,Jun18,Jul18,Aug18},xtick=data,legend style={at={(0.02,0.80)},anchor=north west,font=\scriptsize},enlarge x limits=0.04]
-\addplot[thick,mark=*,mark size=1.4pt] coordinates {(Sep17,93.828) (Oct17,96.289) (Nov17,96.866) (Dec17,98.188) (Jan18,99.191) (Feb18,97.575) (Mar18,95.465) (May18,89.582) (Jun18,88.088) (Jul18,85.791) (Aug18,87.814)};
-\addlegendentry{Engine buffer level (right axis)}
+ enlarge x limits=0.04]
+\addplot[fill=gray!55,draw=none] coordinates {(Mar17,4.558) (Apr17,6.557) (May17,2.991) (Jun17,3.031) (Jul17,2.799) (Aug17,2.912) (Sep17,4.362) (Oct17,4.176) (Nov17,12.404) (Dec17,7.455) (Jan18,5.701) (Feb18,14.127) (Mar18,18.966) (Apr18,4.506) (May18,6.593) (Jun18,1.157) (Jul18,3.383) (Aug18,6.232)};
 \end{axis}
 \end{tikzpicture}

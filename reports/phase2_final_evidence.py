@@ -3,9 +3,13 @@
 Run from the repository root:
     python reports/phase2_final_evidence.py
 
-Reads the saved model outputs in results/phase2/{promise,handover} and the raw Olist tables. It fits no model.
+Reads the saved model outputs in results/phase2/{eta,handover} and the raw Olist tables. It fits no model.
 Writes results/phase2/final/*.csv, reports/generated/numbers.tex (one macro per number quoted in the report) and
-reports/generated/fig_*.tex (pgfplots, so the report compiles in an online LaTeX editor).
+reports/generated/fig_*.tex (pgfplots and plain tables, so the report compiles in an online LaTeX editor).
+
+Story (NEW DIRECTION, docs/phase2_handoff.md): the regression is Pratik's two-stage delivery-time estimate
+(checkout estimate, updated at carrier handover); the classifier is the handover late-warning model. The promise
+engine and the remaining-slack rule are not part of this report (stretch goal / dropped comparison).
 """
 
 from __future__ import annotations
@@ -20,16 +24,15 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from phase2_classification import load_primary_training, temporal_folds  # noqa: E402
-from phase2_promise import load_promise_table  # noqa: E402
+from phase2_eta import CHECKOUT_STAGE, HANDOVER_STAGE, load_stage_table  # noqa: E402
 
 RES = ROOT / "results" / "phase2"
 OUT = RES / "final"
 GEN = ROOT / "reports" / "generated"
-GAMMA = 0.05
 BAD_REVIEW = 2  # review score at or below this counts as a bad review
 MONTH_LABEL = {5: "May", 6: "Jun", 7: "Jul", 8: "Aug", 9: "Sep", 10: "Oct", 11: "Nov", 12: "Dec",
                1: "Jan", 2: "Feb", 3: "Mar", 4: "Apr"}
+STAGE_TAG = {CHECKOUT_STAGE: "Checkout", HANDOVER_STAGE: "Handover"}
 
 macros: dict[str, str] = {}
 
@@ -48,170 +51,114 @@ def load_json(path):
     return json.loads(Path(path).read_text())
 
 
-def day_to_date(day):
-    return pd.Timestamp("1970-01-01") + pd.to_timedelta(day, unit="D")
+def escape(name):
+    return str(name).replace("_", r"\_")
 
 
-# ---------------------------------------------------------------- promise engine
-def promise_tables(full, train, folds):
-    """Validation comparison per window, test per month, monthly late share and buffer level."""
-    adaptive_val = pd.read_csv(RES / "promise/adaptive_validation.csv")
-    eng = adaptive_val[(adaptive_val.model == "engine") & np.isclose(adaptive_val.gamma, GAMMA)].set_index("window")
-    promise_by_id = full.set_index("order_id")
-    rows = []
-    for window, (_, valid) in enumerate(folds):
-        v = promise_by_id.loc[train.iloc[valid]["order_id"]]
-        rows.append({
-            "window": window,
-            "start": v["order_purchase_timestamp"].min().date().isoformat(),
-            "end": v["order_purchase_timestamp"].max().date().isoformat(),
-            "orders": len(v),
-            "late_share": float(v["is_late"].mean()),
-            "olist_mean_promise": float(v["olist_promise"].mean()),
-            "olist_on_time": float(1 - v["is_late"].mean()),
-            "engine_mean_promise": float(eng.loc[window, "mean_promise"]),
-            "engine_on_time": float(eng.loc[window, "on_time"]),
-        })
-    val = pd.DataFrame(rows)
-    val.to_csv(OUT / "validation_windows_comparison.csv", index=False)
+# ---------------------------------------------------------------- regression (two-stage estimate)
+def regression_numbers():
+    sel = load_json(RES / "eta/selection.json")
+    cv = pd.read_csv(RES / "eta/cv_summary.csv")
+    ladder = pd.read_csv(RES / "eta/ladder_summary.csv").set_index("stage")
+    test = pd.read_csv(RES / "eta/test_metrics.csv")
+    rand = pd.read_csv(RES / "eta/random_benchmark.csv")
 
-    # monthly late share (all delivered-cohort orders) and mean buffer level on scoring days
-    full = full.copy()
-    full["month"] = full["order_purchase_timestamp"].dt.to_period("M")
-    monthly = full.groupby("month").agg(orders=("is_late", "size"), late_share=("is_late", "mean")).reset_index()
-    trace = pd.read_csv(RES / "promise/adaptive_level_trace.csv")
-    trace = trace[trace.model == "engine"]
-    scoring_days = set()
-    for _, valid in folds:
-        scoring_days |= set(train.iloc[valid]["order_purchase_timestamp"].dt.normalize().map(lambda d: (d - pd.Timestamp("1970-01-01")).days))
-    test_days = set(full[full.split == "test"]["order_purchase_timestamp"].dt.normalize().map(lambda d: (d - pd.Timestamp("1970-01-01")).days))
-    trace = trace[trace.day.isin(scoring_days | test_days)].copy()
-    trace["month"] = trace.day.map(lambda d: day_to_date(d).to_period("M"))
-    level = trace.groupby("month")["level"].mean().rename("mean_buffer_level").reset_index()
-    monthly = monthly.merge(level, on="month", how="left")
-    monthly["month"] = monthly["month"].astype(str)
-    monthly.to_csv(OUT / "monthly_late_share_and_buffer.csv", index=False)
-    return val, monthly
+    cov = sel["coverage"]
+    put("CohortOrders", cov["handover_cohort"], 0)
+    put("ExcludedOrders", cov["excluded_no_valid_handover"], 0)
+    put("EtaTrainOrders", cov["train_orders"], 0)
+    put("EtaTestOrders", cov["test_orders"], 0)
 
+    # Information ladder: one fixed model (ridge alpha 100), inputs added by prediction point.
+    for stage, tag in [("checkout", "LadderCheckout"), ("checkout_transit", "LadderTransit"),
+                       ("handover_elapsed", "LadderElapsed"), ("handover", "LadderHandover")]:
+        row = ladder.loc[stage]
+        put(f"{tag}MAE", row["mean_mae"], 2)
+        put(f"{tag}RSq", row["mean_r2"], 3)
+        put(f"{tag}MinRSq", row["min_r2"], 3)
 
-def promise_numbers(val, monthly):
-    test = load_json(RES / "promise/adaptive_test_results.json")
-    fixed = load_json(RES / "promise/test_results.json")
-    sel = load_json(RES / "promise/selection.json")
-    adap = load_json(RES / "promise/adaptive_selection.json")
-    put("EngineTestPromise", test["engine"]["mean_promise"], 2)
-    put("EngineTestMedian", test["engine"]["median_promise"], 0)
-    put("EngineTestOnTime", test["engine"]["on_time"], 2, pct=True)
-    put("OlistTestPromise", test["olist"]["mean_promise"], 2)
-    put("OlistTestMedian", test["olist"]["median_promise"], 0)
-    put("OlistTestOnTime", test["olist"]["on_time"], 2, pct=True)
-    put("TestPromiseGap", test["olist"]["mean_promise"] - test["engine"]["mean_promise"], 1)
-    put("FixedTestPromise", fixed["selected"]["mean_promise"], 1)
-    put("FixedTestOnTime", fixed["selected"]["on_time"], 1, pct=True)
-    put("FixedLevel", sel["fixed_level"], 4)
-    put("FixedValOnTime", sel["mean_validation_on_time_at_fixed_level"], 1, pct=True)
-    put("MatchedEngine", fixed["matched_reliability_mean_promise"]["selected"], 1)
-    put("MatchedGap", fixed["gate_1"]["test_matched_gap_days"], 1)
-    put("SelectedGamma", adap["selected_gamma"]["engine"], 2)
-    mean_val = adap["mean_validation"][adap["selected"]][str(adap["selected_gamma"]["engine"])]
-    put("EngineValPromise", mean_val["mean_promise"], 1)
-    put("EngineValOnTime", mean_val["on_time"], 1, pct=True)
-    put("OlistValPromise", val["olist_mean_promise"].mean(), 1)
-    put("OlistValOnTime", val["olist_on_time"].mean(), 1, pct=True)
-    for i, word in enumerate(["A", "B", "C", "D", "E"]):
-        r = val.iloc[i]
-        put(f"Win{word}Start", r["start"])
-        put(f"Win{word}End", r["end"])
-        put(f"Win{word}Late", r["late_share"], 1, pct=True)
-        put(f"Win{word}Olist", r["olist_mean_promise"], 1)
-        put(f"Win{word}Engine", r["engine_mean_promise"], 1)
-        put(f"Win{word}OlistOnTime", r["olist_on_time"], 1, pct=True)
-        put(f"Win{word}EngineOnTime", r["engine_on_time"], 1, pct=True)
-    put("PeakPromise", val["engine_mean_promise"].max(), 0)
-    # regression diagnostics for the selected model and the best-MAE model
-    summ = pd.read_csv(RES / "promise/validation_summary.csv").set_index("candidate")
-    chosen = sel["selected"]
-    put("SelName", chosen.replace("_", r"\_"))
-    for tag, name in [("Sel", chosen), ("Forest", "forest_leaf20"), ("Ridge", "ridge_100"), ("Mean", "mean_baseline"),
-                      ("Route", "route_baseline"), ("Linear", "linear_baseline"), ("Tree", "tree_depth6")]:
-        put(f"{tag}MAE", summ.loc[name, "mean_mae"], 2)
-        put(f"{tag}RMSE", summ.loc[name, "mean_rmse"], 2)
-        put(f"{tag}RSq", summ.loc[name, "mean_r2"], 2)
-        put(f"{tag}PromiseNinetyFive", summ.loc[name, "mean_promise_at_95"], 1)
-    pred = pd.read_csv(RES / "promise/adaptive_test_predictions.csv")
-    for tag, col in [("Engine", "mu_engine"), ("RouteBase", "mu_route")]:
-        err = pred["need"] - pred[col]
-        put(f"Test{tag}MAE", err.abs().mean(), 2)
-        put(f"Test{tag}RMSE", float(np.sqrt((err ** 2).mean())), 2)
-        put(f"Test{tag}RSq", 1 - (err ** 2).sum() / ((pred["need"] - pred["need"].mean()) ** 2).sum(), 2)
-    put("TestOrders", len(pred), 0)
-    # one-standard-error rule on the adaptive engine: per-window mean promise at each candidate's chosen gamma
-    asel = load_json(RES / "promise/adaptive_selection.json")
-    av = pd.read_csv(RES / "promise/adaptive_validation.csv")
-    rows = []
-    for name, g in asel["gamma_by_candidate"].items():
-        per = av[av.candidate == name].groupby("gamma")[["on_time", "mean_promise"]].mean()
-        g_used = g if g is not None else per["on_time"].idxmax()
-        w = av[(av.candidate == name) & np.isclose(av.gamma, g_used)].sort_values("window")
-        rows.append({"candidate": name, "eligible": g is not None, "gamma": g_used,
-                     "mean_on_time": w["on_time"].mean(), "mean_promise": w["mean_promise"].mean(),
-                     "per_window": list(w["mean_promise"])})
-    tab = pd.DataFrame(rows).set_index("candidate")
-    best = tab[tab.eligible & ~tab.index.isin(["route_baseline"])]["mean_promise"].idxmin()
-    for name in tab.index:
-        gap = np.array(tab.loc[name, "per_window"]) - np.array(tab.loc[best, "per_window"])
-        tab.loc[name, "gap_to_best"] = gap.mean()
-        tab.loc[name, "se_of_gap"] = gap.std(ddof=1) / np.sqrt(len(gap))
-    tab.drop(columns="per_window").to_csv(OUT / "promise_adaptive_selection.csv")
-    put("BestName", best.replace("_", r"\_"))
-    for tag, name in [("Sel", chosen), ("Forest", "forest_leaf20"), ("Linear", "linear_baseline"),
-                      ("RidgeOne", "ridge_1"), ("RouteAd", "route_baseline")]:
-        put(f"{tag}AdOnTime", tab.loc[name, "mean_on_time"], 1, pct=True)
-        put(f"{tag}AdPromise", tab.loc[name, "mean_promise"], 1)
-        put(f"{tag}AdGap", tab.loc[name, "gap_to_best"], 2)
-        put(f"{tag}AdGapSE", tab.loc[name, "se_of_gap"], 2)
-    lin = tab.loc[[n for n in ["linear_baseline", "ridge_1", "ridge_10", "ridge_100"]]]
-    put("LinOnTimeLow", lin["mean_on_time"].min(), 1, pct=True)
-    put("LinOnTimeHigh", lin["mean_on_time"].max(), 1, pct=True)
-    put("LinPromiseLow", lin["mean_promise"].min(), 1)
-    put("LinPromiseHigh", lin["mean_promise"].max(), 1)
-    fixed_sel = sel.get("fixed_buffer_rule_choice", "")
-    put("FixedRuleName", fixed_sel.replace("_", r"\_"))
-    cls = pd.read_csv(RES / "handover/validation_windows.csv")
-    cls = cls[cls.variant == "primary"].pivot(index="window", columns="candidate", values="pr_auc")
-    gap = cls["forest_leaf20"] - cls["logistic"]
-    put("ClsGap", gap.mean(), 3)
-    put("ClsGapSE", gap.std(ddof=1) / np.sqrt(len(gap)), 3)
-    put("ClsBestWins", int((gap > 0).sum()), 0)
-    pm = pd.read_csv(RES / "promise/adaptive_test_per_month.csv")
-    pm.to_csv(OUT / "promise_test_per_month.csv", index=False)
-    for _, r in pm.iterrows():
-        tag = {5: "May", 6: "Jun", 7: "Jul", 8: "Aug"}[int(r["month"][-2:])]
-        put(f"Test{tag}Engine", r["engine_mean_promise"], 1)
-        put(f"Test{tag}Olist", r["olist_mean_promise"], 1)
-        put(f"Test{tag}EngineOnTime", r["engine_on_time"], 1, pct=True)
-        put(f"Test{tag}OlistOnTime", r["olist_on_time"], 1, pct=True)
-    # headline late-share facts
-    m = monthly.set_index("month")
-    put("BlackFridayLate", val.iloc[1]["late_share"], 0, pct=True)
-    put("NovLate", m.loc["2017-11", "late_share"], 1, pct=True)
-    put("MarLate", m.loc["2018-03", "late_share"], 1, pct=True)
-    put("FebMarLate", val.iloc[4]["late_share"], 0, pct=True)
-    normal = m.loc[["2017-03", "2017-04", "2017-05", "2017-06", "2017-07", "2017-08", "2017-09", "2017-10"]]
-    put("NormalLate", (normal["late_share"] * normal["orders"]).sum() / normal["orders"].sum(), 0, pct=True)
-    put("AllOrders", int(monthly["orders"].sum()), 0)
+    selected = {CHECKOUT_STAGE: sel["checkout_selected_candidate"], HANDOVER_STAGE: sel["selected_candidate"]}
+    for stage, tag in STAGE_TAG.items():
+        put(f"{tag}SelName", escape(selected[stage]))
+        put(f"{tag}BestName", escape(sel["lowest_mae_candidate"][stage]))
+        stage_cv = cv[cv["stage"] == stage].set_index("candidate")
+        for name_tag, name in [("Sel", selected[stage]), ("Best", sel["lowest_mae_candidate"][stage]),
+                               ("Mean", "mean_baseline")]:
+            row = stage_cv.loc[name]
+            put(f"{tag}{name_tag}MAE", row["mean_mae"], 2)
+            put(f"{tag}{name_tag}RMSE", row["mean_rmse"], 2)
+            put(f"{tag}{name_tag}RSq", row["mean_r2"], 3)
+        if HANDOVER_STAGE == stage and "elapsed_plus_route_baseline" in stage_cv.index:
+            row = stage_cv.loc["elapsed_plus_route_baseline"]
+            put(f"{tag}RuleMAE", row["mean_mae"], 2)
+            put(f"{tag}RuleRSq", row["mean_r2"], 3)
+        # stage-2 one-SE line-up: gap and SE of the selected candidate to the best
+        s2 = {r["candidate"]: r for r in sel["stage2"][stage]}
+        if selected[stage] in s2:
+            put(f"{tag}SelGap", s2[selected[stage]]["gap_to_best"], 3)
+            put(f"{tag}SelGapSE", s2[selected[stage]]["se_of_gap"], 3)
+
+    # Later period (post hoc), each stage's own selected model, overall.
+    test_overall = test[test["scope"] == "overall"].set_index(["stage", "candidate"])
+    for stage, tag in STAGE_TAG.items():
+        row = test_overall.loc[(stage, selected[stage])]
+        put(f"{tag}TestMAE", row["mae"], 2)
+        put(f"{tag}TestRMSE", row["rmse"], 2)
+        put(f"{tag}TestRSq", row["r2"], 3)
+        put(f"{tag}TestBias", row["mean_signed_error"], 2)
+    put("TestOrders", int(test_overall.loc[(HANDOVER_STAGE, selected[HANDOVER_STAGE]), "orders"]), 0)
+    test[test["scope"] == "overall"].to_csv(OUT / "eta_test_overall.csv", index=False)
+    monthly = test[test["scope"] != "overall"].rename(columns={"scope": "month"})
+    monthly.to_csv(OUT / "eta_test_monthly.csv", index=False)
+
+    # Same-period benchmark (random split; secondary), each stage's own selected model.
+    rand_i = rand.set_index(["stage", "candidate"])
+    for stage, tag in STAGE_TAG.items():
+        row = rand_i.loc[(stage, selected[stage])]
+        put(f"{tag}RandValRSq", row["cv_mean_r2"], 3)
+        put(f"{tag}RandTestRSq", row["test_r2"], 3)
+        put(f"{tag}RandTestMAE", row["test_mae"], 2)
+
+    # Feature importance / coefficients of each stage's own selected model.
+    for stage, tag, stem in [(CHECKOUT_STAGE, "Checkout", "checkout_selected"), (HANDOVER_STAGE, "Handover", "selected")]:
+        coef_path, imp_path = RES / f"eta/{stem}_coefficients.csv", RES / f"eta/{stem}_permutation_importance.csv"
+        if coef_path.exists():
+            coef = pd.read_csv(coef_path)
+            # One-hot state/category dummies dominate by magnitude but are not individually interpretable;
+            # report the top numeric/engineered inputs instead (the categorical columns remain in the model).
+            coef = coef[~coef["feature"].str.startswith("category__")]
+            top = (coef.groupby("feature")["coefficient"].mean().abs().sort_values(ascending=False).head(3))
+            kind = "coefficient (mean $|$weight$|$ over windows, numeric and engineered inputs; one-hot " \
+                   "state/category dummies excluded from this ranking)"
+        else:
+            imp = pd.read_csv(imp_path)
+            top = imp.groupby("feature")["importance_mean"].mean().sort_values(ascending=False).head(3)
+            kind = "permutation importance (mean MAE rise over windows)"
+        put(f"{tag}ImpKind", kind)
+        for i, (feature, value) in enumerate(top.items()):
+            put(f"{tag}Imp{'ABC'[i]}Name", escape(feature))
+            put(f"{tag}Imp{'ABC'[i]}Val", value, 3)
+
+    cv.to_csv(OUT / "eta_cv_summary.csv", index=False)
+    return sel, selected
 
 
 # ---------------------------------------------------------------- classifier
 def classifier_numbers():
     sel = load_json(RES / "handover/selection.json")
-    test = pd.read_csv(RES / "handover/test_metrics.csv").set_index("ranking")
+    test = pd.read_csv(RES / "handover/test_metrics.csv")
+    test = test[test["variant"] == "primary"].set_index("ranking")
     val = pd.read_csv(RES / "handover/validation_summary.csv")
     gains = pd.read_csv(RES / "handover/test_gains_curve.csv")
     imp = pd.read_csv(RES / "handover/primary_permutation_importance.csv")
     cov = sel["coverage"]
+    primary = sel["variants"]["primary"]
+    chosen, best = primary["selected"], primary["best_pr_auc_candidate"]
+
     put("CohortOrders", cov["handover_cohort"], 0)
     put("ExcludedOrders", cov["excluded_no_valid_handover"], 0)
+    put("ClsSelName", escape(chosen))
+    put("ClsBestName", escape(best))
     put("ClsTestPR", test.loc["model", "pr_auc"], 2)
     put("ClsTestROC", test.loc["model", "roc_auc"], 2)
     put("ClsTestLate", test.loc["model", "late_rate"], 1, pct=True)
@@ -219,37 +166,48 @@ def classifier_numbers():
     put("ClsTestRec", test.loc["model", "recall"], 0, pct=True)
     put("ClsTestFone", test.loc["model", "f1"], 2)
     put("ClsTestMCC", test.loc["model", "mcc"], 2)
-    put("SlackTestPR", test.loc["slack_rule", "pr_auc"], 2)
-    put("SlackTestROC", test.loc["slack_rule", "roc_auc"], 2)
     put("ClsNetBenefit", test.loc["model", "net_benefit_per_order"], 3)
-    put("ActShare", sel["variants"]["primary"]["k"], 0, pct=True)
+    put("ActShare", primary["k"], 0, pct=True)
     put("BenefitRatio", sel["benefit_ratio"], 0)
-    primary = val[val.variant == "primary"].set_index("candidate")
-    for tag, name in [("Forest", "forest_leaf20"), ("Logit", "logistic"), ("LogitBal", "logistic_balanced"), ("Tree", "tree_depth6")]:
-        put(f"Val{tag}PR", primary.loc[name, "pr_auc"], 3)
-        put(f"Val{tag}ROC", primary.loc[name, "roc_auc"], 3)
-    put("ValForestRecallTen", primary.loc["forest_leaf20", "recall_top10"], 0, pct=True)
-    checkout = val[val.variant == "checkout"].set_index("candidate")
-    put("CheckoutPR", checkout.loc["forest_leaf20", "pr_auc"], 2)
-    diff = sel["variants"]["primary"]["value_test"]["model_minus_slack_rule"]["pr_auc"]
-    put("ValDiffPR", diff["difference"], 3)
-    put("ValDiffLow", diff["ci_low"], 3)
-    put("ValDiffHigh", diff["ci_high"], 3)
-    # gains at fixed shares
-    g = gains.set_index("share_acted")
+
+    primary_val = val[val["variant"] == "primary"].set_index("candidate")
+    put("ValSelPR", primary_val.loc[chosen, "pr_auc"], 3)
+    put("ValSelROC", primary_val.loc[chosen, "roc_auc"], 3)
+    put("ValBestPR", primary_val.loc[best, "pr_auc"], 3)
+    put("ValSelRecallTen", primary_val.loc[chosen, "recall_top10"], 0, pct=True)
+    # stage-2 one-SE line-up: gap and SE of the selected candidate to the best
+    s2 = {r["candidate"]: r for r in primary["stage2"]}
+    put("ClsSelGap", s2[chosen]["gap_to_best"], 3)
+    put("ClsSelGapSE", s2[chosen]["se_of_gap"], 3)
+    # the group-plain baseline for the selected model's own group (the group's first lineup entry)
+    group_of = {c: g["group"] for g in sel["groups"] for c in g["configs"]}
+    plain = next(c for c in primary["lineup"] if group_of.get(c) == group_of.get(chosen))
+    put("ClsPlainName", escape(plain))
+    put("ClsPlainPR", primary_val.loc[plain, "pr_auc"], 3)
+
+    checkout = val[val["variant"] == "checkout"].set_index("candidate")
+    checkout_sel = sel["checkout_variant"]["selected"]
+    put("ClsCheckoutSelName", escape(checkout_sel))
+    put("CheckoutPR", checkout.loc[checkout_sel, "pr_auc"], 3)
+
+    # gains at fixed shares (model only; the slack rule is not a report comparison)
+    g = gains[gains["variant"] == "primary"].set_index("share_acted")
     for share in (0.01, 0.05, 0.10, 0.20):
         tag = {0.01: "One", 0.05: "Five", 0.10: "Ten", 0.20: "Twenty"}[share]
         row = g.iloc[(g.index - share).to_series().abs().argmin()]
         put(f"Gain{tag}Model", row["model"], 0, pct=True)
-        put(f"Gain{tag}Slack", row["slack_rule"], 0, pct=True)
         put(f"Prec{tag}Model", row["model"] * test.loc["model", "late_rate"] / share, 0, pct=True)
-    gains[gains.variant == "primary"].to_csv(OUT / "classifier_gains_test.csv", index=False)
+    gains[gains["variant"] == "primary"][["share_acted", "model", "random"]].to_csv(
+        OUT / "classifier_gains_test.csv", index=False)
+
     top = imp.sort_values("mean_pr_auc_drop", ascending=False).head(6)
     top.to_csv(OUT / "classifier_importance_top.csv", index=False)
     for i, (_, r) in enumerate(top.iterrows()):
-        put(f"Imp{'ABCDEF'[i]}Name", r["feature"].replace("_", r"\_"))
+        put(f"Imp{'ABCDEF'[i]}Name", escape(r["feature"]))
         put(f"Imp{'ABCDEF'[i]}Drop", r["mean_pr_auc_drop"], 3)
+
     monthly = pd.read_csv(RES / "handover/test_monthly_counts.csv")
+    monthly = monthly[monthly["variant"] == "primary"] if "variant" in monthly.columns else monthly
     monthly.to_csv(OUT / "classifier_test_monthly.csv", index=False)
     for _, r in monthly.iterrows():
         tag = MONTH_LABEL[int(r["month"][-2:])]
@@ -257,10 +215,28 @@ def classifier_numbers():
         put(f"Test{tag}LateCount", r["late"], 0)
         put(f"Test{tag}Caught", r["caught"], 0)
         put(f"Test{tag}Acted", r["acted"], 0)
+    val.to_csv(OUT / "classifier_validation_summary.csv", index=False)
     return gains
 
 
-# ---------------------------------------------------------------- supporting facts
+# ---------------------------------------------------------------- supporting facts and monthly late share
+def monthly_late_share(table):
+    full = table.copy()
+    full["month"] = full["order_purchase_timestamp"].dt.to_period("M")
+    monthly = full.groupby("month").agg(orders=("is_late", "size"), late_share=("is_late", "mean")).reset_index()
+    monthly["month"] = monthly["month"].astype(str)
+    monthly.to_csv(OUT / "monthly_late_share.csv", index=False)
+    m = monthly.set_index("month")
+    put("BlackFridayLate", m.loc["2017-11", "late_share"], 0, pct=True)
+    put("FebMarLate", float(np.average(m.loc[["2018-02", "2018-03"], "late_share"],
+                                       weights=m.loc[["2018-02", "2018-03"], "orders"])), 0, pct=True)
+    normal_months = ["2017-03", "2017-04", "2017-05", "2017-06", "2017-07", "2017-08", "2017-09", "2017-10"]
+    normal = m.loc[[x for x in normal_months if x in m.index]]
+    put("NormalLate", float(np.average(normal["late_share"], weights=normal["orders"])), 0, pct=True)
+    put("AllOrders", int(monthly["orders"].sum()), 0)
+    return monthly
+
+
 def supporting_facts(cohort_ids):
     orders = pd.read_csv(ROOT / "data/olist_orders_dataset.csv",
                          parse_dates=["order_purchase_timestamp", "order_delivered_carrier_date",
@@ -304,7 +280,7 @@ def supporting_facts(cohort_ids):
                   "value": [share, bad[0], bad[1], rep[0], rep[1]]}).to_csv(OUT / "supporting_facts.csv", index=False)
 
 
-# ---------------------------------------------------------------- figures
+# ---------------------------------------------------------------- figures and tables
 def coords(xs, ys):
     return " ".join(f"({x},{y:.4f})" for x, y in zip(xs, ys))
 
@@ -312,48 +288,38 @@ def coords(xs, ys):
 def fig_monthly(monthly):
     m = monthly[(monthly["month"] >= "2017-03") & (monthly["month"] <= "2018-08")].reset_index(drop=True)
     labels = ",".join(pd.Timestamp(x + "-01").strftime("%b%y") for x in m["month"])
-    idx = list(range(len(m)))
-    late = coords(idx, m["late_share"] * 100)
-    lv = m.dropna(subset=["mean_buffer_level"])
-    level = coords([i for i in idx if not np.isnan(m.loc[i, "mean_buffer_level"])], lv["mean_buffer_level"] * 100)
     text = rf"""\begin{{tikzpicture}}
-\begin{{axis}}[width=\linewidth,height=6.2cm,ybar,bar width=7pt,ymin=0,ymax=26,ylabel={{Orders late (\%)}},
+\begin{{axis}}[width=0.95\linewidth,height=5.6cm,ybar,bar width=7pt,ymin=0,ymax=26,ylabel={{Orders late (\%)}},
  symbolic x coords={{{labels}}},xtick=data,x tick label style={{rotate=60,anchor=east,font=\scriptsize}},
- enlarge x limits=0.04,legend style={{at={{(0.02,0.97)}},anchor=north west,font=\scriptsize}},
- axis y line*=left]
+ enlarge x limits=0.04]
 \addplot[fill=gray!55,draw=none] coordinates {{{" ".join(f"({pd.Timestamp(x + '-01').strftime('%b%y')},{y:.3f})" for x, y in zip(m['month'], m['late_share'] * 100))}}};
-\addlegendentry{{Orders late (left axis)}}
-\end{{axis}}
-\begin{{axis}}[width=\linewidth,height=6.2cm,ymin=80,ymax=100,axis y line*=right,axis x line=none,ylabel={{Buffer level (\%)}},
- symbolic x coords={{{labels}}},xtick=data,legend style={{at={{(0.02,0.80)}},anchor=north west,font=\scriptsize}},enlarge x limits=0.04]
-\addplot[thick,mark=*,mark size=1.4pt] coordinates {{{" ".join(f"({pd.Timestamp(m.loc[i, 'month'] + '-01').strftime('%b%y')},{m.loc[i, 'mean_buffer_level'] * 100:.3f})" for i in idx if not np.isnan(m.loc[i, 'mean_buffer_level']))}}};
-\addlegendentry{{Engine buffer level (right axis)}}
 \end{{axis}}
 \end{{tikzpicture}}"""
     (GEN / "fig_monthly.tex").write_text(text)
 
 
-def fig_windows(val):
-    names = ",".join(f"W{i + 1}" for i in range(len(val)))
-    olist = " ".join(f"(W{i + 1},{v:.2f})" for i, v in enumerate(val["olist_mean_promise"]))
-    engine = " ".join(f"(W{i + 1},{v:.2f})" for i, v in enumerate(val["engine_mean_promise"]))
+def fig_ladder(ladder_windows):
+    """Mean MAE by validation window, checkout vs handover: the two-stage improvement."""
+    piv = ladder_windows.pivot_table(index="window", columns="stage", values="mae", aggfunc="mean")
+    names = ",".join(f"W{i + 1}" for i in piv.index)
+    checkout = " ".join(f"(W{i + 1},{v:.2f})" for i, v in zip(piv.index, piv["checkout"]))
+    handover = " ".join(f"(W{i + 1},{v:.2f})" for i, v in zip(piv.index, piv["handover"]))
     text = rf"""\begin{{tikzpicture}}
-\begin{{axis}}[width=0.92\linewidth,height=5.4cm,ybar,bar width=9pt,ymin=0,ylabel={{Mean promise (days)}},
- symbolic x coords={{{names}}},xtick=data,enlarge x limits=0.12,legend style={{at={{(0.02,0.97)}},anchor=north west,font=\scriptsize}}]
-\addplot[fill=gray!55,draw=none] coordinates {{{olist}}};
-\addplot[fill=blue!55!black,draw=none] coordinates {{{engine}}};
-\legend{{Olist promise,Promise engine}}
+\begin{{axis}}[width=0.92\linewidth,height=5.4cm,ybar,bar width=9pt,ymin=0,ylabel={{Mean validation MAE (days)}},
+ symbolic x coords={{{names}}},xtick=data,enlarge x limits=0.12,legend style={{at={{(0.02,0.03)}},anchor=south west,font=\scriptsize}}]
+\addplot[fill=gray!55,draw=none] coordinates {{{checkout}}};
+\addplot[fill=blue!55!black,draw=none] coordinates {{{handover}}};
+\legend{{Checkout estimate,Handover update}}
 \end{{axis}}
 \end{{tikzpicture}}"""
-    (GEN / "fig_windows.tex").write_text(text)
+    (GEN / "fig_ladder.tex").write_text(text)
 
 
 def fig_gains(gains):
     g = gains[gains.variant == "primary"]
     step = max(len(g) // 40, 1)
     g = g.iloc[::step]
-    plots = [("model", "Late-warning model", "thick,blue!60!black"), ("slack_rule", "Remaining-slack rule", "thick,dashed,orange!80!black"),
-             ("random", "Random list", "thin,gray")]
+    plots = [("model", "Late-warning model", "thick,blue!60!black"), ("random", "Random list", "thin,gray")]
     body = "\n".join(rf"\addplot[{style},no marks] coordinates {{{coords(g['share_acted'] * 100, g[col] * 100)}}};" + f"\n\\addlegendentry{{{label}}}"
                      for col, label, style in plots)
     text = rf"""\begin{{tikzpicture}}
@@ -363,6 +329,45 @@ def fig_gains(gains):
 \end{{axis}}
 \end{{tikzpicture}}"""
     (GEN / "fig_gains.tex").write_text(text)
+
+
+def latex_table(frame, columns, header, caption, label, floatfmt="{:.3f}"):
+    numeric = {c: pd.api.types.is_numeric_dtype(frame[c]) for c in columns}
+    cols = "".join("r" if numeric[c] else "l" for c in columns)
+    body_rows = []
+    for _, r in frame.iterrows():
+        cells = [floatfmt.format(r[c]) if numeric[c] else str(r[c]).replace("_", r"\_") for c in columns]
+        body_rows.append(" & ".join(cells) + r" \\")
+    text = (r"\begin{table}[H]" "\n" r"\centering\small" "\n" rf"\caption{{{caption}}}" "\n"
+            rf"\label{{{label}}}" "\n" rf"\begin{{tabular}}{{@{{}}{cols}@{{}}}}" "\n" r"\toprule" "\n"
+            + " & ".join(header) + r" \\" "\n" r"\midrule" "\n" + "\n".join(body_rows) + "\n"
+            r"\bottomrule" "\n" r"\end{tabular}" "\n" r"\end{table}")
+    return text
+
+
+def fig_appendix_regression(cv):
+    rows = []
+    for stage, stage_label in [(CHECKOUT_STAGE, "Checkout"), (HANDOVER_STAGE, "Handover")]:
+        s = cv[cv["stage"] == stage].copy()
+        s.insert(0, "Stage", stage_label)
+        rows.append(s[["Stage", "candidate", "algorithm", "mean_mae", "mean_rmse", "mean_r2"]])
+    frame = pd.concat(rows, ignore_index=True)
+    frame["candidate"] = frame["candidate"].astype(str)
+    frame["algorithm"] = frame["algorithm"].astype(str)
+    text = latex_table(frame, ["Stage", "candidate", "algorithm", "mean_mae", "mean_rmse", "mean_r2"],
+                       ["Stage", "Candidate", "Family", "MAE", "RMSE", "$R^2$"],
+                       "Every regression candidate, mean over five validation windows.", "tab:app-regression")
+    (GEN / "fig_appendix_regression.tex").write_text(text)
+
+
+def fig_appendix_classifier(val):
+    s = val[val["variant"] == "primary"][["candidate", "pr_auc", "roc_auc", "recall_top10"]].copy()
+    s["candidate"] = s["candidate"].astype(str)
+    text = latex_table(s, ["candidate", "pr_auc", "roc_auc", "recall_top10"],
+                       ["Candidate", "PR-AUC", "ROC-AUC", "Recall at top 10\\%"],
+                       "Every classifier candidate, mean over five validation windows (handover stage).",
+                       "tab:app-classifier")
+    (GEN / "fig_appendix_classifier.tex").write_text(text)
 
 
 def write_macros():
@@ -375,16 +380,16 @@ def write_macros():
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     GEN.mkdir(parents=True, exist_ok=True)
-    train, spec = load_primary_training()
-    folds = temporal_folds(train, spec)
-    full, _, _ = load_promise_table()
-    val, monthly = promise_tables(full, train, folds)
-    promise_numbers(val, monthly)
+    table, _, _ = load_stage_table()
+    sel, selected = regression_numbers()
     gains = classifier_numbers()
-    supporting_facts(set(full["order_id"]))
+    monthly = monthly_late_share(table)
+    supporting_facts(set(table["order_id"]))
     fig_monthly(monthly)
-    fig_windows(val)
+    fig_ladder(pd.read_csv(RES / "eta/ladder_windows.csv"))
     fig_gains(gains)
+    fig_appendix_regression(pd.read_csv(RES / "eta/cv_summary.csv"))
+    fig_appendix_classifier(pd.read_csv(RES / "handover/validation_summary.csv"))
     write_macros()
     print(f"{len(macros)} macros written to {GEN / 'numbers.tex'}")
 

@@ -1,0 +1,33 @@
+\begin{table}[H]
+\centering\small
+\caption{Every regression candidate, mean over five validation windows.}
+\label{tab:app-regression}
+\begin{tabular}{@{}lllrrr@{}}
+\toprule
+Stage & Candidate & Family & MAE & RMSE & $R^2$ \\
+\midrule
+Checkout & mean\_baseline & mean & 7.215 & 10.671 & -0.078 \\
+Checkout & linear\_baseline & linear & 5.860 & 9.464 & 0.155 \\
+Checkout & ridge\_1 & ridge & 5.858 & 9.462 & 0.156 \\
+Checkout & ridge\_10 & ridge & 5.848 & 9.451 & 0.158 \\
+Checkout & ridge\_100 & ridge & 5.809 & 9.398 & 0.167 \\
+Checkout & tree\_baseline & tree & 7.787 & 12.344 & -0.472 \\
+Checkout & tree\_depth6 & tree & 5.933 & 9.505 & 0.144 \\
+Checkout & forest\_leaf20 & forest & 5.783 & 9.340 & 0.176 \\
+Checkout & boost\_baseline & boost & 5.830 & 9.452 & 0.155 \\
+Checkout & boost\_slow & boost & 5.816 & 9.444 & 0.157 \\
+Handover & mean\_baseline & mean & 7.215 & 10.671 & -0.078 \\
+Handover & elapsed\_plus\_route\_baseline & rule & 5.304 & 8.396 & 0.337 \\
+Handover & linear\_baseline & linear & 5.146 & 8.472 & 0.327 \\
+Handover & ridge\_1 & ridge & 5.145 & 8.470 & 0.327 \\
+Handover & ridge\_10 & ridge & 5.136 & 8.460 & 0.329 \\
+Handover & ridge\_100 & ridge & 5.099 & 8.406 & 0.338 \\
+Handover & tree\_baseline & tree & 6.840 & 11.625 & -0.330 \\
+Handover & tree\_depth6 & tree & 5.313 & 8.633 & 0.299 \\
+Handover & forest\_leaf20 & forest & 5.346 & 8.808 & 0.270 \\
+Handover & boost\_baseline & boost & 5.214 & 8.651 & 0.297 \\
+Handover & boost\_slow & boost & 5.215 & 8.666 & 0.294 \\
+Handover & voting\_family\_winners & voting & 5.107 & 8.471 & 0.327 \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -72,7 +72,7 @@
     "primary": {
       "selected": "logistic_c0.01",
       "best_pr_auc_candidate": "forest_l50_sqrt",
-      "reason": "best forest_l50_sqrt (mean validation PR-AUC 0.3685); chosen logistic_c0.01 (0.3666), the simplest line-up entry within one standard error of the best",
+      "reason": "best forest_l50_sqrt (mean validation PR-AUC 0.3686); chosen logistic_c0.01 (0.3666), the simplest line-up entry within one standard error of the best",
       "tuned": {
         "linear": "logistic_c0.01",
         "tree": "tree_d8_l100",
@@ -91,34 +91,34 @@
         {
           "candidate": "logistic_c1",
           "mean": 0.34288125574669,
-          "gap_to_best": 0.025664225248177176,
-          "se_of_gap": 0.006947640491861575,
+          "gap_to_best": 0.02569272736183409,
+          "se_of_gap": 0.006946515639027983,
           "within_one_se": false
         },
         {
           "candidate": "logistic_c0.01",
           "mean": 0.36656836929322234,
-          "gap_to_best": 0.001977111701644818,
-          "se_of_gap": 0.009519682248219636,
+          "gap_to_best": 0.002005613815301732,
+          "se_of_gap": 0.009523074156906276,
           "within_one_se": true
         },
         {
           "candidate": "tree_plain",
-          "mean": 0.13701238594539097,
-          "gap_to_best": 0.23153309504947622,
-          "se_of_gap": 0.015739157285385188,
+          "mean": 0.13779529768559584,
+          "gap_to_best": 0.23077868542292826,
+          "se_of_gap": 0.015847660498813764,
           "within_one_se": false
         },
         {
           "candidate": "tree_d8_l100",
           "mean": 0.308159538806844,
-          "gap_to_best": 0.06038594218802318,
-          "se_of_gap": 0.016518153060386988,
+          "gap_to_best": 0.060414444301680095,
+          "se_of_gap": 0.01652623042661241,
           "within_one_se": false
         },
         {
           "candidate": "forest_l50_sqrt",
-          "mean": 0.36854548099486717,
+          "mean": 0.3685739831085241,
           "gap_to_best": 0.0,
           "se_of_gap": 0.0,
           "within_one_se": true
@@ -126,8 +126,8 @@
         {
           "candidate": "boost_lr0.03_n200_l20",
           "mean": 0.35441804382500985,
-          "gap_to_best": 0.014127437169857348,
-          "se_of_gap": 0.010116773012615675,
+          "gap_to_best": 0.014155939283514263,
+          "se_of_gap": 0.010119001766929075,
           "within_one_se": false
         }
       ],
@@ -139,9 +139,9 @@
         "seed": 42,
         "model_minus_slack_rule": {
           "pr_auc": {
-            "difference": 0.038697370553498346,
+            "difference": 0.03869737667933952,
             "ci_low": 0.02938473086890319,
-            "ci_high": 0.047547519426924714
+            "ci_high": 0.047547543134959826
           },
           "recall_top10": {
             "difference": 0.058815209544915835,
@@ -179,9 +179,9 @@
       },
       {
         "candidate": "tree_plain",
-        "mean": 0.10988976531304347,
-        "gap_to_best": 0.10347455313231506,
-        "se_of_gap": 0.031429870743461964,
+        "mean": 0.11003145667938723,
+        "gap_to_best": 0.1033328617659713,
+        "se_of_gap": 0.03137369369178561,
         "within_one_se": false
       },
       {
@@ -193,9 +193,9 @@
       },
       {
         "candidate": "forest_l50_sqrt",
-        "mean": 0.20209115317759907,
-        "gap_to_best": 0.011273165267759466,
-        "se_of_gap": 0.006813545678453325,
+        "mean": 0.2021146600435169,
+        "gap_to_best": 0.011249658401841606,
+        "se_of_gap": 0.006816696623786792,
         "within_one_se": false
       },
       {
@@ -213,5 +213,5 @@
   },
   "extension_run": false,
   "counterfactual_simulation": "not implemented in this run (depends on the promise engine output)",
-  "runtime_seconds": 1399.9
+  "runtime_seconds": 1791.1
 }
