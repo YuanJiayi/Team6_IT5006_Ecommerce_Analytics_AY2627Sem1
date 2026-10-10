@@ -33,3 +33,16 @@ Most scripts hard-code the old scratchpad path (`/private/tmp/claude-501/.../scr
 1. Consolidate the promise engine and the handover classifier into one reviewed pipeline with settings fixed in advance.
 2. Decide with the team how to present the classifier (it ties the rule; its value is the decision it supports).
 3. Add a monitoring/peak buffer plan (on-time fell to 91.7% in the Feb–Mar 2018 slowdown at the 95% target).
+
+## Follow-up comparisons (10 October 2026, second session)
+
+Same windows and daily buffer as `geo_run.py`; scripts hard-code that session's scratchpad path. Promise days at 95% on time are per-window interpolations (model comparison only, not an implementable headline).
+
+| Script / results | Question | Finding |
+|---|---|---|
+| `cmp_pratik.py`, `.csv` | Ours vs Pratik's checkout models, each + buffer | Pratik forest 27.75 val / 17.08 test; ours 28.02 / 16.98; Pratik ridge 28.09 / 17.54 |
+| `cmp_pratik_nopromise.py`, `.csv` | Same without `promised_days`, `promise_slack` | Pratik forest improves to 27.58 / 16.93 |
+| `cmp_tier.py`, `.csv` | Classifier risk tiers with separate buffers | Worse than one buffer (28.17 vs 27.58 val); classifier AUC 0.59 |
+| `cmp_checkout_cls.py`, `.csv` | Checkout classifier for "misses the engine promise" | ROC-AUC 0.52, recall@10% 0.16 ≈ route-spread rule: not useful |
+
+These led to the consolidated design in `docs/phase2_final_spec.md`.
