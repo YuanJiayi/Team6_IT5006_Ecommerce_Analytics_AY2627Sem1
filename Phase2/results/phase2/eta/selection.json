@@ -37,51 +37,51 @@
   "highest_r2_candidate": "ridge_100",
   "reason": {
     "checkout": "forest_leaf20 has the lowest mean validation MAE (5.7829); ridge_100 (5.8085) is within one standard error and simpler, so it is chosen",
-    "handover": "ridge_100 has the lowest mean validation MAE (5.0985)"
+    "handover": "ridge_100 has the lowest mean validation MAE (5.0986)"
   },
   "rule": "lowest mean validation MAE over 5 chronological windows; the simplest candidate within one standard error of the lowest wins (ISLR, James, Witten, Hastie and Tibshirani, Sec. 6.1.3, p. 214); baselines and the ensemble are reference only",
   "stage2": {
     "checkout": [
       {
         "candidate": "linear_baseline",
-        "mean": 5.860297020433897,
-        "gap_to_best": 0.07744561927162526,
-        "se_of_gap": 0.03230968460634013,
+        "mean": 5.860312872410603,
+        "gap_to_best": 0.07746147124833005,
+        "se_of_gap": 0.03231315168261583,
         "within_one_se": false
       },
       {
         "candidate": "ridge_1",
-        "mean": 5.858297274087174,
-        "gap_to_best": 0.07544587292490182,
-        "se_of_gap": 0.03267830068336817,
+        "mean": 5.858245718303063,
+        "gap_to_best": 0.07539431714079114,
+        "se_of_gap": 0.03268608419222849,
         "within_one_se": false
       },
       {
         "candidate": "ridge_10",
-        "mean": 5.848387149974313,
-        "gap_to_best": 0.06553574881204031,
-        "se_of_gap": 0.033175013909736685,
+        "mean": 5.848423956765368,
+        "gap_to_best": 0.06557255560309523,
+        "se_of_gap": 0.0331852885204322,
         "within_one_se": false
       },
       {
         "candidate": "ridge_100",
-        "mean": 5.80852834762576,
-        "gap_to_best": 0.025676946463487928,
-        "se_of_gap": 0.027990678212474106,
+        "mean": 5.808535091853213,
+        "gap_to_best": 0.02568369069094052,
+        "se_of_gap": 0.027953294585874058,
         "within_one_se": true
       },
       {
         "candidate": "tree_depth6",
         "mean": 5.932524868421388,
-        "gap_to_best": 0.1496734672591158,
-        "se_of_gap": 0.017034868970882338,
+        "gap_to_best": 0.14967346725911562,
+        "se_of_gap": 0.017034868970882456,
         "within_one_se": false
       },
       {
         "candidate": "tree_baseline",
-        "mean": 7.7865133303717755,
-        "gap_to_best": 2.0036619292095024,
-        "se_of_gap": 0.0566882756496095,
+        "mean": 7.754225048639677,
+        "gap_to_best": 1.9713736474774053,
+        "se_of_gap": 0.05270201123825507,
         "within_one_se": false
       },
       {
@@ -94,80 +94,80 @@
       {
         "candidate": "boost_baseline",
         "mean": 5.830217609859458,
-        "gap_to_best": 0.04736620869718618,
-        "se_of_gap": 0.01706251973716195,
+        "gap_to_best": 0.047366208697185996,
+        "se_of_gap": 0.017062519737161795,
         "within_one_se": false
       },
       {
         "candidate": "boost_slow",
         "mean": 5.81612017598771,
-        "gap_to_best": 0.03326877482543846,
-        "se_of_gap": 0.01722656302146876,
+        "gap_to_best": 0.03326877482543829,
+        "se_of_gap": 0.0172265630214686,
         "within_one_se": false
       }
     ],
     "handover": [
       {
         "candidate": "linear_baseline",
-        "mean": 5.146210909161235,
-        "gap_to_best": 0.047671406181090246,
-        "se_of_gap": 0.00404538301744772,
+        "mean": 5.146201978046019,
+        "gap_to_best": 0.047640933730457836,
+        "se_of_gap": 0.004041116855554458,
         "within_one_se": false
       },
       {
         "candidate": "ridge_1",
-        "mean": 5.1448492598750155,
-        "gap_to_best": 0.046309756894869644,
-        "se_of_gap": 0.003599517724150448,
+        "mean": 5.14478467483074,
+        "gap_to_best": 0.046223630515179435,
+        "se_of_gap": 0.003596761096312992,
         "within_one_se": false
       },
       {
         "candidate": "ridge_10",
-        "mean": 5.135970562901798,
-        "gap_to_best": 0.03743105992165274,
-        "se_of_gap": 0.002912101947425153,
+        "mean": 5.136014879330657,
+        "gap_to_best": 0.03745383501509512,
+        "se_of_gap": 0.002923430762590153,
         "within_one_se": false
       },
       {
         "candidate": "ridge_100",
-        "mean": 5.098539502980145,
+        "mean": 5.098561044315561,
         "gap_to_best": 0.0,
         "se_of_gap": 0.0,
         "within_one_se": true
       },
       {
         "candidate": "tree_depth6",
-        "mean": 5.313429607237533,
-        "gap_to_best": 0.21489010425738816,
-        "se_of_gap": 0.02751772085646204,
+        "mean": 5.313429607237534,
+        "gap_to_best": 0.21486856292197282,
+        "se_of_gap": 0.027511544730520667,
         "within_one_se": false
       },
       {
         "candidate": "tree_baseline",
-        "mean": 6.839975770797077,
-        "gap_to_best": 1.741436267816931,
-        "se_of_gap": 0.0828327929505494,
+        "mean": 6.887719392174219,
+        "gap_to_best": 1.7891583478586583,
+        "se_of_gap": 0.08872609968208842,
         "within_one_se": false
       },
       {
         "candidate": "forest_leaf20",
-        "mean": 5.3457976168995,
-        "gap_to_best": 0.2472581139193542,
-        "se_of_gap": 0.053030272716395724,
+        "mean": 5.345795352844421,
+        "gap_to_best": 0.24723430852885997,
+        "se_of_gap": 0.053023895269440596,
         "within_one_se": false
       },
       {
         "candidate": "boost_baseline",
-        "mean": 5.214455231887597,
-        "gap_to_best": 0.11591572890745239,
-        "se_of_gap": 0.02960237990073459,
+        "mean": 5.214455231887596,
+        "gap_to_best": 0.11589418757203651,
+        "se_of_gap": 0.029608755536026314,
         "within_one_se": false
       },
       {
         "candidate": "boost_slow",
         "mean": 5.215336436637951,
-        "gap_to_best": 0.1167969336578059,
-        "se_of_gap": 0.05191046230659455,
+        "gap_to_best": 0.1167753923223902,
+        "se_of_gap": 0.05191318819113149,
         "within_one_se": false
       }
     ]

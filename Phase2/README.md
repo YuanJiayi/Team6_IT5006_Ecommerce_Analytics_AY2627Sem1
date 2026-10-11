@@ -29,3 +29,7 @@ This folder contains the code, notebooks, data and saved results supporting the 
 The report compares checkout and carrier-handover predictions on distinct information sets. Its five chronological validation windows drive model choice. The later test period is a separate evaluation period, and the monthly refresh and drift analyses describe that period after it was available; they do not constitute a new untouched test.
 
 The data include only eventual deliveries with a valid carrier handover for the final model comparison. See the report for cohort exclusions and assumptions about checkout visibility of the recorded promise, payments and static ZIP coordinates.
+
+## Package verification (12 October 2026)
+
+The 43 focused Phase 2 tests passed from this folder. The report evidence script ran from this folder, and the open LaTeX source compiled in the document editor. GX Core 1.24.0 passed 35/35 contract checks on the packaged table and feature spec; its JSON records their SHA-256 hashes. The full regression entry point was rerun. Its selected ridge results were stable; the unpruned decision-tree baseline shifted by a few hundredths of a day, so the saved regression output and report table were refreshed together. The classifier's selected logistic validation result and initial tree/forest candidates were rerun; its full ensemble sweep was not repeated during packaging. The included saved classifier outputs remain the source for its report figures.
