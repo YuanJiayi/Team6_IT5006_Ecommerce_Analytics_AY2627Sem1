@@ -1,0 +1,15 @@
+\begin{table}[ht]
+\centering\small
+\caption{Selected-model train--validate--test comparison. Train is apparent, in-sample fit; validation is the mean of five chronological windows; the previously inspected test describes later conditions. Periods and late prevalence differ.}
+\label{tab:split-summary}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Metric & Train (apparent) & Validation & Later test \\
+\midrule
+Checkout MAE (days) & 5.23 & 5.81 & 5.00 \\
+Handover MAE (days) & 4.57 & 5.10 & 3.97 \\
+Late warning PR-AUC & 0.333 & 0.367 & 0.231 \\
+Late prevalence & 7.1\% & 10.7\% & 3.5\% \\
+\bottomrule
+\end{tabular}
+\end{table}

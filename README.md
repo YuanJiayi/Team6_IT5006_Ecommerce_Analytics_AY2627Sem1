@@ -6,8 +6,8 @@ Phase / Milestone 2: Analytics Implementation - Problem Definition, Model Buildi
 - `app.py`, `dashboard_data.py`, `geomapper.py`, and `map_layers/`: the shared Phase 1 dashboard and map code.
 - `data/`: original Olist tables and the prepared, item-level Phase 1 dataset.
 - `notebooks/phase1/`: Phase 1 exploratory notebooks and historical EDA snippets.
-- `notebooks/phase2/`: the data-preparation and classification notebooks; regression and later diagnostics are reproducible Python scripts.
-- `notebooks/phase2/data_prep.ipynb`: shared Phase 2 data preparation, evaluation rationale, and split definitions.
+- `phase2_final/`: the current Phase 2 data preparation, feature engineering, modelling code, results and report evidence.
+- `notebooks/phase2/`: older checkout-classification work retained as development history.
 - `ref/`: project brief, submitted Phase 1 report, and feedback.
 - `tests/`: checks for the dashboard's delivery and review rules.
 
@@ -23,11 +23,11 @@ For modelling, build a fresh **one-row-per-order** table from the raw Olist CSVs
 
 ## Phase 2 evaluation decision
 
-The [Phase 2 data preparation notebook](notebooks/phase2/data_prep.ipynb) explains both evaluation approaches and saves their partitions. The primary test holds out orders purchased on or after 2018-05-26, about the latest 20% by purchase date, to assess performance on a later period. Primary training uses earlier orders whose outcomes were known by that date, with five expanding-time validation windows. The teammate's seeded, stratified random 80/20 split is retained as a separate secondary benchmark for orders drawn from the same historical mix. Both tasks use the same partitions within each experiment. Run the notebook from the repository root or its own folder; its setup locates the root `data/` directory.
+The [Phase 2 data preparation notebook](phase2_final/notebooks/phase2/data_prep.ipynb) explains both evaluation approaches and saves their partitions. The primary test holds out orders purchased on or after 2018-05-26, about the latest 20% by purchase date, to assess performance on a later period. Primary training uses earlier orders whose outcomes were known by that date, with five expanding-time validation windows. The teammate's seeded, stratified random 80/20 split is retained as a separate secondary benchmark for orders drawn from the same historical mix. Both tasks use the same partitions within each experiment. Run the notebook from `phase2_final/` or its own folder; its setup locates that folder's `data/` directory.
 
 The [Phase 2 assumptions log](docs/phase2_assumptions.md) records business scope, checkout-time feature assumptions, and preprocessing choices.
 
-For the submitted Phase 2 story, start with the [report PDF](reports/Team6_Phase2_IT5006_AY2627Sem1.pdf), its [editable source](reports/phase2_report.tex), and [docs/phase2_handoff.md](docs/phase2_handoff.md). The final models are a two-stage delivery-time estimate, [`phase2_eta.py`](phase2_eta.py) (checkout regression, updated at carrier handover), and a handover late-warning classifier, [`phase2_handover_classifier.py`](phase2_handover_classifier.py); [`reports/phase2_final_evidence.py`](reports/phase2_final_evidence.py) regenerates every number and figure in the report from their saved results. Earlier notebooks, the promise-engine stretch goal ([`phase2_promise.py`](phase2_promise.py)) and the older joint report preserve development history and are superseded for submission purposes.
+For teammate review, start with the [Phase 2 final pipeline folder](phase2_final/README.md). It contains the [editable report source](phase2_final/reports/phase2_report.tex), active preparation, feature engineering, selected model code, saved results, evidence scripts and relevant tests. The Olist raw CSVs are also copied inside the Phase 2 folder because Phase 1 still reads the originals at repository root. Earlier checkout-only and promise-engine experiments remain outside that folder as development history.
 
 Deadline: Sunday, 11 October 2026 at 23:59 (end of Week 8)
 Weight: 40%
