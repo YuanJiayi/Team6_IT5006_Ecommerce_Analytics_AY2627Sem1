@@ -1,0 +1,201 @@
+{
+  "prediction_points": {
+    "checkout": "after checkout and payment submission, before approval or dispatch",
+    "handover": "when the carrier records receiving the parcel from the seller"
+  },
+  "target": "delivery_days",
+  "population": "delivered orders with a carrier handover after purchase and before delivery",
+  "coverage": {
+    "orders": 96470,
+    "handover_cohort": 96272,
+    "excluded_no_valid_handover": 198,
+    "train_orders": 75039,
+    "test_orders": 19230
+  },
+  "stage_features": {
+    "checkout": [],
+    "checkout_transit": [
+      "route_transit_90d"
+    ],
+    "handover_elapsed": [
+      "route_transit_90d",
+      "approval_days",
+      "handover_days"
+    ],
+    "handover": [
+      "approval_days",
+      "handover_days",
+      "route_transit_90d_at_handover"
+    ]
+  },
+  "selected_candidate": "ridge_100",
+  "checkout_selected_candidate": "ridge_100",
+  "lowest_mae_candidate": {
+    "checkout": "forest_leaf20",
+    "handover": "ridge_100"
+  },
+  "highest_r2_candidate": "ridge_100",
+  "reason": {
+    "checkout": "forest_leaf20 has the lowest mean validation MAE (5.7829); ridge_100 (5.8085) is within one standard error and simpler, so it is chosen",
+    "handover": "ridge_100 has the lowest mean validation MAE (5.0986)"
+  },
+  "rule": "lowest mean validation MAE over 5 chronological windows; the simplest candidate within one standard error of the lowest wins (ISLR, James, Witten, Hastie and Tibshirani, Sec. 6.1.3, p. 214); baselines and the ensemble are reference only",
+  "stage2": {
+    "checkout": [
+      {
+        "candidate": "linear_baseline",
+        "mean": 5.860312872410603,
+        "gap_to_best": 0.07746147124833005,
+        "se_of_gap": 0.03231315168261583,
+        "within_one_se": false
+      },
+      {
+        "candidate": "ridge_1",
+        "mean": 5.858245718303063,
+        "gap_to_best": 0.07539431714079114,
+        "se_of_gap": 0.03268608419222849,
+        "within_one_se": false
+      },
+      {
+        "candidate": "ridge_10",
+        "mean": 5.848423956765368,
+        "gap_to_best": 0.06557255560309523,
+        "se_of_gap": 0.0331852885204322,
+        "within_one_se": false
+      },
+      {
+        "candidate": "ridge_100",
+        "mean": 5.808535091853213,
+        "gap_to_best": 0.02568369069094052,
+        "se_of_gap": 0.027953294585874058,
+        "within_one_se": true
+      },
+      {
+        "candidate": "tree_depth6",
+        "mean": 5.932524868421388,
+        "gap_to_best": 0.14967346725911562,
+        "se_of_gap": 0.017034868970882456,
+        "within_one_se": false
+      },
+      {
+        "candidate": "tree_baseline",
+        "mean": 7.754225048639677,
+        "gap_to_best": 1.9713736474774053,
+        "se_of_gap": 0.05270201123825507,
+        "within_one_se": false
+      },
+      {
+        "candidate": "forest_leaf20",
+        "mean": 5.782851401162271,
+        "gap_to_best": 0.0,
+        "se_of_gap": 0.0,
+        "within_one_se": true
+      },
+      {
+        "candidate": "boost_baseline",
+        "mean": 5.830217609859458,
+        "gap_to_best": 0.047366208697185996,
+        "se_of_gap": 0.017062519737161795,
+        "within_one_se": false
+      },
+      {
+        "candidate": "boost_slow",
+        "mean": 5.81612017598771,
+        "gap_to_best": 0.03326877482543829,
+        "se_of_gap": 0.0172265630214686,
+        "within_one_se": false
+      }
+    ],
+    "handover": [
+      {
+        "candidate": "linear_baseline",
+        "mean": 5.146201978046019,
+        "gap_to_best": 0.047640933730457836,
+        "se_of_gap": 0.004041116855554458,
+        "within_one_se": false
+      },
+      {
+        "candidate": "ridge_1",
+        "mean": 5.14478467483074,
+        "gap_to_best": 0.046223630515179435,
+        "se_of_gap": 0.003596761096312992,
+        "within_one_se": false
+      },
+      {
+        "candidate": "ridge_10",
+        "mean": 5.136014879330657,
+        "gap_to_best": 0.03745383501509512,
+        "se_of_gap": 0.002923430762590153,
+        "within_one_se": false
+      },
+      {
+        "candidate": "ridge_100",
+        "mean": 5.098561044315561,
+        "gap_to_best": 0.0,
+        "se_of_gap": 0.0,
+        "within_one_se": true
+      },
+      {
+        "candidate": "tree_depth6",
+        "mean": 5.313429607237534,
+        "gap_to_best": 0.21486856292197282,
+        "se_of_gap": 0.027511544730520667,
+        "within_one_se": false
+      },
+      {
+        "candidate": "tree_baseline",
+        "mean": 6.887719392174219,
+        "gap_to_best": 1.7891583478586583,
+        "se_of_gap": 0.08872609968208842,
+        "within_one_se": false
+      },
+      {
+        "candidate": "forest_leaf20",
+        "mean": 5.345795352844421,
+        "gap_to_best": 0.24723430852885997,
+        "se_of_gap": 0.053023895269440596,
+        "within_one_se": false
+      },
+      {
+        "candidate": "boost_baseline",
+        "mean": 5.214455231887596,
+        "gap_to_best": 0.11589418757203651,
+        "se_of_gap": 0.029608755536026314,
+        "within_one_se": false
+      },
+      {
+        "candidate": "boost_slow",
+        "mean": 5.215336436637951,
+        "gap_to_best": 0.1167753923223902,
+        "se_of_gap": 0.05191318819113149,
+        "within_one_se": false
+      }
+    ]
+  },
+  "family_winners": {
+    "linear": "ridge_100",
+    "tree_based": "boost_baseline"
+  },
+  "simplicity_order": [
+    "linear_baseline",
+    "ridge_1",
+    "ridge_10",
+    "ridge_100",
+    "tree_depth6",
+    "tree_baseline",
+    "forest_leaf20",
+    "boost_baseline",
+    "boost_slow"
+  ],
+  "interpretation_files": {
+    "checkout": [
+      "checkout_selected_coefficients.csv"
+    ],
+    "handover": [
+      "selected_coefficients.csv",
+      "tree_winner_permutation_importance.csv"
+    ]
+  },
+  "random_state": 42,
+  "test_status": "post hoc: the later period was opened before the handover stage was designed"
+}

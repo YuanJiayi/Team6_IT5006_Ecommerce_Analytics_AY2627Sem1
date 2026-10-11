@@ -1,0 +1,17 @@
+\begin{table}[H]
+\centering\small
+\caption{Day-by-day replay of the chosen model, flagging the top \ActShare{}\% of handovers each day. Each row covers every valid handover in its calendar span. Counts show which orders would be flagged, not the effect of acting on them.}
+\label{tab:daily-replay}
+\begin{tabular}{@{}lrrrrrr@{}}
+\toprule
+Period & Active days & Orders & Late rate & Median flagged/day & Precision & Recall \\
+\midrule
+W1 & 45 & 7,262 & 3.6\% & 19 & 16.8\% & 47.9\% \\
+W2 & 24 & 7,450 & 12.9\% & 36 & 39.5\% & 31.0\% \\
+W3 & 33 & 7,685 & 5.7\% & 26 & 22.9\% & 41.0\% \\
+W4 & 28 & 7,591 & 9.1\% & 32 & 29.6\% & 33.2\% \\
+W5 & 29 & 7,357 & 21.9\% & 29 & 61.6\% & 28.7\% \\
+Test set & 81 & 19,534 & 3.6\% & 27 & 19.5\% & 55.0\% \\
+\bottomrule
+\end{tabular}
+\end{table}

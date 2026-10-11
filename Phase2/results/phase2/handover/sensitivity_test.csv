@@ -1,0 +1,13 @@
+variant,benefit_ratio,k,ranking,test_net_benefit_per_order
+primary,5.0,0.14,model,-0.03135725429017161
+primary,5.0,0.14,slack_rule,-0.026937077483099325
+primary,5.0,0.14,regression_gap,-0.022516900676027043
+primary,2.0,0.01,model,0.0035881435257410295
+primary,2.0,0.01,slack_rule,0.003172126885075403
+primary,2.0,0.01,regression_gap,0.0030681227249089965
+primary,10.0,0.3,model,-0.024440977639105563
+primary,10.0,0.3,slack_rule,-0.01768070722828913
+primary,10.0,0.3,regression_gap,-0.0171606864274571
+primary,20.0,0.3,model,0.25117004680187205
+primary,20.0,0.3,slack_rule,0.26469058762350495
+primary,20.0,0.3,regression_gap,0.265730629225169

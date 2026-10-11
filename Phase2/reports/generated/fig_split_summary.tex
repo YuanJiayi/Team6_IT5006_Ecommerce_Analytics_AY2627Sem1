@@ -1,0 +1,15 @@
+\begin{table}[H]
+\centering\small
+\caption{Descriptive scores for the chosen models. Training is scored in sample; validation averages five separately fitted chronological windows; the test set uses a model fitted on pre-test data. Late rates and case mixes differ, so the PR-AUC values are not a like-for-like learning curve.}
+\label{tab:split-summary}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Metric & Training & Validation & Test set \\
+\midrule
+Checkout MAE (days) & 5.23 & 5.81 & 5.00 \\
+Handover MAE (days) & 4.57 & 5.10 & 3.97 \\
+Late warning PR-AUC & 0.374 & 0.392 & 0.489 \\
+Late prevalence & 7.1\% & 10.7\% & 3.5\% \\
+\bottomrule
+\end{tabular}
+\end{table}

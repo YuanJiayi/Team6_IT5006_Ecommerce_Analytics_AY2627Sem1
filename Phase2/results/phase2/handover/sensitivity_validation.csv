@@ -1,0 +1,5 @@
+benefit_ratio,k,validation_net_benefit_per_order,variant
+5.0,0.14,0.08373182199018134,primary
+2.0,0.01,0.007236284699381659,primary
+10.0,0.3,0.38410610792208777,primary
+20.0,0.3,1.0682674717315588,primary

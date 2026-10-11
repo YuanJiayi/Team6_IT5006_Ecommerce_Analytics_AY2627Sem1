@@ -1,0 +1,14 @@
+streamlit
+pandas
+numpy
+altair
+matplotlib
+folium
+branca
+jinja2
+ipython
+scipy
+seaborn
+pyarrow
+scikit-learn
+xgboost>=3.2,<4
