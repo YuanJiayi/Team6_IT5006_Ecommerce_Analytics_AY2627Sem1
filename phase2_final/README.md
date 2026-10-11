@@ -1,6 +1,6 @@
 # Phase 2 final pipeline and evidence
 
-This folder holds the **active Phase 2 pipeline**. Start with the [report source](reports/phase2_report.tex), then follow the chain below. The preparation, feature, model, evidence and test code in this folder is the working source. The scripts run from this folder without depending on their old locations in the repository.
+This folder holds the **active Phase 2 pipeline**. Start with the [report PDF](reports/phase2_report.pdf) and its [LaTeX source](reports/phase2_report.tex), then follow the chain below. The preparation, feature, model, evidence and test code in this folder is the working source. The scripts run from this folder without depending on their old locations in the repository.
 
 | Stage | Current work in this folder | What it establishes |
 | --- | --- | --- |
@@ -28,7 +28,7 @@ The test period had already been inspected during report development. Reproducin
 
 ## Submission handoff
 
-The report source, its logo, the three Phase 2 notebooks, training and evidence scripts, feature contract, saved results and focused tests are all here. The report still needs a final PDF export for submission; check that the main body remains within the required 6–8 pages and that the GitHub link, author details, figures and declaration render correctly. Commit and push this folder before sharing the repository link so teammates see the same snapshot. The notebooks are readable without retraining; the preparation notebook writes the included prepared table when executed.
+The report PDF and source, its logo, the three Phase 2 notebooks, training and evidence scripts, feature contract, saved results and focused tests are all here. The PDF has a cover, seven main-report pages, and references and appendices. After editing the LaTeX source, regenerate the PDF and check that the GitHub link, author details, figures and declaration render correctly before submission. The notebooks are readable without retraining; the preparation notebook writes the included prepared table when executed.
 
 ## Scope and provenance
 
