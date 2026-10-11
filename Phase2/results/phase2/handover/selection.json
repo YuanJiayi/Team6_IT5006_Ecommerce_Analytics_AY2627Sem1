@@ -1,0 +1,218 @@
+{
+  "coverage": {
+    "orders": 96470,
+    "handover_cohort": 96272,
+    "excluded_no_valid_handover": 198,
+    "train_orders": 75039
+  },
+  "benefit_ratio": 5.0,
+  "k_grid": [
+    0.01,
+    0.3
+  ],
+  "smoke": false,
+  "groups": [
+    {
+      "group": "linear",
+      "baseline": "logistic_unregularized",
+      "configs": [
+        "logistic_unregularized",
+        "logistic_c1",
+        "logistic_c1_bal",
+        "logistic_c0.01",
+        "logistic_c0.01_bal",
+        "logistic_c0.1",
+        "logistic_c0.1_bal",
+        "logistic_c10",
+        "logistic_c10_bal"
+      ]
+    },
+    {
+      "group": "tree",
+      "baseline": "tree_plain",
+      "configs": [
+        "tree_plain",
+        "tree_d4_l20",
+        "tree_d4_l100",
+        "tree_d6_l20",
+        "tree_d6_l100",
+        "tree_d8_l20",
+        "tree_d8_l100",
+        "tree_d12_l20",
+        "tree_d12_l100"
+      ]
+    },
+    {
+      "group": "forest",
+      "baseline": null,
+      "configs": [
+        "forest_l5_sqrt",
+        "forest_l5_half",
+        "forest_l20_sqrt",
+        "forest_l20_half",
+        "forest_l50_sqrt",
+        "forest_l50_half"
+      ]
+    },
+    {
+      "group": "boost",
+      "baseline": null,
+      "configs": [
+        "boost_lr0.03_n200_l20",
+        "boost_lr0.03_n200_l100",
+        "boost_lr0.03_n500_l20",
+        "boost_lr0.03_n500_l100",
+        "boost_lr0.1_n200_l20",
+        "boost_lr0.1_n200_l100",
+        "boost_lr0.1_n500_l20",
+        "boost_lr0.1_n500_l100"
+      ]
+    }
+  ],
+  "variants": {
+    "primary": {
+      "selected": "logistic_c0.01",
+      "best_pr_auc_candidate": "logistic_c0.01",
+      "reason": "best logistic_c0.01 (mean validation PR-AUC 0.3923); chosen logistic_c0.01 (0.3923), the simplest line-up entry within one standard error of the best",
+      "tuned": {
+        "linear": "logistic_c0.01",
+        "tree": "tree_d8_l100",
+        "forest": "forest_l20_sqrt",
+        "boost": "boost_lr0.03_n200_l20"
+      },
+      "lineup": [
+        "logistic_unregularized",
+        "logistic_c0.01",
+        "tree_plain",
+        "tree_d8_l100",
+        "forest_l20_sqrt",
+        "boost_lr0.03_n200_l20"
+      ],
+      "stage2": [
+        {
+          "candidate": "logistic_unregularized",
+          "mean": 0.3713989993353928,
+          "gap_to_best": 0.020936129923018222,
+          "se_of_gap": 0.006991150016186621,
+          "within_one_se": false
+        },
+        {
+          "candidate": "logistic_c0.01",
+          "mean": 0.392335129258411,
+          "gap_to_best": 0.0,
+          "se_of_gap": 0.0,
+          "within_one_se": true
+        },
+        {
+          "candidate": "tree_plain",
+          "mean": 0.14044874815036001,
+          "gap_to_best": 0.251886381108051,
+          "se_of_gap": 0.01175166320388264,
+          "within_one_se": false
+        },
+        {
+          "candidate": "tree_d8_l100",
+          "mean": 0.31997141869420676,
+          "gap_to_best": 0.07236371056420428,
+          "se_of_gap": 0.009148523158673299,
+          "within_one_se": false
+        },
+        {
+          "candidate": "forest_l20_sqrt",
+          "mean": 0.3727919039400662,
+          "gap_to_best": 0.01954322531834477,
+          "se_of_gap": 0.005478865791802131,
+          "within_one_se": false
+        },
+        {
+          "candidate": "boost_lr0.03_n200_l20",
+          "mean": 0.3632796069956687,
+          "gap_to_best": 0.029055522262742307,
+          "se_of_gap": 0.006913156644078894,
+          "within_one_se": false
+        }
+      ],
+      "k": 0.14,
+      "value_test": {
+        "variant": "primary",
+        "selected": "logistic_c0.01",
+        "n_resamples": 1000,
+        "seed": 42,
+        "model_minus_slack_rule": {
+          "pr_auc": {
+            "difference": 0.06446413051868695,
+            "ci_low": 0.05738636859049958,
+            "ci_high": 0.07178210237836065
+          },
+          "recall_top10": {
+            "difference": 0.0684936225353314,
+            "ci_low": 0.053029176076912814,
+            "ci_high": 0.08091798440110688
+          }
+        },
+        "gate_2_pass": true
+      }
+    }
+  },
+  "checkout_variant": {
+    "selected": "logistic_c0.01",
+    "reason": "best logistic_c0.01 (mean validation PR-AUC 0.2134); chosen logistic_c0.01 (0.2134), the simplest line-up entry within one standard error of the best",
+    "tuned": {
+      "linear": "logistic_c0.01",
+      "tree": "tree_d8_l100",
+      "forest": "forest_l50_sqrt",
+      "boost": "boost_lr0.03_n200_l100"
+    },
+    "stage2": [
+      {
+        "candidate": "logistic_unregularized",
+        "mean": 0.18770460787988932,
+        "gap_to_best": 0.02565971056546921,
+        "se_of_gap": 0.0064984964384681605,
+        "within_one_se": false
+      },
+      {
+        "candidate": "logistic_c0.01",
+        "mean": 0.2133643184453585,
+        "gap_to_best": 0.0,
+        "se_of_gap": 0.0,
+        "within_one_se": true
+      },
+      {
+        "candidate": "tree_plain",
+        "mean": 0.10988976531304347,
+        "gap_to_best": 0.10347455313231506,
+        "se_of_gap": 0.031429870743461964,
+        "within_one_se": false
+      },
+      {
+        "candidate": "tree_d8_l100",
+        "mean": 0.153114305297383,
+        "gap_to_best": 0.06025001314797551,
+        "se_of_gap": 0.022632431674783238,
+        "within_one_se": false
+      },
+      {
+        "candidate": "forest_l50_sqrt",
+        "mean": 0.20209115317759907,
+        "gap_to_best": 0.011273165267759466,
+        "se_of_gap": 0.006813545678453325,
+        "within_one_se": false
+      },
+      {
+        "candidate": "boost_lr0.03_n200_l100",
+        "mean": 0.19449364921486,
+        "gap_to_best": 0.01887066923049852,
+        "se_of_gap": 0.006394805554609567,
+        "within_one_se": false
+      }
+    ],
+    "pr_auc": 0.2133643184453585,
+    "roc_auc": 0.6947267149234682,
+    "recall_top10": 0.24320463280110727,
+    "precision_top10": 0.26166643612974616
+  },
+  "extension_run": false,
+  "counterfactual_simulation": "not implemented in this run (depends on the promise engine output)",
+  "runtime_seconds": 921.1
+}

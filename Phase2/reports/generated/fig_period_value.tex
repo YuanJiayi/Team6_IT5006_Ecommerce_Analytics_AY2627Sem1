@@ -1,0 +1,19 @@
+\begin{table}[ht]
+\centering\small
+\caption{Model against the remaining-slack rule at the same workload: the top \ActShare{}\% of each validation window, or of each purchase month in the test set (26 May--August 2018). A random list would catch \ActShare{}\% of late orders.}
+\label{tab:period-value}
+\begin{tabular}{@{}lrrrrrrr@{}}
+\toprule
+& & Late already & \multicolumn{2}{c}{PR-AUC} & \multicolumn{3}{c}{Late orders caught} \\
+\cmidrule(lr){4-5}\cmidrule(l){6-8}
+Period & Late rate & past date & Model & Rule & Model & Rule & Random \\
+\midrule
+W1 & 4.1\% & 12\% & 0.378 & 0.354 & 164 & 132 & 31 \\
+W2 & 13.8\% & 6\% & 0.430 & 0.343 & 341 & 271 & 105 \\
+W3 & 4.8\% & 7\% & 0.282 & 0.256 & 126 & 112 & 36 \\
+W4 & 9.9\% & 3\% & 0.370 & 0.301 & 274 & 227 & 75 \\
+W5 & 20.7\% & 1\% & 0.502 & 0.386 & 469 & 357 & 158 \\
+Test set & 3.5\% & 29\% & 0.489 & 0.519 & 377 & 398 & 67 \\
+\bottomrule
+\end{tabular}
+\end{table}

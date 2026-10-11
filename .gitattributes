@@ -1,0 +1,5 @@
+# Large data tables are tracked for reproducibility but not useful as line diffs.
+Phase1/data/*.csv -diff
+Phase2/data/*.csv -diff
+Phase2/results/phase2/handover/test_scores.csv -diff
+Phase2/experiments/monthly_retraining/scores.csv.gz binary

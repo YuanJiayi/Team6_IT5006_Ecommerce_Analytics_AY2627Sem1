@@ -1,0 +1,19 @@
+\begin{table}[ht]
+\centering\small
+\caption{Regression comparison: mean MAE in days over five chronological validation windows. Lower is better. Full configurations are in Appendix Table~\ref{tab:app-regression}.}
+\label{tab:regression-family-summary}
+\begin{tabular}{@{}llrr@{}}
+\toprule
+Family & Configuration & Checkout & Handover \\
+\midrule
+Benchmark & Training mean & 7.21 & 7.21 \\
+Linear & Plain linear regression & 5.86 & 5.15 \\
+Linear & Ridge regression (selected) & 5.81 & 5.10 \\
+Tree-based & Single decision tree & 7.79 & 6.84 \\
+Tree-based & Tuned decision tree & 5.93 & 5.31 \\
+Tree-based & Random forest & 5.78 & 5.35 \\
+Tree-based & Gradient boosting & 5.83 & 5.21 \\
+Benchmark & Elapsed time + route rule & -- & 5.30 \\
+\bottomrule
+\end{tabular}
+\end{table}

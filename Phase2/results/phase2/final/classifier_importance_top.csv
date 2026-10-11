@@ -1,0 +1,7 @@
+feature,mean_pr_auc_drop
+slack_shortfall,0.0832440758798229
+handover_days,0.0563026983567878
+remaining_slack,0.0316478470335638
+route_transit_90d_at_handover,0.0300127899395115
+promised_days,0.0255305401653711
+distance_km,0.0155276935098572

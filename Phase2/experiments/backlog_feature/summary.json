@@ -1,0 +1,81 @@
+{
+  "definition": "Open-order backlog counts purchases by handover minus deliveries completed by handover; carrier backlog counts carrier handovers minus completed deliveries. Each excludes the target order, is either global or within buyer state, and is log1p transformed.",
+  "selected_model_unchanged": "logistic_c0.01",
+  "validation_mean": {
+    "baseline": {
+      "pr_auc": 0.3822630105951036,
+      "recall_top10": 0.3600193994085692,
+      "precision_top10": 0.34580296009405903
+    },
+    "both_backlogs": {
+      "pr_auc": 0.3713481447817924,
+      "recall_top10": 0.3520450751466412,
+      "precision_top10": 0.33448855384189774
+    },
+    "both_carrier_backlogs": {
+      "pr_auc": 0.37269826765036285,
+      "recall_top10": 0.3561253412533777,
+      "precision_top10": 0.3376433363303133
+    },
+    "carrier_backlog": {
+      "pr_auc": 0.3766890105423888,
+      "recall_top10": 0.3606444669756209,
+      "precision_top10": 0.3386952762984992
+    },
+    "global_backlog": {
+      "pr_auc": 0.37637695989423237,
+      "recall_top10": 0.3614599891210176,
+      "precision_top10": 0.3400114115775642
+    },
+    "global_mean_2wk": {
+      "pr_auc": 0.3792883668714733,
+      "recall_top10": 0.3608572542538043,
+      "precision_top10": 0.34211805795698186
+    },
+    "global_mean_4wk": {
+      "pr_auc": 0.3811223405350937,
+      "recall_top10": 0.3616675322678045,
+      "precision_top10": 0.3447489452935888
+    },
+    "global_mean_8wk": {
+      "pr_auc": 0.3819100642522052,
+      "recall_top10": 0.3612534754679208,
+      "precision_top10": 0.3452769901099661
+    },
+    "global_recent_vs_8wk": {
+      "pr_auc": 0.3876350611198594,
+      "recall_top10": 0.36504889569305227,
+      "precision_top10": 0.3529075316411923
+    },
+    "state_backlog": {
+      "pr_auc": 0.37660778018251756,
+      "recall_top10": 0.35653327017555914,
+      "precision_top10": 0.3437011549899716
+    },
+    "state_carrier_backlog": {
+      "pr_auc": 0.37677266147135213,
+      "recall_top10": 0.35578973598100994,
+      "precision_top10": 0.3434376512898541
+    },
+    "state_mean_2wk": {
+      "pr_auc": 0.37770367599712734,
+      "recall_top10": 0.35868452013392105,
+      "precision_top10": 0.34501383221522924
+    },
+    "state_mean_4wk": {
+      "pr_auc": 0.37838399349000446,
+      "recall_top10": 0.35908643801969276,
+      "precision_top10": 0.34553980219932223
+    },
+    "state_mean_8wk": {
+      "pr_auc": 0.3788447829916234,
+      "recall_top10": 0.35995460071750374,
+      "precision_top10": 0.3463285842727713
+    },
+    "state_recent_vs_8wk": {
+      "pr_auc": 0.392335129258411,
+      "recall_top10": 0.37265774690714115,
+      "precision_top10": 0.3613227055812988
+    }
+  }
+}

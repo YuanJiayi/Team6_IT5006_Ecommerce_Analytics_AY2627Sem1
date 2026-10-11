@@ -1,0 +1,18 @@
+\begin{table}[ht]
+\centering\small
+\caption{Classification comparison, mean over five chronological validation windows. Full configurations are in Appendix Table~\ref{tab:app-classifier}.}
+\label{tab:family-summary}
+\begin{tabular}{@{}llrr@{}}
+\toprule
+Family & Configuration & PR-AUC & ROC-AUC \\
+\midrule
+Linear & Plain logistic regression & 0.371 & 0.747 \\
+Linear & Regularised logistic regression & 0.392 & 0.780 \\
+Tree-based & Single decision tree & 0.140 & 0.567 \\
+Tree-based & Tuned decision tree & 0.320 & 0.705 \\
+Tree-based & Random forest & 0.373 & 0.744 \\
+Tree-based & Gradient boosting & 0.363 & 0.741 \\
+Benchmark & Remaining-slack rule & 0.328 & 0.697 \\
+\bottomrule
+\end{tabular}
+\end{table}

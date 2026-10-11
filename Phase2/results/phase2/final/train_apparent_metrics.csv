@@ -1,0 +1,4 @@
+task,stage,model,scope,orders,mae,rmse,r2,mean_signed_error,late_orders,late_rate,pr_auc,roc_auc,action_share,flagged,caught,precision,recall,f1,mcc
+regression,checkout,ridge_100,apparent_in_sample,75039,5.234972244340272,8.409393155531935,0.26248154938719004,1.4214074168155246e-14,,,,,,,,,,,
+regression,handover,ridge_100,apparent_in_sample,75039,4.573028259779568,7.693871042821323,0.3826472584865742,5.8116807193608535e-15,,,,,,,,,,,
+classification,handover,logistic_c0.01,apparent_in_sample,75039,,,,,5333.0,0.0710697104172497,0.37440312612055054,0.8128915896956066,0.14,10517.0,2452.0,0.23314633450603783,0.45977873617101067,0.3094006309148265,0.2546704605558344
