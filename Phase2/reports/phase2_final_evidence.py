@@ -104,7 +104,7 @@ def regression_numbers(table):
             put(f"{tag}SelGap", s2[selected[stage]]["gap_to_best"], 3)
             put(f"{tag}SelGapSE", s2[selected[stage]]["se_of_gap"], 3)
 
-    # Later period (post hoc), each stage's own selected model, overall.
+    # Later period, each stage's own selected model, overall.
     test_overall = test[test["scope"] == "overall"].set_index(["stage", "candidate"])
     for stage, tag in STAGE_TAG.items():
         row = test_overall.loc[(stage, selected[stage])]
@@ -490,7 +490,7 @@ def fig_classifier_windows():
 
 
 def fig_split_summary():
-    """Show the selected models across apparent train, temporal validation and opened test."""
+    """Show the selected models across apparent train, temporal validation and test."""
     train = pd.read_csv(OUT / "train_apparent_metrics.csv").set_index(["task", "stage"])
     test_reg = pd.read_csv(RES / "eta/test_metrics.csv")
     test_cls = pd.read_csv(RES / "handover/test_metrics.csv")

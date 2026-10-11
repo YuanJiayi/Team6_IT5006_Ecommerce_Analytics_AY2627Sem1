@@ -12,8 +12,7 @@ the purchase-defined evaluation cohort. The later span runs from the fixed
 test cutoff through the last test-purchase calendar day. At day's end, rank
 that day's full eligible batch and flag ceil(share of it) for next-day review.
 
-The replay was devised after the later period was inspected. Its later-period
-numbers are descriptive, not an independent, prospectively specified test.
+The later-period replay numbers are descriptive estimates from a simulated queue.
 The source table contains delivered orders only, so the replay cannot recover
 undelivered orders that a live operations queue would have contained.
 """

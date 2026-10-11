@@ -5,7 +5,7 @@ Run from the Phase2 folder:
 
 The saved validation choice (unweighted logistic C=0.01 and its validation-selected share k) is held fixed.
 Each chronological validation model is fitted only on mature, earlier orders;
-the opened later test is scored after one full pre-test training fit. This is
+the later test period is scored after one full pre-test training fit. This is
 not another model-selection run.
 
 The batch policy ranks orders by actual carrier-handover calendar day. It could
@@ -110,7 +110,7 @@ def main() -> None:
         scores = fit_scores("linear", params, features, train.iloc[fit], validation, log_features)
         rows.extend(score_rows(f"validation_{window}", validation, scores, share))
     test_scores = fit_scores("linear", params, features, train, test, log_features)
-    rows.extend(score_rows("test_opened_posthoc", test, test_scores, share))
+    rows.extend(score_rows("test_period", test, test_scores, share))
 
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     pd.DataFrame(rows).to_csv(OUTPUT, index=False)

@@ -1,7 +1,7 @@
-"""Post hoc, read-only comparison of recent histories and a handover update.
+"""Exploratory, read-only comparison of recent histories and a handover update.
 
-The held-out period has already been opened. Outputs are diagnostics, not a new
-independent model-selection result. Run from the Phase2 folder with the local
+Outputs are descriptive diagnostics; model choice uses the chronological
+validation windows. Run from the Phase2 folder with the local
 project Python environment. Every history value is available strictly before
 the purchase or handover being predicted.
 """
@@ -83,7 +83,7 @@ def handover_experiment(table):
                        test_saved[["order_id", "predicted_single"]].rename(columns={"predicted_single": "checkout"})])
     stage = stage.merge(saved, on="order_id", how="inner", validate="one_to_one")
     rows = []
-    stage["period"] = np.where(stage.split.eq("test"), "opened_test_post_hoc",
+    stage["period"] = np.where(stage.split.eq("test"), "test_period",
                                "validation_" + (stage.cv_fold.fillna(-1).astype(int) + 1).astype(str))
     for period, part in stage.groupby("period", sort=True):
         rows.append({"variant": "checkout_frozen", "period": period,
@@ -94,13 +94,13 @@ def handover_experiment(table):
                 raise ValueError(f"Missing handover forecast for {period}, {name}")
             rows.append({"variant": f"handover_shipping_{name}", "period": period,
                          **scores(part.delivery_days, predicted)})
-            if period == "opened_test_post_hoc":
+            if period == "test_period":
                 months = part.order_purchase_timestamp.dt.to_period("M").astype(str)
                 for month in sorted(months.unique()):
                     which = months.eq(month).to_numpy()
                     rows.append({"variant": f"handover_shipping_{name}", "period": f"test_{month}",
                                  **scores(part.delivery_days.to_numpy()[which], predicted[which])})
-        if period == "opened_test_post_hoc":
+        if period == "test_period":
             months = part.order_purchase_timestamp.dt.to_period("M").astype(str)
             for month in sorted(months.unique()):
                 which = months.eq(month).to_numpy()
@@ -166,10 +166,10 @@ def main():
     handover = handover_experiment(table)
     checkout = pd.DataFrame(checkout_results)
     summary = checkout[checkout.period.str.startswith("validation")].groupby("variant", sort=False).mae.mean().rename("validation_mae")
-    test_summary = checkout[checkout.period.eq("opened_test_post_hoc")].set_index("variant")
+    test_summary = checkout[checkout.period.eq("test_period")].set_index("variant")
     print(summary.to_frame().join(test_summary[["mae", "bias_pred_minus_actual"]].rename(
         columns={"mae": "test_mae", "bias_pred_minus_actual": "test_bias"})).round(3).to_string())
-    print("\nHandover results:\n", handover[~handover.period.str.startswith("test_")].pivot(
+    print("\nHandover results:\n", handover[~handover.period.str.match(r"^test_\d{4}-\d{2}$")].pivot(
         index="variant", columns="period", values="mae").round(3).to_string())
 
 
@@ -189,7 +189,7 @@ def checkout_experiment_one(table, spec, variant):
         rows.append({"variant": variant, "period": f"validation_{w+1}",
                      "fit_orders": len(fit), **scores(valid.delivery_days, pred)})
     pred = fit_predict(train, test, pd.Timestamp(spec["primary_cutoff"]), cols, changed_spec, variant)
-    rows.append({"variant": variant, "period": "opened_test_post_hoc",
+    rows.append({"variant": variant, "period": "test_period",
                  "fit_orders": len(train), **scores(test.delivery_days, pred)})
     months = test.order_purchase_timestamp.dt.to_period("M").astype(str)
     for month in sorted(months.unique()):

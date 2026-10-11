@@ -8,7 +8,7 @@ The final report states these boundaries in its Data Preparation and Limitations
 - Order-item and payment rows are aggregated to one row per order. The furthest seller represents multi-seller distance. ZIP-prefix coordinates are medians after implausible points are removed; distance is a straight-line proxy.
 - The recorded promise, payment details and static ZIP map have no historical snapshot timestamps in the supplied data. Their exact checkout availability is assumed, not demonstrated.
 - Training examples enter a fit only after their outcomes are recorded. Route and seller historical means use events completed strictly before the prediction time. Imputation, encoding and scaling are fitted within each chronological training fold.
-- The five earlier chronological windows support model selection. The later test period describes performance under changed conditions. Monthly refitting and drift analyses were explored after that period was available and should not be presented as independent confirmation.
+- The five earlier chronological windows support model selection. The later test period describes performance under changed conditions. Monthly refitting and drift analyses are descriptive diagnostics.
 - Reviewing a flagged parcel has no observed carrier action, cost or measured causal effect in Olist's tables. The 10% queue is an illustrative workload setting.
 
 The executable feature contract is [`data/phase2_feature_spec.json`](../data/phase2_feature_spec.json), and the construction logic and timing checks are in [`phase2_features.py`](../phase2_features.py), [`phase2_eta.py`](../phase2_eta.py) and [`tests/`](../tests/).

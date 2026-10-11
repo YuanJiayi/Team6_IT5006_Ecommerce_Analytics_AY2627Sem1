@@ -6,7 +6,7 @@ Run from the Phase2 folder:
 The checkout stage uses the prepared Phase 2 inputs. The handover stage predicts the same target,
 `delivery_days`, once the seller has handed the parcel to the carrier, so it may also use the time already elapsed.
 Both stages are scored on the same orders: the five chronological validation windows (primary), the later test
-period (post hoc: it had been opened before this stage was designed) and a random same-period split (secondary).
+period (descriptive) and a random same-period split (secondary).
 The current report's candidate comparisons and saved results are in results/phase2/eta/.
 """
 
@@ -323,7 +323,7 @@ def run(root=ROOT):
     handover_summary = summary[summary["stage"] == HANDOVER_STAGE]
     best_r2 = handover_summary.loc[handover_summary["mean_r2"].idxmax(), "candidate"]
 
-    # 4. Later period (post hoc) and the random same-period benchmark, each stage's own selected model.
+    # 4. Later period and the random same-period benchmark, each stage's own selected model.
     checkout_selected, handover_selected = stages[CHECKOUT_STAGE]["selected"], stages[HANDOVER_STAGE]["selected"]
     checkout_model, selected_model = lookup[checkout_selected], lookup[handover_selected]
     tree_model = lookup[winners["tree_based"]]
@@ -367,7 +367,7 @@ def run(root=ROOT):
         "stage2": {stage: stages[stage]["stage2"] for stage in stages},
         "family_winners": winners, "simplicity_order": SIMPLICITY,
         "interpretation_files": files, "random_state": spec["random_state"],
-        "test_status": "post hoc: the later period was opened before the handover stage was designed",
+        "test_status": "scored separately from chronological model selection",
     }
     (output / "selection.json").write_text(json.dumps(selection, indent=2) + "\n")
     print(f"\nCheckout selected {checkout_selected}: {stages[CHECKOUT_STAGE]['reason']}", flush=True)

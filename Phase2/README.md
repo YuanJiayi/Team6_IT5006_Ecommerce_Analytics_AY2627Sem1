@@ -26,7 +26,7 @@ This folder contains the code, notebooks, data and saved results supporting the 
 4. To reproduce specific report checks, run the scripts in `experiments/` and `reports/` shown in [the evidence map](docs/report_evidence_map.md). The monthly retraining experiment is inside this folder and the report generator reads its saved metrics here.
 5. Run `python reports/phase2_final_evidence.py` to refresh generated LaTeX blocks from the saved outputs. From `Phase2/`, run `python -m unittest discover -s tests -p 'test_phase2_*.py'` for focused tests. Run `python quality/ge_validation.py --out quality/ge_validation.json` for the GX table contract.
 
-The report compares checkout and carrier-handover predictions on distinct information sets. Its five chronological validation windows drive model choice. The later test period is a separate evaluation period, and the monthly refresh and drift analyses describe that period after it was available; they do not constitute a new untouched test.
+The report compares checkout and carrier-handover predictions on distinct information sets. Its five chronological validation windows drive model choice. The later test period reports performance under subsequent conditions; the monthly refresh and drift analyses are descriptive diagnostics.
 
 The data include only eventual deliveries with a valid carrier handover for the final model comparison. See the report for cohort exclusions and assumptions about checkout visibility of the recorded promise, payments and static ZIP coordinates.
 

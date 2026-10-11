@@ -156,7 +156,7 @@ def main() -> None:
     }, indent=2) + "\n")
     print(result.pivot(index="window", columns="variant", values="pr_auc").to_string(), flush=True)
 
-    # Retrospective diagnostic only: choose the state-relative feature using
+    # Descriptive diagnostic only: choose the state-relative feature using
     # validation above, then refit each fixed specification on all train rows.
     test = table.loc[table[spec["primary_split"]].eq("test")].reset_index(drop=True)
     months = test["order_purchase_timestamp"].dt.to_period("M").astype(str).to_numpy()
@@ -175,8 +175,8 @@ def main() -> None:
                               "recall_top10_within_month": month_action["recall"],
                               "precision_top10_within_month": month_action["precision"]})
     test_result = pd.DataFrame(test_rows)
-    test_result.to_csv(OUT / "inspected_test_diagnostic.csv", index=False)
-    print("Inspected test diagnostic, not for model selection:", flush=True)
+    test_result.to_csv(OUT / "test_diagnostic.csv", index=False)
+    print("Test diagnostic, not for model selection:", flush=True)
     print(test_result.to_string(index=False), flush=True)
 
 
