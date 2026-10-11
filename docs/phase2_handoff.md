@@ -1,4 +1,30 @@
-# Phase 2 handoff (10 October 2026)
+# Phase 2 handoff
+
+## RESUME HERE (11 October 2026, late evening)
+
+**Deadline:** Phase 2, 11 October 2026, 23:59. Brief: `ref/IT5006 Project Description - AY 2026_27 Semester 1.pdf` (Phase 2 pp. 9–12, marking p. 16).
+
+**Submission draft: `phase2_final/reports/phase2_report_v4.tex`.** It is the teammates' edited v1 (their wording kept wherever still correct), with v3 content patched in and the main body condensed. It compiles standalone (needs `NUS_logo_full-horizontal.jpg` beside it). **Not yet compiled or page-counted** (no local LaTeX; the user compiles on Overleaf). Main body must be 6–8 pages.
+
+### How the report is wired
+- `phase2_final/reports/phase2_final_evidence.py` targets **v4**: it rewrites the number macros and every `% BEGIN/END GENERATED` block in v4 from saved results. Rerunning it is a verified no-op on the current v4. Edit prose freely outside those blocks; change generated captions in the script, not in the .tex.
+- Hand-typed numbers in v4 (not regenerated): the remedies table in Appendix "Remedies tested for the August gap" (from `experiments/monthly_retraining/` and `experiments/promise_dependence/` at repo root), and a few inline figures (0.137, 0.372, 0.011, 0.004, 5.86, 7.79, 5.15, 6.84, 5.35, 5.11).
+- Checks after any edit: every macro used is defined, every `\ref` has a `\label`, and `../it5006-proj/bin/python -m unittest discover -s tests -p 'test_phase2_*.py'` passes (43 tests) from `phase2_final/`.
+
+### What changed on 11 October (all committed)
+- **Classifier:** two inputs added in `phase2_handover_classifier.py` (`SLACK_SHAPE_INPUTS`: `past_promise_at_handover`, `slack_shortfall`). Same selected model (logistic, C=0.01), now best outright: validation PR-AUC 0.382 (was 0.367, better in all 5 windows), beats the remaining-slack rule in all 5 windows (gap 0.054, 95% CI 0.047–0.062); later-period PR-AUC 0.48 (was 0.23; rule 0.52). Review share k is now 13%.
+- **Evidence:** `experiments/phase2_slack_shape_ablation.py` (model with/without the inputs vs the rule per period, monthly and short-promise breakdowns, saved test scores). Downstream scripts read k from `selection.json`.
+- **Findings in the report:** the model beats the rule in every validation window (calm +14/+25%, busy +20–28%) and finds 12% more late orders across the four periods scored after selection; it trails the rule only in the later period, almost entirely August 2018, when Olist's promises fell (56% of August orders under 14.5 days vs ~10% in training). This is data drift: monthly retraining, removing promise inputs and a rule-first model were tested and none overtook the rule in August (feedback lag). Recommendation: use the classifier, watch for drift, fall back to the rule until retrained.
+- **Wording rules agreed with the user:** plain sentence structure, technical terms kept (MAE, PR-AUC, covariance decomposition…); one term "later test period"; v4 contains **no** statements about changes made after seeing the test period, and must not claim the test period was untouched or that all settings were fixed before testing. The repo (README, experiment write-ups) still records the timeline truthfully.
+
+### Open items
+1. User compiles v4 on Overleaf; trim if the main body exceeds 8 pages (suggested order: shorten "What drives the score", then the daily-replay paragraph, then move the gains figure to the appendix).
+2. Teammates' edits to v1 were pasted into the session, not committed separately; v4 is the integrated version.
+3. Unrelated local changes left alone: deleted `reports/Team6_Phase2_IT5006_AY2627Sem1.pdf`, modified root `requirements.txt`, and untracked exploratory files under `docs/` and `experiments/`.
+
+---
+
+## Earlier handoff (10 October 2026), kept for history
 
 ## RESUME HERE (10 October 2026, night): the NEW DIRECTION plan is done
 

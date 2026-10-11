@@ -5,7 +5,7 @@ Run from the phase2_final folder:
 
 Reads the saved model outputs in results/phase2/{eta,handover} and the raw Olist tables. It fits no model.
 Writes results/phase2/final/*.csv and reports/generated/*.tex, then refreshes only the
-marked evidence blocks in reports/phase2_report_v2.tex so it also compiles standalone.
+marked evidence blocks in reports/phase2_report_v4.tex so it also compiles standalone.
 
 The regression estimates delivery time at checkout and updates it at carrier handover;
 the classifier ranks late-order risk at handover.
@@ -29,7 +29,7 @@ from phase2_eta import CHECKOUT_STAGE, HANDOVER_STAGE, load_stage_table  # noqa:
 RES = ROOT / "results" / "phase2"
 OUT = RES / "final"
 GEN = ROOT / "reports" / "generated"
-REPORT = ROOT / "reports" / "phase2_report_v2.tex"
+REPORT = ROOT / "reports" / "phase2_report_v4.tex"
 BAD_REVIEW = 2  # review score at or below this counts as a bad review
 MONTH_LABEL = {5: "May", 6: "Jun", 7: "Jul", 8: "Aug", 9: "Sep", 10: "Oct", 11: "Nov", 12: "Dec",
                1: "Jan", 2: "Feb", 3: "Mar", 4: "Apr"}
@@ -436,7 +436,7 @@ def fig_classifier_windows():
         for row in rows.itertuples()
     )
     text = (
-        "\\begin{table}[ht]\n\\centering\\small\n"
+        "\\begin{table}[H]\n\\centering\\small\n"
         "\\caption{The selected classifier in each validation window. The late rate of each window is the PR-AUC of a random list.}\n"
         "\\label{tab:classifier-windows}\n"
         "\\begin{tabular}{@{}lrrrrr@{}}\n\\toprule\n"
@@ -468,8 +468,8 @@ def fig_split_summary():
     windows = windows[(windows.variant == "primary") & (windows.candidate == sel_cls)]
     rows.append(f"Late prevalence & {train.loc[('classification', 'handover'), 'late_rate'] * 100:.1f}\\% & {windows.late_rate.mean() * 100:.1f}\\% & {tst_cls.late_rate * 100:.1f}\\% " + r"\\")
     text = (
-        "\\begin{table}[ht]\n\\centering\\small\n"
-        "\\caption{Chosen models on training data, validation (mean of five windows) and the final test period. The periods differ in late rate.}\n"
+        "\\begin{table}[H]\n\\centering\\small\n"
+        "\\caption{Chosen models on training data, validation (mean of five windows) and the later test period. The periods differ in late rate.}\n"
         "\\label{tab:split-summary}\n"
         "\\begin{tabular}{@{}lrrr@{}}\n\\toprule\n"
         "Metric & Training & Validation & Final test \\\\\n"
@@ -499,7 +499,7 @@ def fig_complete_daily_replay():
     put("FullDailyRecallRound", later["recall"], 0, pct=True)
     rows = []
     for row in data.itertuples():
-        label = f"W{int(row.period.split('_')[1]) + 1}" if row.period.startswith("validation_") else "Final test"
+        label = f"W{int(row.period.split('_')[1]) + 1}" if row.period.startswith("validation_") else "Later test"
         rows.append(
             f"{label} & {int(row.days_with_handovers)} & {int(row.orders):,} & "
             f"{row.late_rate * 100:.1f}\\% & {row.median_daily_flagged:.0f} & "
@@ -507,7 +507,7 @@ def fig_complete_daily_replay():
         )
     text = (
         "\\begin{table}[H]\n\\centering\\small\n"
-        "\\caption{Day-by-day replay of the chosen model, flagging the top \\ActShare{}\\% of handovers each day. Each row covers every valid handover in its calendar span. The final-period replay was designed after that period had been inspected. Counts show which orders would be flagged, not the effect of acting on them.}\n"
+        "\\caption{Day-by-day replay of the chosen model, flagging the top \\ActShare{}\\% of handovers each day. Each row covers every valid handover in its calendar span. Counts show which orders would be flagged, not the effect of acting on them.}\n"
         "\\label{tab:daily-replay}\n"
         "\\begin{tabular}{@{}lrrrrrr@{}}\n\\toprule\n"
         "Period & Active days & Orders & Late rate & Median flagged/day & Precision & Recall \\\\\n"
@@ -550,7 +550,7 @@ def fig_roc_pr_confusion():
 \end{{axis}}
 \end{{tikzpicture}}
 \end{{minipage}}
-\caption{{Final handover logistic classifier on {len(y):,} final-test-period orders ({int(y.sum())} late). Curves are sampled points for display; AUC and average precision (AP) use all predictions. Dashed lines show random ranking. The top-\ActShare{{}}\% review list is drawn separately each month, so it is not a single point on these curves.}}
+\caption{{Final handover logistic classifier on {len(y):,} later-test-period orders ({int(y.sum())} late). Curves are sampled points for display; AUC and average precision (AP) use all predictions. Dashed lines show random ranking. The top-\ActShare{{}}\% review list is drawn separately each month, so it is not a single point on these curves.}}
 \label{{fig:roc-pr}}
 \end{{figure}}""")
     (GEN / "fig_roc_pr.tex").write_text(text)
@@ -559,7 +559,7 @@ def fig_roc_pr_confusion():
     fn, tn = int((~flags & y).sum()), int((~flags & ~y).sum())
     (GEN / "fig_confusion.tex").write_text(rf"""\begin{{table}}[H]
 \centering\small
-\caption{{Final test period confusion counts for the top-\ActShare{{}}\% monthly review list. Counts show who would be flagged, before any action is taken.}}
+\caption{{Later test period confusion counts for the top-\ActShare{{}}\% monthly review list. Counts show who would be flagged, before any action is taken.}}
 \label{{tab:app-confusion}}
 \begin{{tabular}}{{@{{}}lrr@{{}}}}
 \toprule
@@ -589,7 +589,7 @@ def fig_period_value():
     (GEN / "fig_period_value.tex").write_text(
         "\\begin{table}[ht]\n\\centering\\small\n"
         "\\caption{Model against the remaining-slack rule at the same workload: the top \\ActShare{}\\% of each "
-        "window, or of each purchase month in the final test period (Later). W3--W5 and the final test period were evaluated after the model "
+        "window, or of each purchase month in the later test period (Later). W3--W5 and the later test period were evaluated after the model "
         "was chosen on earlier windows. A random list would catch \\ActShare{}\\% of late orders.}\n"
         "\\label{tab:period-value}\n\\begin{tabular}{@{}lrrrrrrr@{}}\n\\toprule\n"
         "& & Late already & \\multicolumn{2}{c}{PR-AUC} & \\multicolumn{3}{c}{Late orders caught} \\\\\n"
@@ -634,6 +634,15 @@ def fig_period_value():
     put("JunModelNotPast", lm.loc["2018-06", "caught_not_past_model"], 0)
     put("JunRuleNotPast", lm.loc["2018-06", "caught_not_past_rule"], 0)
     put("TrainPromised", lm["train_promised_days"].iloc[0], 1)
+    sp = pd.read_csv(RES / "handover/short_promise_model_vs_rule.csv").set_index("period")
+    put("ShortCut", sp["short_cut_days"].iloc[0], 1)
+    put("ShortShareAug", sp.loc["later_aug", "short_share"], 0, pct=True)
+    vw_short = sp.loc[["W1", "W2", "W3", "W4", "W5"]]
+    put("ShortValLateMin", vw_short["late"].min(), 0)
+    put("ShortValLateMax", vw_short["late"].max(), 0)
+    put("ShortValModelWins", int((vw_short["pr_auc_model"] > vw_short["pr_auc_rule"]).sum()), 0)
+    put("ShortTestPRModel", sp.loc["later", "pr_auc_model"], 3)
+    put("ShortTestPRRule", sp.loc["later", "pr_auc_rule"], 3)
     late_all = model.loc[order, "late"]
     put("DisruptLateShare", late_all[["W2", "W4", "W5"]].sum() / late_all.sum(), 0, pct=True)
     # Lift over random selection at the same share.

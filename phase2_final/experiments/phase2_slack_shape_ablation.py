@@ -5,7 +5,7 @@ without the two slack-shape inputs, against the remaining-slack rule, including 
 passed their promised date at handover in each period. Writes results/phase2/handover/slack_shape_ablation.csv and
 results/phase2/handover/past_promise_share.csv, and the selected model's later-period scores
 (test_scores.csv) for the report's ROC/PR curves and confusion counts, and a monthly model-versus-rule breakdown of the
-later period (later_monthly_model_vs_rule.csv).
+later period (later_monthly_model_vs_rule.csv), and a short-promise comparison (short_promise_model_vs_rule.csv).
 
 Run from the phase2_final folder:  python experiments/phase2_slack_shape_ablation.py
 """
@@ -90,6 +90,22 @@ def main():
     monthly = pd.DataFrame(monthly)
     monthly["train_promised_days"] = float(train[PROMISE].mean())
     monthly.to_csv(OUT / "later_monthly_model_vs_rule.csv", index=False)
+
+    # Short promises (below the training 10th percentile): model against rule among parcels not yet past their date.
+    short_cut = float(train[PROMISE].quantile(0.10))
+    short_rows = []
+    for period, fit_rows, rows_, _ in periods:
+        y = rows_[LABEL].to_numpy().astype(bool)
+        j = (rows_[PROMISE] < short_cut).to_numpy() & (rows_["past_promise_at_handover"] != 1).to_numpy()
+        m_s, r_s = rankers["with_slack_shape"](fit_rows, rows_), rankers["slack_rule"](fit_rows, rows_)
+        short_rows.append({"period": period, "short_cut_days": short_cut, "short_share": float((rows_[PROMISE] < short_cut).mean()),
+                           "orders": int(j.sum()), "late": int(y[j].sum()),
+                           "pr_auc_model": average_precision_score(y[j], m_s[j]) if y[j].any() else np.nan,
+                           "pr_auc_rule": average_precision_score(y[j], r_s[j]) if y[j].any() else np.nan})
+    aug = months == "2018-08"
+    short_rows.append({"period": "later_aug", "short_cut_days": short_cut,
+                       "short_share": float((test.loc[aug, PROMISE] < short_cut).mean())})
+    pd.DataFrame(short_rows).to_csv(OUT / "short_promise_model_vs_rule.csv", index=False)
 
     valid_rows = train.iloc[np.concatenate([v for _, v in folds])]
     share = []

@@ -1,6 +1,6 @@
 # Phase 2 final pipeline and evidence
 
-This folder holds the **active Phase 2 pipeline**. Start with the [version 2 LaTeX source](reports/phase2_report_v2.tex), which adds the slack-shape inputs and the remaining-slack benchmark; [version 1](reports/phase2_report.tex) and its [PDF](reports/phase2_report.pdf) are kept for reference with their original numbers. Then follow the chain below. The preparation, feature, model, evidence and test code in this folder is the working source. The scripts run from this folder without depending on their old locations in the repository.
+This folder holds the **active Phase 2 pipeline**. Start with the [version 4 LaTeX source](reports/phase2_report_v4.tex), the submission draft: teammates' edited v1, corrected and condensed with the slack-shape inputs, the remaining-slack benchmark and the short-promise drift analysis. [Version 3](reports/phase2_report_v3.tex) is a uniformly reworded alternative; [version 2](reports/phase2_report_v2.tex) and [version 1](reports/phase2_report.tex) (with its [PDF](reports/phase2_report.pdf)) are kept for reference. Only v4's numbers are refreshed. Then follow the chain below. The preparation, feature, model, evidence and test code in this folder is the working source. The scripts run from this folder without depending on their old locations in the repository.
 
 | Stage | Current work in this folder | What it establishes |
 | --- | --- | --- |
@@ -14,7 +14,7 @@ This folder holds the **active Phase 2 pipeline**. Start with the [version 2 LaT
 
 ## Reproduction order
 
-Run commands from **this folder's root**. The preparation notebook reads the raw Olist tables and product-category translation, then writes the prepared CSV and feature spec. The review CSV is also included because the report's customer-experience context uses it. Model and diagnostic scripts use only the paths in this folder; the final evidence script updates `reports/phase2_report_v2.tex` here.
+Run commands from **this folder's root**. The preparation notebook reads the raw Olist tables and product-category translation, then writes the prepared CSV and feature spec. The review CSV is also included because the report's customer-experience context uses it. Model and diagnostic scripts use only the paths in this folder; the final evidence script updates `reports/phase2_report_v4.tex` here.
 
 1. Install the Phase 2 dependencies from `requirements.txt`. The separate GX audit uses `quality/requirements.txt`.
 2. Run `notebooks/phase2/data_prep.ipynb` from a fresh kernel if rebuilding the prepared table. This **overwrites** its included prepared CSV and feature spec, so preserve the snapshot if comparing exact saved results.
