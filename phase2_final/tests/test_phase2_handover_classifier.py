@@ -40,6 +40,15 @@ class HandoverInputTests(unittest.TestCase):
         self.assertAlmostEqual(slack[0], 7.0)
         self.assertTrue(np.isnan(slack[1]))
 
+    def test_slack_shape_inputs(self):
+        frame = pd.DataFrame({"promised_days": [20.0, 5.0, 20.0], "handover_days": [3.0, 8.0, 3.0],
+                              "route_transit_90d_at_handover": [10.0, 4.0, np.nan]})
+        out = add_remaining_slack(frame)
+        self.assertEqual(out["past_promise_at_handover"].tolist(), [0.0, 1.0, 0.0])
+        self.assertAlmostEqual(out["slack_shortfall"][0], 0.0)   # slack +7
+        self.assertAlmostEqual(out["slack_shortfall"][1], 7.0)   # slack 5 - 8 - 4 = -7
+        self.assertTrue(np.isnan(out["slack_shortfall"][2]))
+
     def test_extension_history_is_strictly_before_handover(self):
         staged = self.staged
         staged["furthest_seller_id"] = "s1"

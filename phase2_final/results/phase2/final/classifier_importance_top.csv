@@ -1,7 +1,7 @@
 feature,mean_pr_auc_drop
-handover_days,0.1302985605532822
-remaining_slack,0.0852871408643315
-promised_days,0.0272983005885452
-route_typical_days,0.0189969390538808
-distance_km,0.0147765390265963
-customer_state,0.0123325139699361
+slack_shortfall,0.0883614325021912
+handover_days,0.0463590373732997
+remaining_slack,0.0394148092272137
+distance_km,0.0164616028831941
+route_typical_days,0.0164583126419071
+promised_days,0.0141336469979404

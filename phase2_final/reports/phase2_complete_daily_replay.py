@@ -4,13 +4,13 @@ Run from the phase2_final folder:
     python reports/phase2_complete_daily_replay.py
 
 This evaluation changes neither model nor features nor the validation-selected
-14% action share. Each validation fit uses only outcomes available before its
+validation-selected action share. Each validation fit uses only outcomes available before its
 purchase-window start; the later-period fit uses the mature pre-cutoff train.
 For a non-overlapping calendar span associated with each validation window,
 score *every* eligible carrier handover on each day, including orders outside
 the purchase-defined evaluation cohort. The later span runs from the fixed
 test cutoff through the last test-purchase calendar day. At day's end, rank
-that day's full eligible batch and flag ceil(14% of it) for next-day review.
+that day's full eligible batch and flag ceil(share of it) for next-day review.
 
 The replay was devised after the later period was inspected. Its later-period
 numbers are descriptive, not an independent, prospectively specified test.
@@ -126,8 +126,9 @@ def score_period(name: str, fit: pd.DataFrame, cohort: pd.DataFrame,
 def main() -> None:
     selection = json.loads((ROOT / "results/phase2/handover/selection.json").read_text())
     primary = selection["variants"]["primary"]
-    if primary["selected"] != "logistic_c0.01" or float(primary["k"]) != .14:
-        raise ValueError("Saved selected model/share changed; update this replay deliberately")
+    if primary["selected"] != "logistic_c0.01":
+        raise ValueError("Saved selected model changed; update this replay deliberately")
+    share = float(primary["k"])
     cohort, spec, _ = load_cohort(ROOT)
     promises = pd.read_csv(ROOT / "data/olist_orders_dataset.csv",
                            usecols=["order_id", "order_estimated_delivery_date"],
@@ -155,13 +156,13 @@ def main() -> None:
         start = valid["order_purchase_timestamp"].min().normalize() + pd.Timedelta(days=1)
         end = valid["order_purchase_timestamp"].max().normalize()
         result, days = score_period(f"validation_{window}", train.iloc[fit_idx],
-                                    cohort, start, end, features, log_features, .14)
+                                    cohort, start, end, features, log_features, share)
         summaries.append(result)
         daily_rows.append(days)
     start = pd.Timestamp(spec["primary_cutoff"])
     end = test["order_purchase_timestamp"].max().normalize()
     result, days = score_period("later_opened", train, cohort, start, end,
-                                features, log_features, .14)
+                                features, log_features, share)
     summaries.append(result)
     daily_rows.append(days)
 

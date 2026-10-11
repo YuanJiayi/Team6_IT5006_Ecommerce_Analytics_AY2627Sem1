@@ -3,7 +3,7 @@
 Run from the phase2_final folder:
     python reports/phase2_daily_queue_evidence.py
 
-The saved validation choice (unweighted logistic C=0.01, k=14%) is held fixed.
+The saved validation choice (unweighted logistic C=0.01 and its validation-selected share k) is held fixed.
 Each chronological validation model is fitted only on mature, earlier orders;
 the opened later test is scored after one full pre-test training fit. This is
 not another model-selection run.
@@ -95,7 +95,6 @@ def main() -> None:
     primary = selected["variants"]["primary"]
     assert primary["selected"] == "logistic_c0.01"
     share = float(primary["k"])
-    assert share == 0.14
 
     table, spec, _ = load_cohort(ROOT)
     train = table.loc[table[spec["primary_split"]].eq("train")].reset_index(drop=True)

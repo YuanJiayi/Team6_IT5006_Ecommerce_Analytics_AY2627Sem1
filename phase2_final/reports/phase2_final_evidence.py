@@ -5,7 +5,7 @@ Run from the phase2_final folder:
 
 Reads the saved model outputs in results/phase2/{eta,handover} and the raw Olist tables. It fits no model.
 Writes results/phase2/final/*.csv and reports/generated/*.tex, then refreshes only the
-marked evidence blocks in reports/phase2_report.tex so it also compiles standalone.
+marked evidence blocks in reports/phase2_report_v2.tex so it also compiles standalone.
 
 The regression estimates delivery time at checkout and updates it at carrier handover;
 the classifier ranks late-order risk at handover.
@@ -29,7 +29,7 @@ from phase2_eta import CHECKOUT_STAGE, HANDOVER_STAGE, load_stage_table  # noqa:
 RES = ROOT / "results" / "phase2"
 OUT = RES / "final"
 GEN = ROOT / "reports" / "generated"
-REPORT = ROOT / "reports" / "phase2_report.tex"
+REPORT = ROOT / "reports" / "phase2_report_v2.tex"
 BAD_REVIEW = 2  # review score at or below this counts as a bad review
 MONTH_LABEL = {5: "May", 6: "Jun", 7: "Jul", 8: "Aug", 9: "Sep", 10: "Oct", 11: "Nov", 12: "Dec",
                1: "Jan", 2: "Feb", 3: "Mar", 4: "Apr"}
@@ -195,14 +195,45 @@ def classifier_numbers():
     put("ClsCheckoutSelName", escape(checkout_sel))
     put("CheckoutPR", checkout.loc[checkout_sel, "pr_auc"], 3)
 
-    # gains at fixed shares (model only; the slack rule is not a report comparison)
+    # Remaining-slack rule: the operational benchmark the model must beat.
+    op = pd.read_csv(RES / "handover/validation_operating_point.csv")
+    op = op[op["variant"] == "primary"].set_index("ranking")
+    put("RuleValPR", op.loc["slack_rule", "pr_auc"], 3)
+    put("RuleTestPR", test.loc["slack_rule", "pr_auc"], 2)
+    put("RuleTestROC", test.loc["slack_rule", "roc_auc"], 2)
+    put("RuleTestPrec", test.loc["slack_rule", "precision"], 1, pct=True)
+    put("RuleTestRec", test.loc["slack_rule", "recall"], 0, pct=True)
+    put("RuleNetBenefit", test.loc["slack_rule", "net_benefit_per_order"], 3)
+    put("RuleTestFone", test.loc["slack_rule", "f1"], 2)
+    gap = primary["value_test"]["model_minus_slack_rule"]["pr_auc"]
+    put("RuleGapPR", gap["difference"], 3)
+    put("RuleGapLow", gap["ci_low"], 3)
+    put("RuleGapHigh", gap["ci_high"], 3)
+    ablation = pd.read_csv(RES / "handover/slack_shape_ablation.csv")
+    windows = ablation[ablation["period"] != "later"].pivot(index="period", columns="ranking", values="pr_auc")
+    later = ablation[ablation["period"] == "later"].set_index("ranking")
+    put("ShapeValWith", windows["with_slack_shape"].mean(), 3)
+    put("ShapeValWithout", windows["without_slack_shape"].mean(), 3)
+    put("ShapeWinsWindows", int((windows["with_slack_shape"] > windows["without_slack_shape"]).sum()), 0)
+    put("ShapeBeatsRuleWindows", int((windows["with_slack_shape"] > windows["slack_rule"]).sum()), 0)
+    put("ShapeTestWith", later.loc["with_slack_shape", "pr_auc"], 2)
+    put("ShapeTestWithout", later.loc["without_slack_shape", "pr_auc"], 2)
+    put("ShapeRecallWith", later.loc["with_slack_shape", "recall_top10"], 0, pct=True)
+    put("ShapeRecallWithout", later.loc["without_slack_shape", "recall_top10"], 0, pct=True)
+    put("RuleRecallTen", later.loc["slack_rule", "recall_top10"], 0, pct=True)
+    past = pd.read_csv(RES / "handover/past_promise_share.csv").set_index("period")
+    put("PastPromiseVal", past.loc["validation", "late_already_past_promise"], 1, pct=True)
+    put("PastPromiseTest", past.loc["later", "late_already_past_promise"], 1, pct=True)
+    put("PastPromiseLateRate", past.loc["validation", "past_promise_late_rate"], 1, pct=True)
+
+    # gains at fixed shares
     g = gains[gains["variant"] == "primary"].set_index("share_acted")
     for share in (0.01, 0.05, 0.10, 0.20):
         tag = {0.01: "One", 0.05: "Five", 0.10: "Ten", 0.20: "Twenty"}[share]
         row = g.iloc[(g.index - share).to_series().abs().argmin()]
         put(f"Gain{tag}Model", row["model"], 0, pct=True)
         put(f"Prec{tag}Model", row["model"] * test.loc["model", "late_rate"] / share, 0, pct=True)
-    gains[gains["variant"] == "primary"][["share_acted", "model", "random"]].to_csv(
+    gains[gains["variant"] == "primary"][["share_acted", "model", "slack_rule", "random"]].to_csv(
         OUT / "classifier_gains_test.csv", index=False)
 
     top = imp.sort_values("mean_pr_auc_drop", ascending=False).head(6)
@@ -228,10 +259,18 @@ def classifier_numbers():
 def monthly_late_share(table):
     full = table.copy()
     full["month"] = full["order_purchase_timestamp"].dt.to_period("M")
-    monthly = full.groupby("month").agg(orders=("is_late", "size"), late_share=("is_late", "mean")).reset_index()
+    monthly = full.groupby("month").agg(orders=("is_late", "size"), late_share=("is_late", "mean"),
+                                        promised_days=("promised_days", "mean")).reset_index()
     monthly["month"] = monthly["month"].astype(str)
     monthly.to_csv(OUT / "monthly_late_share.csv", index=False)
     m = monthly.set_index("month")
+    put("PromJun", m.loc["2018-06", "promised_days"], 1)
+    put("PromAug", m.loc["2018-08", "promised_days"], 1)
+    # Promise length over the training and validation span with real volume (March 2017 to May 2018).
+    span = m.loc["2017-03":"2018-05", "promised_days"]
+    put("PromSpanMin", span.min(), 0)
+    put("PromSpanMax", span.max(), 0)
+    put("PromJul", m.loc["2018-07", "promised_days"], 1)
     put("BlackFridayLate", m.loc["2017-11", "late_share"], 0, pct=True)
     put("FebMarLate", float(np.average(m.loc[["2018-02", "2018-03"], "late_share"],
                                        weights=m.loc[["2018-02", "2018-03"], "orders"])), 0, pct=True)
@@ -324,7 +363,8 @@ def fig_gains(gains):
     g = gains[gains.variant == "primary"]
     step = max(len(g) // 40, 1)
     g = g.iloc[::step]
-    plots = [("model", "Late-warning model", "thick,blue!60!black"), ("random", "Random list", "thin,gray")]
+    plots = [("model", "Late-warning model", "thick,blue!60!black"), ("slack_rule", "Remaining-slack rule", "thick,orange!80!black,dashed"),
+             ("random", "Random list", "thin,gray")]
     body = "\n".join(rf"\addplot[{style},no marks] coordinates {{{coords(g['share_acted'] * 100, g[col] * 100)}}};" + f"\n\\addlegendentry{{{label}}}"
                      for col, label, style in plots)
     text = rf"""\begin{{tikzpicture}}
@@ -397,7 +437,7 @@ def fig_classifier_windows():
     )
     text = (
         "\\begin{table}[ht]\n\\centering\\small\n"
-        "\\caption{Selected classifier across chronological validation windows. Each late rate is the no-skill PR-AUC baseline; top-10\\% precision is an offline ranking measure.}\n"
+        "\\caption{The selected classifier in each validation window. The late rate of each window is the PR-AUC of a random list.}\n"
         "\\label{tab:classifier-windows}\n"
         "\\begin{tabular}{@{}lrrrrr@{}}\n\\toprule\n"
         "Window & Orders & Late rate & PR-AUC & ROC-AUC & Top-10\\% precision " + r"\\" + "\n"
@@ -429,10 +469,10 @@ def fig_split_summary():
     rows.append(f"Late prevalence & {train.loc[('classification', 'handover'), 'late_rate'] * 100:.1f}\\% & {windows.late_rate.mean() * 100:.1f}\\% & {tst_cls.late_rate * 100:.1f}\\% " + r"\\")
     text = (
         "\\begin{table}[ht]\n\\centering\\small\n"
-        "\\caption{Selected-model train--validate--test comparison. Train is apparent, in-sample fit; validation is the mean of five chronological windows; the previously inspected test describes later conditions. Periods and late prevalence differ.}\n"
+        "\\caption{Chosen models on training data, validation (mean of five windows) and the final test period. The periods differ in late rate.}\n"
         "\\label{tab:split-summary}\n"
         "\\begin{tabular}{@{}lrrr@{}}\n\\toprule\n"
-        "Metric & Train (apparent) & Validation & Later test \\\\\n"
+        "Metric & Training & Validation & Final test \\\\\n"
         "\\midrule\n" + "\n".join(rows) + "\n\\bottomrule\n\\end{tabular}\n\\end{table}\n"
     )
     (GEN / "fig_split_summary.tex").write_text(text)
@@ -455,9 +495,11 @@ def fig_complete_daily_replay():
         put(name, later[col], 0)
     put("FullDailyPrecision", later["precision"], 1, pct=True)
     put("FullDailyRecall", later["recall"], 1, pct=True)
+    put("FullDailyCaughtPerDay", later["caught"] / later["days_with_handovers"], 0)
+    put("FullDailyRecallRound", later["recall"], 0, pct=True)
     rows = []
     for row in data.itertuples():
-        label = f"W{int(row.period.split('_')[1]) + 1}" if row.period.startswith("validation_") else "Later period"
+        label = f"W{int(row.period.split('_')[1]) + 1}" if row.period.startswith("validation_") else "Final test"
         rows.append(
             f"{label} & {int(row.days_with_handovers)} & {int(row.orders):,} & "
             f"{row.late_rate * 100:.1f}\\% & {row.median_daily_flagged:.0f} & "
@@ -465,13 +507,185 @@ def fig_complete_daily_replay():
         )
     text = (
         "\\begin{table}[H]\n\\centering\\small\n"
-        "\\caption{Complete handover-day replay at the fixed validation-selected model and 14\\% review share. Each row contains all valid handovers in its calendar span, including purchases outside the original purchase-window scoring cohort. The later-period analysis was specified after that period had been inspected. Workload is per active handover day; results do not measure intervention effects.}\n"
+        "\\caption{Day-by-day replay of the chosen model, flagging the top \\ActShare{}\\% of handovers each day. Each row covers every valid handover in its calendar span. The final-period replay was designed after that period had been inspected. Counts show which orders would be flagged, not the effect of acting on them.}\n"
         "\\label{tab:daily-replay}\n"
         "\\begin{tabular}{@{}lrrrrrr@{}}\n\\toprule\n"
         "Period & Active days & Orders & Late rate & Median flagged/day & Precision & Recall \\\\\n"
         "\\midrule\n" + "\n".join(rows) + "\n\\bottomrule\n\\end{tabular}\n\\end{table}\n"
     )
     (GEN / "fig_complete_daily_replay.tex").write_text(text)
+
+
+def fig_roc_pr_confusion():
+    """ROC/PR curves and confusion counts of the selected model on the later period, from its saved scores."""
+    from sklearn.metrics import average_precision_score, precision_recall_curve, roc_auc_score, roc_curve
+    sys.path.insert(0, str(ROOT))
+    from phase2_handover_classifier import monthly_flags
+    k = load_json(RES / "handover/selection.json")["variants"]["primary"]["k"]
+    scores = pd.read_csv(RES / "handover/test_scores.csv")
+    y, s = scores["is_late"].to_numpy().astype(bool), scores["score"].to_numpy()
+    fpr, tpr, _ = roc_curve(y, s)
+    prec, rec, _ = precision_recall_curve(y, s)
+    pick = lambda n, m: np.unique(np.linspace(0, n - 1, m).round().astype(int))
+    roc_pts, pr_pts = pick(len(fpr), 70), pick(len(rec), 70)
+    roc = " ".join(f"({fpr[i]:.4f},{tpr[i]:.4f})" for i in roc_pts)
+    pr = " ".join(f"({rec[i]:.4f},{prec[i]:.4f})" for i in pr_pts[::-1])
+    rate = y.mean()
+    axis = r"width=\linewidth,height=5.1cm,xmin=0,xmax=1,ymin=0,ymax=1,title style={font=\small},tick label style={font=\scriptsize},label style={font=\scriptsize}"
+    text = (rf"""\begin{{figure}}[H]
+\centering
+\begin{{minipage}}{{0.49\linewidth}}\centering
+\begin{{tikzpicture}}
+\begin{{axis}}[{axis},xlabel={{False positive rate}},ylabel={{True positive rate}},title={{ROC (AUC = {roc_auc_score(y, s):.3f})}}]
+\addplot[thick,blue!65!black,no marks] coordinates {{{roc}}};
+\addplot[thin,gray,dashed,no marks] coordinates {{(0,0) (1,1)}};
+\end{{axis}}
+\end{{tikzpicture}}
+\end{{minipage}}\hfill
+\begin{{minipage}}{{0.49\linewidth}}\centering
+\begin{{tikzpicture}}
+\begin{{axis}}[{axis},xlabel={{Recall}},ylabel={{Precision}},title={{PR (AP = {average_precision_score(y, s):.3f})}}]
+\addplot[thick,blue!65!black,no marks] coordinates {{{pr}}};
+\addplot[thin,gray,dashed,no marks] coordinates {{(0,{rate:.4f}) (1,{rate:.4f})}};
+\end{{axis}}
+\end{{tikzpicture}}
+\end{{minipage}}
+\caption{{Final handover logistic classifier on {len(y):,} final-test-period orders ({int(y.sum())} late). Curves are sampled points for display; AUC and average precision (AP) use all predictions. Dashed lines show random ranking. The top-\ActShare{{}}\% review list is drawn separately each month, so it is not a single point on these curves.}}
+\label{{fig:roc-pr}}
+\end{{figure}}""")
+    (GEN / "fig_roc_pr.tex").write_text(text)
+    flags = monthly_flags(s, scores["month"].to_numpy(), k)
+    tp, fp = int((flags & y).sum()), int((flags & ~y).sum())
+    fn, tn = int((~flags & y).sum()), int((~flags & ~y).sum())
+    (GEN / "fig_confusion.tex").write_text(rf"""\begin{{table}}[H]
+\centering\small
+\caption{{Final test period confusion counts for the top-\ActShare{{}}\% monthly review list. Counts show who would be flagged, before any action is taken.}}
+\label{{tab:app-confusion}}
+\begin{{tabular}}{{@{{}}lrr@{{}}}}
+\toprule
+& Actually late & Actually on time \\
+\midrule
+Selected for review & {tp:,} & {fp:,} \\
+Not selected & {fn:,} & {tn:,} \\
+\bottomrule
+\end{{tabular}}
+\end{{table}}""")
+
+
+def fig_period_value():
+    """Model against the remaining-slack rule in every period at the same review share, plus walk-forward selection."""
+    k = load_json(RES / "handover/selection.json")["variants"]["primary"]["k"]
+    d = pd.read_csv(RES / "handover/slack_shape_ablation.csv")
+    model = d[d.ranking == "with_slack_shape"].set_index("period")
+    rule = d[d.ranking == "slack_rule"].set_index("period")
+    order = ["W1", "W2", "W3", "W4", "W5", "later"]
+    rows = []
+    for period in order:
+        m, r = model.loc[period], rule.loc[period]
+        label = "Later" if period == "later" else period
+        rows.append(f"{label} & {m.late / m.orders * 100:.1f}\\% & {m.late_past_promise / m.late * 100:.0f}\\% & "
+                    f"{m.pr_auc:.3f} & {r.pr_auc:.3f} & {int(m.caught_at_k):,} & {int(r.caught_at_k):,} & "
+                    f"{m.late * k:,.0f} " + r"\\")
+    (GEN / "fig_period_value.tex").write_text(
+        "\\begin{table}[ht]\n\\centering\\small\n"
+        "\\caption{Model against the remaining-slack rule at the same workload: the top \\ActShare{}\\% of each "
+        "window, or of each purchase month in the final test period (Later). W3--W5 and the final test period were evaluated after the model "
+        "was chosen on earlier windows. A random list would catch \\ActShare{}\\% of late orders.}\n"
+        "\\label{tab:period-value}\n\\begin{tabular}{@{}lrrrrrrr@{}}\n\\toprule\n"
+        "& & Late already & \\multicolumn{2}{c}{PR-AUC} & \\multicolumn{3}{c}{Late orders caught} \\\\\n"
+        "\\cmidrule(lr){4-5}\\cmidrule(l){6-8}\n"
+        "Period & Late rate & past date & Model & Rule & Model & Rule & Random \\\\\n\\midrule\n"
+        + "\n".join(rows) + "\n\\bottomrule\n\\end{tabular}\n\\end{table}\n")
+    oos = ["W3", "W4", "W5", "later"]
+    put("OosModelCaught", model.loc[oos, "caught_at_k"].sum(), 0)
+    put("OosRuleCaught", rule.loc[oos, "caught_at_k"].sum(), 0)
+    put("OosGainPct", (model.loc[oos, "caught_at_k"].sum() / rule.loc[oos, "caught_at_k"].sum() - 1), 0, pct=True)
+    put("OosWins", int((model.loc[oos, "caught_at_k"] > rule.loc[oos, "caught_at_k"]).sum()), 0)
+    put("WFiveModelCaught", model.loc["W5", "caught_at_k"], 0)
+    put("WFiveRuleCaught", rule.loc["W5", "caught_at_k"], 0)
+    put("WTwoModelCaught", model.loc["W2", "caught_at_k"], 0)
+    put("WTwoRuleCaught", rule.loc["W2", "caught_at_k"], 0)
+    put("LaterModelCaught", model.loc["later", "caught_at_k"], 0)
+    put("LaterRuleCaught", rule.loc["later", "caught_at_k"], 0)
+    windows = order[:5]
+    gains = model.loc[windows, "caught_at_k"] / rule.loc[windows, "caught_at_k"] - 1
+    put("ValGainMin", gains.min(), 0, pct=True)
+    put("ValGainMax", gains.max(), 0, pct=True)
+    put("LaterLossPct", 1 - model.loc["later", "caught_at_k"] / rule.loc["later", "caught_at_k"], 0, pct=True)
+    # Calm (under 7% late) versus busy validation windows, by the share of late orders.
+    rate = model.loc[windows, "late"] / model.loc[windows, "orders"]
+    calm, busy = gains[rate < 0.07], gains[rate >= 0.07]
+    put("CalmWindows", " and ".join(calm.index), "")
+    put("CalmGainMin", calm.min(), 0, pct=True)
+    put("CalmGainMax", calm.max(), 0, pct=True)
+    put("BusyGainMin", busy.min(), 0, pct=True)
+    put("BusyGainMax", busy.max(), 0, pct=True)
+    put("CalmRateMax", rate[rate < 0.07].max(), 0, pct=True)
+    put("BusyRateMin", rate[rate >= 0.07].min(), 0, pct=True)
+    put("BusyRateMax", rate[rate >= 0.07].max(), 0, pct=True)
+    past_share = model.loc[windows, "late_past_promise"] / model.loc[windows, "late"]
+    put("PastPromiseWinMin", past_share.min(), 0, pct=True)
+    put("PastPromiseWinMax", past_share.max(), 0, pct=True)
+    lm = pd.read_csv(RES / "handover/later_monthly_model_vs_rule.csv").set_index("month")
+    if (lm["past_flagged_model"] != lm["past_orders"]).any():
+        raise ValueError("Expected the model to flag every parcel already past its promised date")
+    put("AugModelNotPast", lm.loc["2018-08", "caught_not_past_model"], 0)
+    put("AugRuleNotPast", lm.loc["2018-08", "caught_not_past_rule"], 0)
+    put("JunModelNotPast", lm.loc["2018-06", "caught_not_past_model"], 0)
+    put("JunRuleNotPast", lm.loc["2018-06", "caught_not_past_rule"], 0)
+    put("TrainPromised", lm["train_promised_days"].iloc[0], 1)
+    late_all = model.loc[order, "late"]
+    put("DisruptLateShare", late_all[["W2", "W4", "W5"]].sum() / late_all.sum(), 0, pct=True)
+    # Lift over random selection at the same share.
+    put("LaterLift", model.loc["later", "caught_at_k"] / (model.loc["later", "late"] * k), 1)
+    # Walk-forward: choose on windows before t only, score window t.
+    vw = pd.read_csv(RES / "handover/validation_windows.csv")
+    piv = vw[vw.variant == "primary"].pivot(index="window", columns="candidate", values="pr_auc")
+    picks, gaps = [], []
+    for t in range(2, 5):
+        pick = piv.loc[:t - 1].mean().idxmax()
+        picks.append(pick)
+        gaps.append(piv.loc[t].max() - piv.loc[t, pick])
+    selected = load_json(RES / "handover/selection.json")["variants"]["primary"]["selected"]
+    put("WalkSame", sum(p == selected for p in picks), 0)
+    put("WalkMaxGap", max(gaps), 3)
+    # Break-even: value of catching one late order, in review costs, at which the selected share pays for itself.
+    op = pd.read_csv(RES / "handover/validation_operating_point.csv")
+    op = op[op.variant == "primary"].set_index("ranking")
+    test = pd.read_csv(RES / "handover/test_metrics.csv")
+    test = test[test.variant == "primary"].set_index("ranking")
+    put("BreakEvenVal", 1 / op.loc["model", "precision"], 1)
+    put("BreakEvenTest", 1 / test.loc["model", "precision"], 1)
+    put("BreakEvenRandomTest", 1 / test.loc["model", "late_rate"], 0)
+    sens = pd.read_csv(RES / "handover/sensitivity_validation.csv")
+    put("ValNetBenefit", sens[(sens.variant == "primary") & (sens.benefit_ratio == 5.0)]["validation_net_benefit_per_order"].iloc[0], 3)
+
+
+def fig_family_summary():
+    """Main-text comparison: simplest and best-tuned candidate per family, and the rule benchmark."""
+    val = pd.read_csv(RES / "handover/validation_summary.csv")
+    val = val[val.variant == "primary"].set_index("candidate")
+    families = [("Linear", "logistic_unregularized", [c for c in val.index if c.startswith("logistic")]),
+                ("Tree", "tree_plain", [c for c in val.index if c.startswith("tree")]),
+                ("Forest", None, [c for c in val.index if c.startswith("forest")]),
+                ("Boosting", None, [c for c in val.index if c.startswith("boost")])]
+    rows = []
+    for family, plain, members in families:
+        best = val.loc[members, "pr_auc"].idxmax()
+        for name, role in ([(plain, "simplest")] if plain else []) + [(best, "best tuned")]:
+            r = val.loc[name]
+            rows.append(f"{family} & {escape(name)} ({role}) & {r.pr_auc:.3f} & {r.roc_auc:.3f} & {r.recall_top10 * 100:.0f}\\% " + r"\\")
+    abl = pd.read_csv(RES / "handover/slack_shape_ablation.csv")
+    rule = abl[(abl.ranking == "slack_rule") & (abl.period != "later")][["pr_auc", "roc_auc", "recall_top10"]].mean()
+    rows.append(f"Rule & remaining slack (benchmark) & {rule.pr_auc:.3f} & {rule.roc_auc:.3f} & {rule.recall_top10 * 100:.0f}\\% " + r"\\")
+    (GEN / "fig_family_summary.tex").write_text(
+        "\\begin{table}[ht]\n\\centering\\small\n"
+        "\\caption{Classifiers by family, mean over five validation windows: the simplest version of each family and "
+        "its best tuned version, against the remaining-slack rule. Every configuration is in Appendix "
+        "Table~\\ref{tab:app-classifier}.}\n\\label{tab:family-summary}\n"
+        "\\begin{tabular}{@{}llrrr@{}}\n\\toprule\n"
+        "Family & Configuration & PR-AUC & ROC-AUC & Recall at top 10\\% \\\\\n\\midrule\n"
+        + "\n".join(rows) + "\n\\bottomrule\n\\end{tabular}\n\\end{table}\n")
 
 
 def write_macros():
@@ -525,6 +739,9 @@ def main():
     fig_classifier_windows()
     fig_split_summary()
     fig_complete_daily_replay()
+    fig_roc_pr_confusion()
+    fig_period_value()
+    fig_family_summary()
     write_macros()
     sync_standalone_report()
     print(f"{len(macros)} macros written to {GEN / 'numbers.tex'}")

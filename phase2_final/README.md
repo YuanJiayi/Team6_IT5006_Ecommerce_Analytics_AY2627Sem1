@@ -1,6 +1,6 @@
 # Phase 2 final pipeline and evidence
 
-This folder holds the **active Phase 2 pipeline**. Start with the [report PDF](reports/phase2_report.pdf) and its [LaTeX source](reports/phase2_report.tex), then follow the chain below. The preparation, feature, model, evidence and test code in this folder is the working source. The scripts run from this folder without depending on their old locations in the repository.
+This folder holds the **active Phase 2 pipeline**. Start with the [version 2 LaTeX source](reports/phase2_report_v2.tex), which adds the slack-shape inputs and the remaining-slack benchmark; [version 1](reports/phase2_report.tex) and its [PDF](reports/phase2_report.pdf) are kept for reference with their original numbers. Then follow the chain below. The preparation, feature, model, evidence and test code in this folder is the working source. The scripts run from this folder without depending on their old locations in the repository.
 
 | Stage | Current work in this folder | What it establishes |
 | --- | --- | --- |
@@ -14,13 +14,13 @@ This folder holds the **active Phase 2 pipeline**. Start with the [report PDF](r
 
 ## Reproduction order
 
-Run commands from **this folder's root**. The preparation notebook reads the raw Olist tables and product-category translation, then writes the prepared CSV and feature spec. The review CSV is also included because the report's customer-experience context uses it. Model and diagnostic scripts use only the paths in this folder; the final evidence script updates `reports/phase2_report.tex` here.
+Run commands from **this folder's root**. The preparation notebook reads the raw Olist tables and product-category translation, then writes the prepared CSV and feature spec. The review CSV is also included because the report's customer-experience context uses it. Model and diagnostic scripts use only the paths in this folder; the final evidence script updates `reports/phase2_report_v2.tex` here.
 
 1. Install the Phase 2 dependencies from `requirements.txt`. The separate GX audit uses `quality/requirements.txt`.
 2. Run `notebooks/phase2/data_prep.ipynb` from a fresh kernel if rebuilding the prepared table. This **overwrites** its included prepared CSV and feature spec, so preserve the snapshot if comparing exact saved results.
 3. Optionally run `python quality/ge_validation.py --out quality/ge_validation_reproduced.json` on the rebuilt table. Its saved JSON in this folder is the teammate's prior run, not a validation performed by this packaging step.
 4. Read `notebooks/phase2/regression.ipynb` and `notebooks/phase2/classification.ipynb` for concise, executed comparisons of the saved candidates and selections. The training scripts are the source of the model fits; run `python phase2_eta.py`, then `python phase2_handover_classifier.py` when a refit is needed. They rebuild the comparisons and write their saved result directories. Rerun the notebooks afterward to display the refreshed evidence.
-5. For the report's extra checks, run the four scripts listed in the **Additional report checks** row. Finally run `python reports/phase2_final_evidence.py` to refresh the marked report blocks and `reports/generated/`.
+5. For the report's extra checks, run the four scripts listed in the **Additional report checks** row and `python experiments/phase2_slack_shape_ablation.py`. Finally run `python reports/phase2_final_evidence.py` to refresh the marked report blocks and `reports/generated/`.
 
 For a quick verification without refitting models, run `python -m unittest discover -s tests -p 'test_phase2_*.py'` from this folder.
 

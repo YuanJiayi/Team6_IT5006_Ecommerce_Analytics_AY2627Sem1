@@ -14,8 +14,9 @@
   "groups": [
     {
       "group": "linear",
-      "baseline": "logistic_c1",
+      "baseline": "logistic_unregularized",
       "configs": [
+        "logistic_unregularized",
         "logistic_c1",
         "logistic_c1_bal",
         "logistic_c0.01",
@@ -71,8 +72,8 @@
   "variants": {
     "primary": {
       "selected": "logistic_c0.01",
-      "best_pr_auc_candidate": "forest_l50_sqrt",
-      "reason": "best forest_l50_sqrt (mean validation PR-AUC 0.3686); chosen logistic_c0.01 (0.3666), the simplest line-up entry within one standard error of the best",
+      "best_pr_auc_candidate": "logistic_c0.01",
+      "reason": "best logistic_c0.01 (mean validation PR-AUC 0.3823); chosen logistic_c0.01 (0.3823), the simplest line-up entry within one standard error of the best",
       "tuned": {
         "linear": "logistic_c0.01",
         "tree": "tree_d8_l100",
@@ -80,7 +81,7 @@
         "boost": "boost_lr0.03_n200_l20"
       },
       "lineup": [
-        "logistic_c1",
+        "logistic_unregularized",
         "logistic_c0.01",
         "tree_plain",
         "tree_d8_l100",
@@ -89,49 +90,49 @@
       ],
       "stage2": [
         {
-          "candidate": "logistic_c1",
-          "mean": 0.34288125574669,
-          "gap_to_best": 0.02569272736183409,
-          "se_of_gap": 0.006946515639027983,
+          "candidate": "logistic_unregularized",
+          "mean": 0.3540164359380194,
+          "gap_to_best": 0.028246574657084265,
+          "se_of_gap": 0.004886937905429834,
           "within_one_se": false
         },
         {
           "candidate": "logistic_c0.01",
-          "mean": 0.36656836929322234,
-          "gap_to_best": 0.002005613815301732,
-          "se_of_gap": 0.009523074156906276,
-          "within_one_se": true
-        },
-        {
-          "candidate": "tree_plain",
-          "mean": 0.13779529768559584,
-          "gap_to_best": 0.23077868542292826,
-          "se_of_gap": 0.015847660498813764,
-          "within_one_se": false
-        },
-        {
-          "candidate": "tree_d8_l100",
-          "mean": 0.308159538806844,
-          "gap_to_best": 0.060414444301680095,
-          "se_of_gap": 0.01652623042661241,
-          "within_one_se": false
-        },
-        {
-          "candidate": "forest_l50_sqrt",
-          "mean": 0.3685739831085241,
+          "mean": 0.3822630105951036,
           "gap_to_best": 0.0,
           "se_of_gap": 0.0,
           "within_one_se": true
         },
         {
+          "candidate": "tree_plain",
+          "mean": 0.1367088514723523,
+          "gap_to_best": 0.24555415912275133,
+          "se_of_gap": 0.012503917293482882,
+          "within_one_se": false
+        },
+        {
+          "candidate": "tree_d8_l100",
+          "mean": 0.3078047944534835,
+          "gap_to_best": 0.07445821614162007,
+          "se_of_gap": 0.0171033646068578,
+          "within_one_se": false
+        },
+        {
+          "candidate": "forest_l50_sqrt",
+          "mean": 0.3715422404996599,
+          "gap_to_best": 0.010720770095443689,
+          "se_of_gap": 0.004205678721414639,
+          "within_one_se": false
+        },
+        {
           "candidate": "boost_lr0.03_n200_l20",
-          "mean": 0.35441804382500985,
-          "gap_to_best": 0.014155939283514263,
-          "se_of_gap": 0.010119001766929075,
+          "mean": 0.3556261188523274,
+          "gap_to_best": 0.026636891742776225,
+          "se_of_gap": 0.009261550953849498,
           "within_one_se": false
         }
       ],
-      "k": 0.14,
+      "k": 0.13,
       "value_test": {
         "variant": "primary",
         "selected": "logistic_c0.01",
@@ -139,14 +140,14 @@
         "seed": 42,
         "model_minus_slack_rule": {
           "pr_auc": {
-            "difference": 0.03869737667933952,
-            "ci_low": 0.02938473086890319,
-            "ci_high": 0.047547543134959826
+            "difference": 0.05439201185537951,
+            "ci_low": 0.047305939637281136,
+            "ci_high": 0.061812577838012785
           },
           "recall_top10": {
-            "difference": 0.058815209544915835,
-            "ci_low": 0.04527766752075233,
-            "ci_high": 0.07249171020875113
+            "difference": 0.05602654049822464,
+            "ci_low": 0.04203344288878447,
+            "ci_high": 0.06925634597435709
           }
         },
         "gate_2_pass": true
@@ -164,10 +165,10 @@
     },
     "stage2": [
       {
-        "candidate": "logistic_c1",
-        "mean": 0.19129585357354423,
-        "gap_to_best": 0.022068464871814273,
-        "se_of_gap": 0.005975313340551306,
+        "candidate": "logistic_unregularized",
+        "mean": 0.18770460787988932,
+        "gap_to_best": 0.02565971056546921,
+        "se_of_gap": 0.0064984964384681605,
         "within_one_se": false
       },
       {
@@ -179,9 +180,9 @@
       },
       {
         "candidate": "tree_plain",
-        "mean": 0.11003145667938723,
-        "gap_to_best": 0.1033328617659713,
-        "se_of_gap": 0.03137369369178561,
+        "mean": 0.10988976531304347,
+        "gap_to_best": 0.10347455313231506,
+        "se_of_gap": 0.031429870743461964,
         "within_one_se": false
       },
       {
@@ -193,9 +194,9 @@
       },
       {
         "candidate": "forest_l50_sqrt",
-        "mean": 0.2021146600435169,
-        "gap_to_best": 0.011249658401841606,
-        "se_of_gap": 0.006816696623786792,
+        "mean": 0.20209115317759907,
+        "gap_to_best": 0.011273165267759466,
+        "se_of_gap": 0.006813545678453325,
         "within_one_se": false
       },
       {
@@ -213,5 +214,5 @@
   },
   "extension_run": false,
   "counterfactual_simulation": "not implemented in this run (depends on the promise engine output)",
-  "runtime_seconds": 1791.1
+  "runtime_seconds": 796.6
 }

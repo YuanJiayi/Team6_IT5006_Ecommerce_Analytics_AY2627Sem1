@@ -1,0 +1,18 @@
+\begin{table}[ht]
+\centering\small
+\caption{Classifiers by family, mean over five validation windows: the simplest version of each family and its best tuned version, against the remaining-slack rule. Every configuration is in Appendix Table~\ref{tab:app-classifier}.}
+\label{tab:family-summary}
+\begin{tabular}{@{}llrrr@{}}
+\toprule
+Family & Configuration & PR-AUC & ROC-AUC & Recall at top 10\% \\
+\midrule
+Linear & logistic\_unregularized (simplest) & 0.354 & 0.736 & 34\% \\
+Linear & logistic\_c0.01 (best tuned) & 0.382 & 0.774 & 36\% \\
+Tree & tree\_plain (simplest) & 0.137 & 0.559 & 21\% \\
+Tree & tree\_d8\_l100 (best tuned) & 0.308 & 0.684 & 32\% \\
+Forest & forest\_l50\_sqrt (best tuned) & 0.372 & 0.750 & 34\% \\
+Boosting & boost\_lr0.03\_n200\_l20 (best tuned) & 0.356 & 0.743 & 33\% \\
+Rule & remaining slack (benchmark) & 0.328 & 0.697 & 30\% \\
+\bottomrule
+\end{tabular}
+\end{table}

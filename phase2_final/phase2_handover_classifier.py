@@ -60,6 +60,8 @@ BENEFIT_SENSITIVITY = (2.0, 10.0, 20.0)
 TOP_SHARE = 0.10
 BOOTSTRAPS, BOOTSTRAP_SEED = 1000, 42
 HANDOVER_INPUTS = ["approval_days", "handover_days", "route_transit_90d_at_handover", "remaining_slack"]
+# Lateness flips where slack crosses zero; a linear model needs these two inputs to represent that turning point.
+SLACK_SHAPE_INPUTS = ["past_promise_at_handover", "slack_shortfall"]
 EXTENSION_INPUTS = ["zip3_transit_90d_at_handover", "seller_handover_90d_at_handover"]
 HISTORY_DAYS = 90
 ZIP_PRIOR_STRENGTH, SELLER_PRIOR_STRENGTH = 20, 10
@@ -69,9 +71,15 @@ SELLER_HANDOVER_RANGE = (0, 60)  # same validity range as the frozen seller_ship
 # ---------------------------------------------------------------------------------------------- features
 
 def add_remaining_slack(table):
-    """promised_days - handover_days - route_transit_90d_at_handover; NaN where transit history is unknown."""
+    """promised_days - handover_days - route_transit_90d_at_handover; NaN where transit history is unknown.
+
+    Also adds the slack-shape inputs: whether the promise had already passed at handover, and how many days the
+    remaining slack falls below zero (0 when it is positive; NaN where transit history is unknown).
+    """
     out = table.copy()
     out["remaining_slack"] = out[PROMISE] - out["handover_days"] - out["route_transit_90d_at_handover"]
+    out["past_promise_at_handover"] = (out["handover_days"] > out[PROMISE]).astype(float)
+    out["slack_shortfall"] = (-out["remaining_slack"]).clip(lower=0)
     return out
 
 
@@ -111,7 +119,7 @@ def variant_spec(spec, extra=(), handover=True):
     """Feature contract for a variant: spec features, plus handover inputs and optional extras."""
     changed = stage_spec(spec, "handover") if handover else copy.deepcopy(spec)
     if handover:
-        changed["numeric_features"] = changed["numeric_features"] + ["remaining_slack"]
+        changed["numeric_features"] = changed["numeric_features"] + ["remaining_slack", *SLACK_SHAPE_INPUTS]
     changed["numeric_features"] = changed["numeric_features"] + list(extra)
     return changed
 
