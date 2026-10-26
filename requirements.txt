@@ -1,0 +1,19 @@
+# Full project: modelling, notebooks, tests and the dashboard.
+# The deployed Streamlit app installs deployment/app/requirements.txt instead.
+numpy>=2.5,<3
+pandas>=3.0,<3.1
+scikit-learn==1.9.1
+threadpoolctl>=3.7,<4
+ipykernel
+
+# Phase 1 EDA notebooks and dashboard
+streamlit
+altair
+matplotlib
+seaborn
+folium
+branca
+jinja2
+ipython
+scipy
+pyarrow
