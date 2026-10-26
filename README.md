@@ -19,7 +19,7 @@ src/
   reporting/      Scripts that generate report numbers, tables and figures from saved outputs
   quality/        Great Expectations contract for the prepared table
 deployment/
-  api/            FastAPI model service (Phase 3, to be built)
+  api/            FastAPI model service; models/ holds the saved pipelines (service to be built)
   app/            Streamlit app (Phase 1 dashboard now; prediction tabs to come)
 docs/
   phase1/         Submitted Phase 1 report, marker feedback, validation notes
@@ -60,6 +60,7 @@ All commands run from the repository root.
 | Run the dashboard | `streamlit run deployment/app/app.py` |
 | Refit the delivery-time models | `python -m olist.eta` |
 | Refit the late-risk classifier | `python -m olist.handover_classifier` |
+| Save the deployment models | `python -m olist.export_models` |
 | Refresh report numbers and figures | `python src/reporting/final_evidence.py` |
 | Check the prepared table contract | `python src/quality/ge_validation.py` (needs `src/quality/requirements.txt`) |
 
