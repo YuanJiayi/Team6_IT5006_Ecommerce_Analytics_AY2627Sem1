@@ -1,7 +1,7 @@
 """Regression Pipeline and metric helpers used by the final two-stage ETA.
 
 The standalone checkout-only experiment is development history. If needed,
-run it from the Phase2 folder:
+run it from the repository root:
     python -m olist.regression              validation stage only (no test rows are scored or read)
     python -m olist.regression --score-test the spec's test step; run once, after the selection is recorded
 """

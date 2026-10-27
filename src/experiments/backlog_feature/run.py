@@ -1,6 +1,6 @@
 """Validation-only as-of-handover backlog feature experiment.
 
-Run from Phase2: python experiments/backlog_feature/run.py
+Run from the repository root: python src/experiments/backlog_feature/run.py
 The existing selected logistic fit and five chronological windows remain fixed.
 """
 

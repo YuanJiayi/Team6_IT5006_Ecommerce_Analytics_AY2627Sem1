@@ -1,7 +1,7 @@
 """Fixed-k handover-day batch sensitivity for the selected late-risk classifier.
 
-Run from the Phase2 folder:
-    python reports/phase2_daily_queue_evidence.py
+Run from the repository root:
+    python src/reporting/daily_queue_evidence.py
 
 The saved validation choice (unweighted logistic C=0.01 and its validation-selected share k) is held fixed.
 Each chronological validation model is fitted only on mature, earlier orders;

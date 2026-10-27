@@ -4,12 +4,12 @@ Compares, on the same five validation windows and the later period, the selected
 without the two slack-shape inputs, against the remaining-slack rule. Both fitted variants retain the relative
 buyer-state backlog input. The comparison includes late orders caught at the validation-selected review share k.
 It also records how many late orders had already
-passed their promised date at handover in each period. Writes results/phase2/handover/slack_shape_ablation.csv and
-results/phase2/handover/past_promise_share.csv, and the selected model's later-period scores
+passed their promised date at handover in each period. Writes data/outputs/phase2/handover/slack_shape_ablation.csv and
+data/outputs/phase2/handover/past_promise_share.csv, and the selected model's later-period scores
 (test_scores.csv) for the report's ROC/PR curves and confusion counts, and a monthly model-versus-rule breakdown of the
 later period (later_monthly_model_vs_rule.csv), and a short-promise comparison (short_promise_model_vs_rule.csv).
 
-Run from the Phase2 folder:  python experiments/phase2_slack_shape_ablation.py
+Run from the repository root:  python src/experiments/slack_shape_ablation.py
 """
 import json
 import sys

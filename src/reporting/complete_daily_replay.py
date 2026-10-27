@@ -1,7 +1,7 @@
 """Complete-calendar-day replay of the *already selected* handover classifier.
 
-Run from the Phase2 folder:
-    python reports/phase2_complete_daily_replay.py
+Run from the repository root:
+    python src/reporting/complete_daily_replay.py
 
 This evaluation uses an illustrative top-10% review workload. It does not change
 the selected model or its features. Each validation fit uses only outcomes available before its

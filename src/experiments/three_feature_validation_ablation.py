@@ -1,7 +1,7 @@
 """Validation-only ablation of the three engineered handover slack inputs.
 
 Run from the repository root:
-    python Phase2/experiments/phase2_three_feature_validation_ablation.py
+    python src/experiments/three_feature_validation_ablation.py
 
 Keeps the selected logistic configuration, relative buyer-state backlog, all other inputs, and the original
 five chronological validation folds fixed. No later-period rows are scored.

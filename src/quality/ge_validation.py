@@ -26,6 +26,12 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
+
+def repo_relative(path) -> str:
+    """Record repository files by their repository path, not this machine's absolute path."""
+    resolved = Path(path).resolve()
+    return str(resolved.relative_to(REPO_ROOT)) if resolved.is_relative_to(REPO_ROOT) else str(path)
+
 import great_expectations as gx
 import great_expectations.expectations as gxe
 import pandas as pd
@@ -205,7 +211,7 @@ def main() -> None:
         "gx_core_version": gx.__version__,
         "table_sha256": hashlib.sha256(Path(args.table).read_bytes()).hexdigest(),
         "spec_sha256": hashlib.sha256(Path(args.spec).read_bytes()).hexdigest(),
-        "table": args.table, "rows": int(len(df)),
+        "table": repo_relative(args.table), "rows": int(len(df)),
         "contract_success": bool(contract.success),
         "contract_expectations": contract_rows,
         "n_contract_passed": int(sum(r["success"] for r in contract_rows)),

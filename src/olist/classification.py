@@ -2,7 +2,7 @@
 
 The standalone checkout-classification experiment below is development history;
 the final handover classifier imports its feature and Pipeline helpers.
-Run the standalone experiment from the Phase2 folder if needed:
+Run the standalone experiment from the repository root if needed:
     python -m olist.classification
 
 Order of work (all on primary training and validation rows only):

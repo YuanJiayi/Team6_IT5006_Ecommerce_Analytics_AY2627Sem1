@@ -1,6 +1,6 @@
 """Exploratory as-of carrier-handover replay of logistic retraining cadence.
 
-Run from Phase2 with ``python experiments/monthly_retraining/run.py``.
+Run from the repository root with ``python src/experiments/monthly_retraining/run.py``.
 This does not change the selected model. It refreshes the metrics that the report evidence script reads.
 """
 

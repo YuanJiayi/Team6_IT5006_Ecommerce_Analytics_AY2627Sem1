@@ -1,11 +1,11 @@
 """Evidence for the final Phase 2 report: tables, number macros and pgfplots figures.
 
-Run from the Phase2 folder:
-    python reports/phase2_final_evidence.py
+Run from the repository root:
+    python src/reporting/final_evidence.py
 
-Reads the saved model outputs in results/phase2/{eta,handover} and the raw Olist tables. It fits no model.
-Writes results/phase2/final/*.csv and reports/generated/*.tex, then refreshes only the
-marked evidence blocks in reports/phase2_report_v4.tex so it also compiles standalone.
+Reads the saved model outputs in data/outputs/phase2/{eta,handover} and the raw Olist tables. It fits no model.
+Writes data/outputs/phase2/final/*.csv and docs/phase2/report/generated/*.tex, then refreshes only the
+marked evidence blocks in docs/phase2/report/phase2_report_v4.tex so it also compiles standalone.
 
 The regression estimates delivery time at checkout and updates it at carrier handover;
 the classifier ranks late-order risk at handover.

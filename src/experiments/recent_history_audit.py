@@ -1,8 +1,8 @@
 """Exploratory, read-only comparison of recent histories and a handover update.
 
 Outputs are descriptive diagnostics; model choice uses the chronological
-validation windows. Run from the Phase2 folder with the local
-project Python environment. Every history value is available strictly before
+validation windows. Run from the repository root with the local
+project Python environment: python src/experiments/recent_history_audit.py Every history value is available strictly before
 the purchase or handover being predicted.
 """
 

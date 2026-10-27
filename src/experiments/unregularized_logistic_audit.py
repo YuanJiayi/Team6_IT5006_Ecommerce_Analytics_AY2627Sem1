@@ -1,7 +1,7 @@
 """Validation-only check of the unregularized handover logistic baseline.
 
-Run from the Phase2 folder:
-    python experiments/phase2_unregularized_logistic_audit.py
+Run from the repository root:
+    python src/experiments/unregularized_logistic_audit.py
 
 Reuses the saved validation scores for the original candidate grid and fits only
 the new baseline on the same five chronological folds. It never opens the test

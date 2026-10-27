@@ -1,6 +1,6 @@
 """Apparent training scores for the saved Phase 2 selected models.
 
-Run from the Phase2 folder with ``python reports/phase2_train_fit_evidence.py``.
+Run from the repository root with ``python src/reporting/train_fit_evidence.py``.
 The script loads only rows assigned to the pre-test training split, fits each
 selected Pipeline on those rows, and scores those same rows. These are
 descriptive in-sample scores, not independent validation results. Model
