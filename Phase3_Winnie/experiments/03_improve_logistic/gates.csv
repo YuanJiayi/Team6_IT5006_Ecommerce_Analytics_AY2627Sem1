@@ -1,0 +1,2 @@
+candidate,role,val_pr_auc_diff,val_pr_auc_ci_low,val_recall_diff,val_recall_ci_low,gate_a,short_pr_auc_diff,short_paired_se,gate_b,test_pr_auc_diff,test_caught_diff,test_caught_not_past_diff,test_at_least_rule,test_clear_lead,gate_c,passes_all
+c0.01_window180_base,best_recent,0.06589642702293383,0.058768069520569205,0.07395529511011804,0.059926454768761635,True,-0.0007708472021846942,0.006696532949947348,True,-0.03133423997472273,-34,-34,False,False,False,False
