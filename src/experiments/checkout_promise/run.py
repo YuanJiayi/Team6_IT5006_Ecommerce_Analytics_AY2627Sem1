@@ -1,7 +1,7 @@
 """Checkout ETA -> promised date: what the checkout regression is worth as a promise-setting tool.
 
 Run from the repository root with ``python src/experiments/checkout_promise/run.py``.
-The ETA is the ridge (alpha=1000) checkout model without promised_days and promise_slack, so the promise it
+The ETA is the ridge (alpha=100) checkout model, the selected Phase 2 setting, without promised_days and promise_slack, so the promise it
 produces does not reuse Olist's promise. A promise is ceil(ETA + buffer), where the buffer is a quantile of
 recent residuals (actual calendar days - ETA). Outputs go to data/outputs/experiments/checkout_promise/.
 
@@ -26,7 +26,7 @@ from olist.paths import EXPERIMENT_OUTPUTS, RAW_DIR, REPO_ROOT  # noqa: E402
 from olist.regression import make_regression_pipeline  # noqa: E402
 
 HERE = EXPERIMENT_OUTPUTS / "checkout_promise"
-ALPHA = 1000.0
+ALPHA = 100.0
 PROMISE_FEATURES = ("promised_days", "promise_slack")
 MIN_GROUP = 100           # monthly cohort orders a group needs for its own quantile
 REGION = {**{s: "N" for s in "AC AP AM PA RO RR TO".split()},
@@ -88,8 +88,12 @@ def predict_all(t, spec):
     val = val[val.window.ge(0)]
     # Orders purchased after the last validation window and before the test cutoff: fitted only on outcomes
     # known when the gap starts, so the monthly cohorts that straddle it carry honest residuals.
+    # Orders bought before the test cutoff but delivered after it are outside the primary training split, yet
+    # many were delivered before a later month starts. They are the slow ones, so leaving them out of the
+    # monthly cohorts would shrink those buffers (about 1,900 May orders for July's buffer).
     gap_start = val.order_purchase_timestamp.max()
-    gap = train[train.order_purchase_timestamp > gap_start].copy()
+    late_outcome = t[t.split.eq("unavailable_at_cutoff")]
+    gap = pd.concat([train[train.order_purchase_timestamp > gap_start], late_outcome], ignore_index=True)
     known = train[train.outcome_available_at < gap_start]
     gap["eta"] = ridge(spec, noprom).fit(known[noprom], known[y]).predict(gap[noprom])
     test = t[t.split.eq("test")].copy()
@@ -383,7 +387,7 @@ def drift_gauge(d):
 
 
 def handover_gauge(spec):
-    """Evidence 6: checkout vs handover residuals on the handover cohort (both ridge alpha=1000)."""
+    """Evidence 6: checkout vs handover residuals on the handover cohort (both ridge alpha=100)."""
     from olist.eta import TARGET, chronological_folds, fit_predict, load_stage_table, stage_spec
     table, s, _ = load_stage_table(REPO_ROOT)
     s.setdefault("random_state", 42)
@@ -421,11 +425,15 @@ def replace_vs_threshold(d, target=0.035):
              "min(Olist, ours)": diff < 0, "max(Olist, ours)": diff > 0,
              "Lengthen all, shorten only if >=5 days shorter": (diff > 0) | (diff <= -5),
              "Lengthen all, shorten only if >=10 days shorter": (diff > 0) | (diff <= -10)}
+    # A rule is only worse if replacing every promise, with the target moved, is shorter at the same late rate.
+    curve = frontier(d, "test", TEST_MONTHS, targets=np.r_[0.005:0.15:0.0025])
     rows = []
     for name, use in rules.items():
         N = ol.where(~use, ours)
-        rows.append({"policy": name, "mean_promise": N.mean(), "late_rate": (a > N).mean(),
-                     "orders_changed": (N != ol).mean()})
+        late = (a > N).mean()
+        rows.append({"policy": name, "mean_promise": N.mean(), "late_rate": late,
+                     "orders_changed": (N != ol).mean(),
+                     "replace_all_promise_at_same_late": length_at(curve, late)})
     bins = pd.cut(diff, [-100, -10, -5, -1, 0, 4, 7, 100],
                   labels=["<=-10", "-9..-5", "-4..-1", "0", "+1..+4", "+5..+7", ">+7"])
     by_diff = pd.DataFrame({"diff": bins, "olist_late": a > ol, "ours_late": a > ours}).groupby(
@@ -630,8 +638,16 @@ def main():
     print("policy comparisons done", flush=True)
 
     final = overall.set_index("policy")
-    summary["headline_test"] = {"olist": final.loc["Olist"].to_dict(),
-                                "region_3.5pct": final.loc["Monthly, region buffer (3.5% target)"].to_dict()}
+    olist = final.loc["Olist"]
+    curve = frontier(d, "test", TEST_MONTHS, targets=np.r_[0.005:0.15:0.0025])
+    by_length = curve.sort_values("mean_promise")
+    summary["headline_test"] = {"olist": olist.to_dict(),
+                                "region_3.5pct": final.loc["Monthly, region buffer (3.5% target)"].to_dict(),
+                                # Read off the target sweep after the fact: what the policy can reach.
+                                "promise_at_olist_late_rate": length_at(curve, olist.late_rate),
+                                "late_rate_at_olist_promise": float(np.interp(olist.mean_promise, by_length.mean_promise,
+                                                                              by_length.late_rate)),
+                                "promise_at_2.8pct_late": length_at(curve, 0.028)}
     (HERE / "summary.json").write_text(json.dumps(summary, indent=2, default=float))
     figures(buffers, by_month)
     print(json.dumps(summary["headline_test"], indent=2, default=float))
