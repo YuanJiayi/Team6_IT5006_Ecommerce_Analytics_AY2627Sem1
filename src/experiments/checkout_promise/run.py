@@ -1,7 +1,7 @@
 """Checkout ETA -> promised date: what the checkout regression is worth as a promise-setting tool.
 
 Run from the repository root with ``python src/experiments/checkout_promise/run.py``.
-The ETA is the ridge (alpha=100) checkout model, the selected Phase 2 setting, without promised_days and promise_slack, so the promise it
+The ETA is the ridge (alpha=1000) checkout model, the team's selected setting after the extended grid, without promised_days and promise_slack, so the promise it
 produces does not reuse Olist's promise. A promise is ceil(ETA + buffer), where the buffer is a quantile of
 recent residuals (actual calendar days - ETA). Outputs go to data/outputs/experiments/checkout_promise/.
 
@@ -26,7 +26,7 @@ from olist.paths import EXPERIMENT_OUTPUTS, RAW_DIR, REPO_ROOT  # noqa: E402
 from olist.regression import make_regression_pipeline  # noqa: E402
 
 HERE = EXPERIMENT_OUTPUTS / "checkout_promise"
-ALPHA = 100.0
+ALPHA = 1000.0
 PROMISE_FEATURES = ("promised_days", "promise_slack")
 MIN_GROUP = 100           # monthly cohort orders a group needs for its own quantile
 REGION = {**{s: "N" for s in "AC AP AM PA RO RR TO".split()},
@@ -387,7 +387,7 @@ def drift_gauge(d):
 
 
 def handover_gauge(spec):
-    """Evidence 6: checkout vs handover residuals on the handover cohort (both ridge alpha=100)."""
+    """Evidence 6: checkout vs handover residuals on the handover cohort (both ridge alpha=1000)."""
     from olist.eta import TARGET, chronological_folds, fit_predict, load_stage_table, stage_spec
     table, s, _ = load_stage_table(REPO_ROOT)
     s.setdefault("random_state", 42)

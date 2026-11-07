@@ -18,18 +18,18 @@ def main():
     close(head["olist"]["mean_promise"], 22.05, 0.05)
     close(head["olist"]["late_rate"], 0.035, 0.001)
     # Includes the slow orders delivered after the cutoff in the monthly cohorts (July's buffer depends on them).
-    close(head["region_3.5pct"]["mean_promise"], 21.75, 0.1)
-    close(head["region_3.5pct"]["late_rate"], 0.0185, 0.002)
-    close(head["promise_at_olist_late_rate"], 18.55, 0.1)
-    close(head["late_rate_at_olist_promise"], 0.0175, 0.002)
-    close(head["promise_at_2.8pct_late"], 19.53, 0.1)
+    close(head["region_3.5pct"]["mean_promise"], 21.63, 0.1)
+    close(head["region_3.5pct"]["late_rate"], 0.0192, 0.002)
+    close(head["promise_at_olist_late_rate"], 18.61, 0.1)
+    close(head["late_rate_at_olist_promise"], 0.0181, 0.002)
+    close(head["promise_at_2.8pct_late"], 19.60, 0.1)
     # The recommended policy is shorter and less late than Olist on test.
     assert head["region_3.5pct"]["mean_promise"] < head["olist"]["mean_promise"]
     assert head["region_3.5pct"]["late_rate"] < head["olist"]["late_rate"]
 
     state = pd.read_csv(HERE / "accuracy_and_state.csv").set_index("split")
-    close(state.loc["val", "mae_ridge_no_promise"], 5.83, 0.02)
-    close(state.loc["val", "mae_ridge_full"], 5.81, 0.02)
+    close(state.loc["val", "mae_ridge_no_promise"], 5.78, 0.02)
+    close(state.loc["val", "mae_ridge_full"], 5.76, 0.02)
 
     months = pd.read_csv(HERE / "monthly_recalibration_by_month.csv")
     recal = months[months.policy.str.startswith("Monthly")]
