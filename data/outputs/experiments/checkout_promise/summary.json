@@ -1,0 +1,43 @@
+{
+  "bad_review_rate": {
+    "late": 0.6235699733584078,
+    "on_time": 0.09231577652806816
+  },
+  "uniform_baseline": {
+    "olist_late": 0.10667017497697671,
+    "olist_promise": 25.03712669385607,
+    "uniform_buffer": 11.527777777777777,
+    "uniform_promise": 24.213775965150784,
+    "saved_mean": 0.3149468922011657,
+    "saved_se": 0.28441705854424626,
+    "late_pp_per_day_shorter": 1.0993529584165287
+  },
+  "bad_reviews_per_100_orders_per_day_shorter": 0.5840358729566308,
+  "olist_differentiation": {
+    "corr_region_promise_vs_p90": 0.9149665848504702,
+    "corr_distance_quintile_promise_vs_p90": 0.9988475699971289,
+    "route_share_of_promise_variance": 0.4516811464364385,
+    "within_route_corr_olist": 0.17101696406785014,
+    "within_route_corr_eta": 0.3027278124520901
+  },
+  "fixed_validation_buffer_5pct": 18.738520408163264,
+  "seasonal_validation": {
+    "olist_late": 0.11849363616752442,
+    "olist_promise": 25.18798730315264,
+    "uniform_promise_at_olist_late": 25.304233476288086,
+    "region_promise_at_olist_late": 24.99460043371704
+  },
+  "headline_test": {
+    "olist": {
+      "mean_promise": 22.05030212260497,
+      "late_rate": 0.034808655683520116
+    },
+    "region_3.5pct": {
+      "mean_promise": 21.63115219749006,
+      "late_rate": 0.019211898982595673
+    },
+    "promise_at_olist_late_rate": 18.609828596349278,
+    "late_rate_at_olist_promise": 0.018081906479210385,
+    "promise_at_2.8pct_late": 19.598960341419673
+  }
+}

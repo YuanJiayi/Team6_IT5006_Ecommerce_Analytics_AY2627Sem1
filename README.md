@@ -1,9 +1,74 @@
 # IT5006 Group 6 — Olist delivery analytics
 
-The repository is organised by project phase. Start with the phase README for the report, executable work, saved results and reproduction instructions.
+We predict how long an Olist order will take to arrive (regression) and flag which parcels are at risk of missing their promised date when the carrier picks them up (classification). The stakeholder is Olist's operations team. Phase 1 explored the data and built a dashboard. Phase 2 built and compared the models. Phase 3 deploys them as an application.
 
-- [Phase 1: exploratory analysis and dashboard](Phase1/README.md)
-- [Phase 2: delivery-time estimation and late-order prioritisation](Phase2/README.md)
-- [Project description](ref/IT5006%20Project%20Description%20-%20AY%202026_27%20Semester%201.pdf)
+## Repository layout
 
-The phase folders contain the work used in the reports. Earlier experiments and drafts remain available in Git history and the existing branches. The raw Olist data are included within each phase so each folder can be run from its own root.
+```
+data/
+  raw/            Olist source CSVs (Canvas copy, unchanged)
+  geo/            Brazil boundary and state GeoJSON for the maps
+  processed/      Prepared tables: Phase 1 consolidated line items, Phase 2 order table and feature spec
+  outputs/        Saved results: phase1 map, phase2 model outputs, experiment and data-quality results
+notebooks/
+  phase1_eda/     Exploratory analysis notebooks
+  phase2_modelling/  Data preparation, regression and classification notebooks
+src/
+  olist/          Shared package: features, model training and selection, EDA helpers, map layers, paths
+  experiments/    Ablations and refresh checks cited by the Phase 2 report
+  reporting/      Scripts that generate report numbers, tables and figures from saved outputs
+  quality/        Great Expectations contract for the prepared table
+deployment/
+  api/            FastAPI model service; models/ holds the saved pipelines (service to be built)
+  app/            Streamlit app (Phase 1 dashboard now; prediction tabs to come)
+docs/
+  phase1/         Submitted Phase 1 report, marker feedback, validation notes
+  phase2/         Phase 2 report source, evidence map, assumptions
+  reference/      Course project description
+tests/            Unit and data-contract tests
+```
+
+## Setup
+
+Python 3.11 or later. From the repository root:
+
+```bash
+python3 -m venv it5006-proj
+```
+
+```bash
+source it5006-proj/bin/activate
+```
+
+```bash
+pip install -r requirements.txt
+```
+
+```bash
+pip install -e .
+```
+
+The last command makes the `olist` package in `src/` importable from any folder. Scripts under `src/experiments/`, `src/reporting/` and the dashboard also add `src/` to the import path themselves.
+
+## Common commands
+
+All commands run from the repository root.
+
+| Task | Command |
+| --- | --- |
+| Run all tests | `python -m unittest discover -s tests` |
+| Run the dashboard | `streamlit run deployment/app/app.py` |
+| Refit the delivery-time models | `python -m olist.eta` |
+| Refit the late-risk classifier | `python -m olist.handover_classifier` |
+| Save the deployment models | `python -m olist.export_models` |
+| Refresh report numbers and figures | `python src/reporting/final_evidence.py` |
+| Check the prepared table contract | `python src/quality/ge_validation.py` (needs `src/quality/requirements.txt`) |
+
+Notebooks find `data/` from any folder inside the repository, so open them from `notebooks/`.
+
+## Phase documents
+
+- [Phase 1: exploratory analysis and dashboard](docs/phase1/README.md)
+- [Phase 2: delivery-time estimation and late-order prioritisation](docs/phase2/README.md)
+- [Deployment](deployment/README.md)
+- [Project description](docs/reference/IT5006%20Project%20Description%20-%20AY%202026_27%20Semester%201.pdf)

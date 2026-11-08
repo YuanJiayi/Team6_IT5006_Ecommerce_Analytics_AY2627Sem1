@@ -1,0 +1,5 @@
+policy,mean_promise,late_rate
+Single model + fixed buffer,32.11552961834426,0.0042348809585291535
+Monthly retrain + fixed buffer,31.8837473531994,0.004389815627743635
+Single model + monthly recalibrated buffer,20.738521923255693,0.022207302587408977
+Monthly retrain + monthly recalibration,20.30325879254248,0.023653359500077468
