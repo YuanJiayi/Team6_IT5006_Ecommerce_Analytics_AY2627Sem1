@@ -1,0 +1,12 @@
+{
+  "chosen_model_weight": {
+    "phase2": 0.9,
+    "relative": 0.9
+  },
+  "candidates": {
+    "phase2_changing": "main_changing",
+    "relative_changing": "exploratory_changing",
+    "relative_w0.9": "exploratory_fixed",
+    "phase2_w0.9": "main_fixed"
+  }
+}

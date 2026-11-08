@@ -1,0 +1,10 @@
+a,b,metric,ci_low,ci_high
+model,slack_rule,caught,-41.0,-1.0
+model,slack_rule,caught_not_past,-41.0,-1.0
+model,slack_rule,pr_auc,-0.051290461080124576,-0.008222787426117638
+relative_replaced,slack_rule,caught,-5.0,25.024999999999977
+relative_replaced,slack_rule,caught_not_past,-5.0,25.024999999999977
+relative_replaced,slack_rule,pr_auc,-0.03021007033067752,0.0018707835744692473
+relative_replaced,model,caught,14.0,48.0
+relative_replaced,model,caught_not_past,14.0,48.0
+relative_replaced,model,pr_auc,-0.007171105925634899,0.0382469559060872

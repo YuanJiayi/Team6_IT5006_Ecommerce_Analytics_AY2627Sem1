@@ -1,0 +1,16 @@
+a,b,metric,ci_low,ci_high
+model,slack_rule,caught,-41.0,-1.0
+model,slack_rule,caught_not_past,-41.0,-1.0
+model,slack_rule,pr_auc,-0.051290461080124576,-0.008222787426117638
+monthly_180d,slack_rule,caught,-31.025,9.0
+monthly_180d,slack_rule,caught_not_past,-31.025,9.0
+monthly_180d,slack_rule,pr_auc,-0.034777381383342444,0.006380512187589731
+monthly_all_history,slack_rule,caught,-28.0,10.024999999999977
+monthly_all_history,slack_rule,caught_not_past,-28.0,10.024999999999977
+monthly_all_history,slack_rule,pr_auc,-0.04615149040643434,-0.0045651904661702875
+monthly_180d,model,caught,-2.0249999999999986,25.0
+monthly_180d,model,caught_not_past,-2.0249999999999986,25.0
+monthly_180d,model,pr_auc,0.008096731839650035,0.026107166834359697
+monthly_all_history,model,caught,5.0,21.0
+monthly_all_history,model,caught_not_past,5.0,21.0
+monthly_all_history,model,pr_auc,0.0022471249860792283,0.007239666635684609

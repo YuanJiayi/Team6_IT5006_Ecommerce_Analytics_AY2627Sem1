@@ -1,0 +1,9 @@
+{
+  "stage_1_best": "c0.01_window180_base",
+  "stage_1_choice": "c0.01_all_base",
+  "selected": "c0.01_all_base",
+  "best_recent": "c0.01_window180_base",
+  "candidates": {
+    "c0.01_window180_base": "best_recent"
+  }
+}
