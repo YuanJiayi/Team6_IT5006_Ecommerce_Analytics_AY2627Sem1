@@ -15,6 +15,7 @@ Code lives here; results and saved models are in [`data/outputs/experiments/rank
 | `10_mix_monthly_refits/run.py` | The 50/50 mix under monthly refits |
 | `11_daily_rerank/run.py` | Daily 9am re-ranking simulation, following `src/reporting/complete_daily_replay.py` |
 | `12_rerank_monthly_refits/run.py` | Daily re-ranking combined with monthly refits |
+| `13_report_period_table/run.py` | Final report Table 18: PR-AUC by period for the rule, model, 50/50 blend, regression ranking (Phase 3 selected handover ridge, alpha=1000) and closest to deadline, with each ranking's largest shortfall |
 | `task4_common.py` | Shared scoring and gate checks for experiments 05 onwards |
 
 Experiment 01 (ranking baselines) is referenced by 02's reproduction check but its code is not included.
@@ -25,7 +26,7 @@ Run each script from the repository root, in the order above, for example:
 python src/experiments/ranking_strategy/02_model_rule_mix/run.py
 ```
 
-Each script stops if its baselines do not reproduce the Phase 2 results or the earlier experiments.
+Each script stops if its baselines do not reproduce the Phase 2 results or the earlier experiments. Experiments 02–12 and the rebuild script use the Phase 2 regression (ridge alpha=100) as their reference; only experiment 13 uses the Phase 3 selection (alpha=1000) for the regression ranking.
 
 ## Final Phase 2 models used as the baseline
 

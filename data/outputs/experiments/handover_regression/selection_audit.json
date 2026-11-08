@@ -77,12 +77,12 @@
   "se_limitation": "Five overlapping training windows; paired SE is descriptive, not an independent-sample significance test",
   "versions": {
     "sklearn": "1.9.1",
-    "pandas": "3.0.5",
-    "numpy": "2.5.3"
+    "pandas": "3.0.6",
+    "numpy": "2.5.4"
   },
   "source_sha256": {
-    "src/olist/eta.py": "a58afb4af2945f8d016fc57d0d94d92dbc48018e8b3952d396f6b623066ff4e5",
-    "src/olist/regression.py": "95d825af2bb63b97f20c33c3e86b08b82764b8098f2d8ae1837704c083a172e4",
-    "data/processed/phase2_order_table.csv": "90a25126d4bc9c3686bd1d8f356d5091adf5c86f5cadeebf8d07cf5847c90a43"
+    "phase2_eta.py": "0459016e8bb8af48a492fe6b02144c52a651bb5fc5dd3be8c0d4523bcdb9fb5b",
+    "phase2_regression.py": "45f02e48231a6d1d95e3cc25b106c49f93d5747ee0da16e799886715a7eea07c",
+    "data/phase2_order_table.csv": "90a25126d4bc9c3686bd1d8f356d5091adf5c86f5cadeebf8d07cf5847c90a43"
   }
 }

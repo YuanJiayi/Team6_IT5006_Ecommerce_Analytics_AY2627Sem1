@@ -1,0 +1,6 @@
+model,variant,dropped,mean_mae,mae_increase,paired_se,worse_in_windows
+ridge_1000,full,,5.756833438793311,0.0,0.0,0
+ridge_1000,without_all_four,total_price total_freight total_weight_g total_volume_cm3,5.772168255257745,0.015334816464433488,0.010347788516455843,4
+ridge_1000,without_freight,total_freight,5.768321633840891,0.011488195047579097,0.007898306745196407,4
+ridge_1000,without_price,total_price,5.7567900950073465,-4.334378596499988e-05,0.0003738475160860952,2
+ridge_1000,without_weight_volume,total_weight_g total_volume_cm3,5.7548746985902355,-0.001958740203075582,0.0007013070059890235,0

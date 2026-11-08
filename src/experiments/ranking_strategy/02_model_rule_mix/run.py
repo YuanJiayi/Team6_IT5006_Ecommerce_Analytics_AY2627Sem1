@@ -33,7 +33,7 @@ OUT.mkdir(parents=True, exist_ok=True)
 MODELS = EXPERIMENT_OUTPUTS / "ranking_strategy" / "models"
 
 from olist.classification import feature_columns, make_pipeline  # noqa: E402
-from olist.eta import CANDIDATES as ETA_CANDIDATES, stage_spec  # noqa: E402
+from olist.eta import CANDIDATES as ETA_CANDIDATES, PHASE2_REFERENCE, stage_spec  # noqa: E402
 from olist.handover_classifier import (  # noqa: E402
     CANDIDATES as CLS_CANDIDATES, LABEL, PROMISE, TOP_SHARE, baseline_scores, chronological_folds, gate_verdict,
     load_cohort, monthly_flags, paired_bootstrap, top_flags, variant_spec,
@@ -191,7 +191,8 @@ def run():
     train = table[table[spec["primary_split"]].eq("train")].reset_index(drop=True)
     test = table[table[spec["primary_split"]].eq("test")].reset_index(drop=True)
     folds = chronological_folds(train, spec)
-    regression_model = lookup(ETA_CANDIDATES, json.loads((REPO_ROOT / "data/outputs/phase2/eta/selection.json").read_text())["selected_candidate"])
+    # The Phase 2 regression (ridge alpha=100), not the Phase 3 selection: this experiment compares Phase 2 rankings.
+    regression_model = lookup(ETA_CANDIDATES, PHASE2_REFERENCE)
     family, params = lookup(CLS_CANDIDATES, "logistic_c0.01")
     spec_v = variant_spec(spec)
     columns = sum(feature_columns(spec_v), [])

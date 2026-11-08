@@ -35,7 +35,7 @@ sys.path.insert(0, str(HERE.parents[1]))
 from olist.paths import EXPERIMENT_OUTPUTS, REPO_ROOT  # noqa: E402
 
 from olist.classification import feature_columns, make_pipeline  # noqa: E402
-from olist.eta import CANDIDATES as ETA_CANDIDATES, TARGET, make_stage_pipeline, stage_spec  # noqa: E402
+from olist.eta import CANDIDATES as ETA_CANDIDATES, PHASE2_REFERENCE, TARGET, make_stage_pipeline, stage_spec  # noqa: E402
 from olist.handover_classifier import CANDIDATES as CLS_CANDIDATES, LABEL, load_cohort, variant_spec  # noqa: E402
 from olist.regression import regression_metrics  # noqa: E402
 
@@ -81,15 +81,15 @@ def run(root=ROOT, out_dir=MODEL_DIR):
     table, spec, _ = load_cohort(root)
     train = table[table[spec["primary_split"]].eq("train")].reset_index(drop=True)
     test = table[table[spec["primary_split"]].eq("test")].reset_index(drop=True)
-    eta_selection = json.loads((root / "data/outputs/phase2/eta/selection.json").read_text())
     cls_selection = json.loads((root / "data/outputs/phase2/handover/selection.json").read_text())
     saved_eta = pd.read_csv(root / "data/outputs/phase2/eta/test_metrics.csv")
     saved_scores = pd.read_csv(root / "data/outputs/phase2/handover/test_scores.csv")
 
     specs = {"checkout": stage_spec(spec, "checkout"), "handover": stage_spec(spec, "handover"),
              "late_warning": variant_spec(spec)}
-    chosen = {"checkout": eta_selection["checkout_selected_candidate"],
-              "handover": eta_selection["selected_candidate"],
+    # The Phase 2 regression selection (ridge alpha=100); olist.eta now selects alpha=1000 for Phase 3.
+    chosen = {"checkout": PHASE2_REFERENCE,
+              "handover": PHASE2_REFERENCE,
               "late_warning": cls_selection["variants"]["primary"]["selected"]}
     log_features = spec["linear_log_candidates"]
     models = {stage: fit_regression(chosen[stage], specs[stage], train) for stage in ("checkout", "handover")}
