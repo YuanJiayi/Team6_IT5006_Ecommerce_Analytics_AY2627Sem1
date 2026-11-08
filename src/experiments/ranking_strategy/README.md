@@ -17,7 +17,7 @@ Code lives here; results and saved models are in [`data/outputs/experiments/rank
 | `10_mix_monthly_refits/run.py` | The 50/50 mix under monthly refits |
 | `11_daily_rerank/run.py` | Daily 9am re-ranking simulation, following `src/reporting/complete_daily_replay.py` |
 | `12_rerank_monthly_refits/run.py` | Daily re-ranking combined with monthly refits |
-| `13_report_period_table/run.py` | Final report Table 18: PR-AUC by period for the rule, model, 50/50 blend, regression ranking (Phase 3 selected handover ridge, alpha=1000) and closest to deadline, with each ranking's largest shortfall |
+| `13_report_period_table/run.py` | PR-AUC by period for the rule, model, 50/50 blend fitted once, regression ranking (Phase 3 selected handover ridge, alpha=1000) and closest to deadline, with each ranking's largest shortfall. The report's Table 19 uses the blend with monthly refits instead, so its blend column comes from 13_deadline_comparison and 17 |
 | `13_deadline_comparison/run.py` | Closest to deadline against the final strategy: daily replay, shortfalls and test comparisons (uses 01, 10 and 12) |
 | `15_weekly_intervals/run.py` | Test intervals from 2,000 resamples of whole weeks, for ranked lists and the daily replay (uses 12 and 13) |
 | `16_regression_comparator/run.py` | The regression ranking added to the shortfalls and weekly intervals (uses 01, 13 and 15) |
@@ -40,7 +40,7 @@ Code lives here; results and saved models are in [`data/outputs/experiments/rank
 | Test intervals | 15, 17, 18 |
 | Review-list quality (Table 17) | 18 |
 | Class weights (Section 5.3, Table 18) and the classifier's training scores (Table 4) | 19 |
-| PR-AUC by period and largest shortfalls (Table 19) | 13 and 17; also 13_report_period_table |
+| PR-AUC by period and largest shortfalls (Table 19) | 13_deadline_comparison (rule, model, blend with monthly refits, closest to deadline) and 17 (regression ranking) |
 
 Run each script from the repository root, in the order above, for example:
 
