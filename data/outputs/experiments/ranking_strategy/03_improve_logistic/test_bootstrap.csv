@@ -1,0 +1,10 @@
+a,b,metric,ci_low,ci_high
+model,slack_rule,caught,-41.0,-1.0
+model,slack_rule,caught_not_past,-41.0,-1.0
+model,slack_rule,pr_auc,-0.051290461080124576,-0.008222787426117638
+c0.01_window180_base,slack_rule,caught,-56.0,-13.975000000000023
+c0.01_window180_base,slack_rule,caught_not_past,-56.0,-13.975000000000023
+c0.01_window180_base,slack_rule,pr_auc,-0.05297204308138128,-0.00977055603290369
+c0.01_window180_base,model,caught,-23.0,-3.0
+c0.01_window180_base,model,caught_not_past,-23.0,-3.0
+c0.01_window180_base,model,pr_auc,-0.008032593491686401,0.006506892286405408

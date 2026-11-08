@@ -1,0 +1,17 @@
+metric,a,b,a_minus_b,ci_low,ci_high
+caught_before_date,B_mix_refits,B_mix,6.0,-4.0,16.0
+caught_before_date,A_mix_refits,A_mix,9.0,1.9750000000000014,17.0
+caught_before_date,B_mix_refits,A_mix_refits,15.0,0.0,31.0
+caught_before_date,B_mix_refits,B_rule,-44.0,-80.0,-13.0
+caught_1plus_days,B_mix_refits,B_mix,3.0,-5.0,12.0
+caught_1plus_days,A_mix_refits,A_mix,3.0,-2.0,8.0
+caught_1plus_days,B_mix_refits,A_mix_refits,6.0,-6.0,18.0
+caught_1plus_days,B_mix_refits,B_rule,6.0,-18.025,30.024999999999977
+caught_3plus_days,B_mix_refits,B_mix,2.0,-6.0,11.0
+caught_3plus_days,A_mix_refits,A_mix,0.0,-4.0,4.0
+caught_3plus_days,B_mix_refits,A_mix_refits,6.0,-3.0,16.0
+caught_3plus_days,B_mix_refits,B_rule,23.0,1.0,44.0
+caught_5plus_days,B_mix_refits,B_mix,-1.0,-9.0,6.0
+caught_5plus_days,A_mix_refits,A_mix,-1.0,-5.0,2.0
+caught_5plus_days,B_mix_refits,A_mix_refits,2.0,-6.0,11.0
+caught_5plus_days,B_mix_refits,B_rule,25.0,4.0,44.0
