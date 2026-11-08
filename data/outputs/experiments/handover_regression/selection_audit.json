@@ -1,0 +1,88 @@
+{
+  "extended_best_ridge": "ridge_1000",
+  "selected": "ridge_1000",
+  "extended_plain_vs_best": {
+    "mean_gain_days": 0.09142041952588223,
+    "sd_gain_days": 0.03382542476098143,
+    "paired_se_days": 0.01512718982667181,
+    "plain_within_one_se": false,
+    "window_gains_days": [
+      0.035458568327195295,
+      0.1038556997077471,
+      0.08586989564918213,
+      0.12121175296476672,
+      0.11070618098051987
+    ]
+  },
+  "frozen_plain_vs_ridge100": {
+    "mean_gain_days": 0.04764984397710137,
+    "sd_gain_days": 0.00907790812142524,
+    "paired_se_days": 0.00405976393060085,
+    "plain_within_one_se": false,
+    "window_gains_days": [
+      0.049147128801759976,
+      0.05624952059574806,
+      0.048406680594609064,
+      0.052070840554758746,
+      0.032375049338631
+    ]
+  },
+  "submitted_plain_vs_ridge100": {
+    "checkout": {
+      "mean_gain_days": 0.05177778055738953,
+      "sd_gain_days": 0.017261153045512935,
+      "paired_se_days": 0.0077194223159588885,
+      "plain_within_one_se": false,
+      "window_gains_days": [
+        0.027279625055418588,
+        0.043623615769678104,
+        0.06168328004778978,
+        0.07232484189509591,
+        0.053977540018965264
+      ]
+    },
+    "handover": {
+      "mean_gain_days": 0.047640933730457836,
+      "sd_gain_days": 0.009036211994039967,
+      "paired_se_days": 0.004041116855554458,
+      "plain_within_one_se": false,
+      "window_gains_days": [
+        0.049125575448106584,
+        0.05622317043458658,
+        0.0483307843473062,
+        0.05207134225497345,
+        0.03245379616731636
+      ]
+    }
+  },
+  "coverage": {
+    "orders": 96470,
+    "handover_cohort": 96272,
+    "excluded_no_valid_handover": 198
+  },
+  "alphas": [
+    0.01,
+    0.1,
+    1,
+    10,
+    100,
+    1000,
+    10000,
+    100000
+  ],
+  "queue_model": "frozen ridge alpha=100, not selected using queue results",
+  "selection_rule": "Tune ridge on mean validation MAE; prefer plain linear if within paired one SE of best ridge",
+  "scope": "Exploratory extension on previously used validation/test periods; no independent confirmatory test",
+  "evaluation_unit": "purchase-cohort validation windows; previous-day handovers reviewed next morning at 09:00",
+  "se_limitation": "Five overlapping training windows; paired SE is descriptive, not an independent-sample significance test",
+  "versions": {
+    "sklearn": "1.9.1",
+    "pandas": "3.0.5",
+    "numpy": "2.5.3"
+  },
+  "source_sha256": {
+    "src/olist/eta.py": "a58afb4af2945f8d016fc57d0d94d92dbc48018e8b3952d396f6b623066ff4e5",
+    "src/olist/regression.py": "95d825af2bb63b97f20c33c3e86b08b82764b8098f2d8ae1837704c083a172e4",
+    "data/processed/phase2_order_table.csv": "90a25126d4bc9c3686bd1d8f356d5091adf5c86f5cadeebf8d07cf5847c90a43"
+  }
+}

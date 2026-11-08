@@ -17,3 +17,6 @@ __pycache__/
 # Editable install metadata
 *.egg-info/
 build/
+
+# Large regenerated experiment outputs
+data/outputs/experiments/handover_regression/predictions.csv.gz
