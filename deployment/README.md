@@ -13,8 +13,8 @@ The Phase 3 deployment follows the course's two-service pattern. A model API loa
 
 | File | Model | Output |
 | --- | --- | --- |
-| `eta_checkout.pkl` | Ridge (alpha 100), checkout inputs | Days from purchase to delivery, predicted at checkout |
-| `eta_handover.pkl` | Ridge (alpha 100), checkout and handover inputs | Updated delivery days once the carrier has the parcel |
+| `eta_checkout.pkl` | Ridge (alpha 1000), checkout inputs | Days from purchase to delivery, predicted at checkout |
+| `eta_handover.pkl` | Ridge (alpha 1000), checkout and handover inputs | Updated delivery days once the carrier has the parcel |
 | `late_risk_handover.pkl` | Logistic regression (C 0.01), handover inputs | Probability of arriving after the promised date; review the top 14% each month |
 | `model_metadata.json` | Input columns, categories, selection reason, test metrics, example input, environment | |
 | `feature_stats.json` | Training mean, spread and missing share of every numeric input, for drift checks | |

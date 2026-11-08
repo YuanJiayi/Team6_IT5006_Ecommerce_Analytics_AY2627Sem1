@@ -4,13 +4,13 @@
       "task": "regression",
       "stage": "checkout",
       "target": "delivery_days",
-      "candidate": "ridge_100",
+      "candidate": "ridge_1000",
       "family": "ridge",
       "params": {
-        "alpha": 100.0
+        "alpha": 1000.0
       },
       "output": "predicted days from purchase to customer delivery (pipeline.predict)",
-      "selection_reason": "forest_leaf20 has the lowest mean validation MAE (5.7829); ridge_100 (5.8085) is within one standard error and simpler, so it is chosen",
+      "selection_reason": "ridge_1000 has the lowest mean validation MAE (5.7568)",
       "file": "eta_checkout.pkl",
       "prediction_point": "after checkout and payment submission, before approval or dispatch",
       "feature_columns": [
@@ -221,10 +221,10 @@
       "target_mean_train": 13.289642744106398,
       "target_mean_test": 8.783144676527801,
       "test_metrics": {
-        "mae": 4.995109794060385,
-        "rmse": 6.411693452673184,
-        "r2": -0.17505241649614844,
-        "mean_signed_error": 3.650701905964019
+        "mae": 5.114016404458967,
+        "rmse": 6.542674119298411,
+        "r2": -0.22355168089334154,
+        "mean_signed_error": 3.7681040738509783
       },
       "example_input": {
         "promised_days": 19.137766203703706,
@@ -253,13 +253,13 @@
       "task": "regression",
       "stage": "handover",
       "target": "delivery_days",
-      "candidate": "ridge_100",
+      "candidate": "ridge_1000",
       "family": "ridge",
       "params": {
-        "alpha": 100.0
+        "alpha": 1000.0
       },
       "output": "predicted days from purchase to customer delivery (pipeline.predict)",
-      "selection_reason": "ridge_100 has the lowest mean validation MAE (5.0986)",
+      "selection_reason": "ridge_1000 has the lowest mean validation MAE (5.0548)",
       "file": "eta_handover.pkl",
       "prediction_point": "when the carrier records receiving the parcel from the seller",
       "feature_columns": [
@@ -476,10 +476,10 @@
       "target_mean_train": 13.289642744106398,
       "target_mean_test": 8.783144676527801,
       "test_metrics": {
-        "mae": 3.971921004508051,
-        "rmse": 5.441832992607775,
-        "r2": 0.15354834569466114,
-        "mean_signed_error": 2.86671240751685
+        "mae": 4.199440474907649,
+        "rmse": 5.656752441807369,
+        "r2": 0.08536864540493871,
+        "mean_signed_error": 3.120052833453464
       },
       "example_input": {
         "promised_days": 19.137766203703706,

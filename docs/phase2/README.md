@@ -26,6 +26,9 @@ The code, notebooks, data and saved results supporting the report are spread acr
 4. To reproduce specific report checks, run the scripts in `src/experiments/` and `src/reporting/` shown in [the evidence map](report_evidence_map.md).
 5. Run `python src/reporting/final_evidence.py` to refresh generated LaTeX blocks from the saved outputs. Run `python -m unittest discover -s tests -p 'test_phase2_*.py'` for focused tests. Run `python src/quality/ge_validation.py` for the GX table contract.
 
+> **Phase 3 update.** After the Phase 2 feedback, `olist.eta` searches ridge alpha from 0.01 to 100,000 and selects alpha = 1000 at both stages, so `data/outputs/phase2/eta/`, the regression-ranking comparisons in `data/outputs/phase2/handover/` and the deployment models now reflect alpha = 1000. The submitted Phase 2 report and its `docs/phase2/report/generated/` files, and `data/outputs/phase2/final/`, still show the alpha = 100 results; they are kept as submitted (the earlier outputs are in git history), so do not rerun `final_evidence.py` expecting to reproduce the Phase 2 PDF.
+
+
 The report compares checkout and carrier-handover predictions on distinct information sets. Its five chronological validation windows drive model choice. The later test period reports performance under subsequent conditions; the monthly refresh and drift analyses are descriptive diagnostics.
 
 The data include only eventual deliveries with a valid carrier handover for the final model comparison. See the report for cohort exclusions and assumptions about checkout visibility of the recorded promise, payments and static ZIP coordinates.

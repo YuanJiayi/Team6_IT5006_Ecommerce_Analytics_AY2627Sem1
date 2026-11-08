@@ -24,7 +24,7 @@ sys.path.insert(0, str(SRC))
 from olist.paths import REPO_ROOT as ROOT  # noqa: E402
 
 from olist.classification import feature_columns, load_primary_training, make_pipeline  # noqa: E402
-from olist.eta import add_stage_features, make_stage_pipeline, stage_spec  # noqa: E402
+from olist.eta import CANDIDATES as ETA_CANDIDATES, add_stage_features, make_stage_pipeline, stage_spec  # noqa: E402
 from olist.handover_classifier import (  # noqa: E402
     action_metrics, add_history_extension, add_remaining_slack, load_cohort, monthly_flags, variant_spec,
 )
@@ -50,21 +50,21 @@ def main() -> None:
 
     eta_selection = json.loads((ROOT / "data/outputs/phase2/eta/selection.json").read_text())
     classifier_selection = json.loads((ROOT / "data/outputs/phase2/handover/selection.json").read_text())
-    assert eta_selection["checkout_selected_candidate"] == "ridge_100"
-    assert eta_selection["selected_candidate"] == "ridge_100"
     assert classifier_selection["variants"]["primary"]["selected"] == "logistic_c0.01"
     share = float(classifier_selection["variants"]["primary"]["k"])
 
     rows = []
+    selected = {"checkout": eta_selection["checkout_selected_candidate"], "handover": eta_selection["selected_candidate"]}
     for stage in ("checkout", "handover"):
         stage_features = stage_spec(spec, stage)
         columns = sum(feature_columns(stage_features), [])
-        model = make_stage_pipeline("ridge", {"alpha": 100.0}, stage_features)
+        family, params = next((f, p) for n, f, p in ETA_CANDIDATES if n == selected[stage])
+        model = make_stage_pipeline(family, params, stage_features)
         with threadpool_limits(limits=1):
             model.fit(staged[columns], staged["delivery_days"])
             predicted = model.predict(staged[columns])
         rows.append({
-            "task": "regression", "stage": stage, "model": "ridge_100",
+            "task": "regression", "stage": stage, "model": selected[stage],
             "scope": "apparent_in_sample", "orders": len(staged),
             **regression_metrics(staged["delivery_days"], predicted),
         })

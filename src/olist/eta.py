@@ -8,6 +8,12 @@ The checkout stage uses the prepared Phase 2 inputs. The handover stage predicts
 Both stages are scored on the same orders: the five chronological validation windows (primary), the later test
 period (descriptive) and a random same-period split (secondary).
 The current report's candidate comparisons and saved results are in data/outputs/phase2/eta/.
+
+Phase 3 update (after the Phase 2 feedback): ridge is searched over alpha from 0.01 to 100,000. Ridge is tuned on mean
+validation MAE, then the one-standard-error rule compares plain linear regression, the tuned ridge and the tree-based
+candidates. The information ladder holds ridge at alpha = 1000. The later period also scores the alpha = 100 Phase 2
+selection, the route baselines and a promise-free checkout ridge for reference, and a paired weekly bootstrap gives
+intervals for the test-period MAE gaps.
 """
 
 from __future__ import annotations
@@ -31,7 +37,7 @@ from olist.classification import feature_columns, load_primary_training, tempora
 from olist.features import asof_mean
 from olist.paths import REPO_ROOT
 from olist.regression import assert_fit_precedes, make_regression_pipeline, regression_metrics
-from olist.selection import one_se_choice
+from olist.selection import one_se_choice, paired_gap
 
 ROOT = REPO_ROOT
 RESULT_DIR = ROOT / "data" / "outputs" / "phase2" / "eta"
@@ -48,27 +54,34 @@ STAGE_FEATURES = {
     "handover": ["approval_days", "handover_days", "route_transit_90d_at_handover"],
 }
 CHECKOUT_STAGE, HANDOVER_STAGE = "checkout", "handover"
-LADDER_MODEL = ("ridge", {"alpha": 100.0})  # the frozen checkout selection, held fixed along the ladder
+LADDER_MODEL = ("ridge", {"alpha": 1000.0})  # the selected checkout ridge, held fixed along the ladder
+LADDER_NAME = "ridge_1000"
+PHASE2_REFERENCE = "ridge_100"  # the Phase 2 selection, scored on the later period for comparison
+RIDGE_ALPHAS = [0.01, 0.1, 1, 10, 100, 1000, 10000, 100000]
+PROMISE_INPUTS = ["promised_days", "promise_slack"]
+BOOTSTRAPS, BOOTSTRAP_SEED = 2000, 42
 
 # Fixed before fitting. Each family starts from its simplest variant.
 CANDIDATES = [
     ("mean_baseline", "mean", {}),
     ("elapsed_plus_route_baseline", "rule", {}),
     ("linear_baseline", "linear", {}),
-    ("ridge_1", "ridge", {"alpha": 1.0}),
-    ("ridge_10", "ridge", {"alpha": 10.0}),
-    ("ridge_100", "ridge", {"alpha": 100.0}),
+    ("route_average_baseline", "route", {}),
+    *[(f"ridge_{a:g}", "ridge", {"alpha": float(a)}) for a in RIDGE_ALPHAS],
     ("tree_baseline", "tree", {"max_depth": None, "min_samples_leaf": 1}),
     ("tree_depth6", "tree", {"max_depth": 6, "min_samples_leaf": 50}),
     ("forest_leaf20", "forest", {"max_depth": None, "min_samples_leaf": 20}),
     ("boost_baseline", "boost", {}),
     ("boost_slow", "boost", {"learning_rate": 0.05, "max_iter": 300, "min_samples_leaf": 40}),
 ]
-BASELINES = {"mean_baseline", "elapsed_plus_route_baseline"}
-SIMPLICITY = ["linear_baseline", "ridge_1", "ridge_10", "ridge_100", "tree_depth6", "tree_baseline",
-              "forest_leaf20", "boost_baseline", "boost_slow"]
+BASELINES = {"mean_baseline", "elapsed_plus_route_baseline", "route_average_baseline"}
+RIDGE_CANDIDATES = [f"ridge_{a:g}" for a in RIDGE_ALPHAS]
+TREE_ORDER = ["tree_depth6", "tree_baseline", "forest_leaf20", "boost_baseline", "boost_slow"]
+# Every selectable candidate, simplest first. Ridge enters the one-SE line-up only as its tuned alpha.
+SIMPLICITY = ["linear_baseline", *RIDGE_CANDIDATES, *TREE_ORDER]
 FAMILY_OF = {"linear": "linear", "ridge": "linear", "tree": "tree_based", "forest": "tree_based",
              "boost": "tree_based"}
+STAGE_ONLY = {"elapsed_plus_route_baseline": "handover", "route_average_baseline": "checkout"}
 
 
 def days_between(later, earlier):
@@ -139,6 +152,17 @@ class ElapsedPlusRoute:
         return (X["handover_days"] + X["route_transit_90d_at_handover"].fillna(self.median_)).to_numpy(dtype=float)
 
 
+class RouteAverage:
+    """Checkout baseline: the route's typical delivery days so far (the smoothed route history input)."""
+
+    def fit(self, X, y=None):
+        self.median_ = float(X["route_typical_days"].median())
+        return self
+
+    def predict(self, X):
+        return X["route_typical_days"].fillna(self.median_).to_numpy(dtype=float)
+
+
 def make_boost(params, spec):
     numeric, categorical = feature_columns(spec)
     prepare = ColumnTransformer([
@@ -153,6 +177,8 @@ def make_stage_pipeline(family, params, spec):
     """All preprocessing sits inside the Pipeline, so it is fitted on the fitting rows only."""
     if family == "rule":
         return ElapsedPlusRoute()
+    if family == "route":
+        return RouteAverage()
     if family == "boost":
         return make_boost(params, spec)
     if family == "voting":
@@ -201,33 +227,70 @@ def summarize(rows, keys):
 
 
 def select_candidate(per_window_mae):
-    """Same rule as the handover classifier: lowest mean validation MAE; the simplest within one SE wins.
+    """Tune ridge's alpha on mean validation MAE, then apply the one-standard-error rule to the line-up
+    plain linear, tuned ridge, tree-based candidates (simplest first): the simplest within one SE of the best wins.
 
     `per_window_mae` maps candidate -> per-window MAE values (lower is better).
     """
     scores = {n: v for n, v in per_window_mae.items() if n in SIMPLICITY}
     if set(scores) != set(SIMPLICITY):
         raise ValueError("Scores must cover exactly the selectable candidates")
-    chosen, best, rows = one_se_choice(SIMPLICITY, scores, higher_is_better=False)
+    tuned_ridge = min(RIDGE_CANDIDATES, key=lambda n: float(np.mean(scores[n])))
+    lineup = ["linear_baseline", tuned_ridge, *TREE_ORDER]
+    chosen, best, rows = one_se_choice(lineup, scores, higher_is_better=False)
     reason = (f"{best} has the lowest mean validation MAE ({np.mean(scores[best]):.4f})"
               + ("" if chosen == best else f"; {chosen} ({np.mean(scores[chosen]):.4f}) is within one standard "
                                            "error and simpler, so it is chosen"))
     return chosen, best, reason, rows
 
 
-def score_later_test(table, spec, entries):
-    """Refit on all primary training orders and score the later period, overall and by purchase month."""
+def score_later_test(table, spec, entries, predictions=None):
+    """Refit on all primary training orders and score the later period, overall and by purchase month.
+
+    If `predictions` is a dict, each entry's test predictions are stored in it under "stage/candidate".
+    """
     train = table[table[spec["primary_split"]].eq("train")]
     test = table[table[spec["primary_split"]].eq("test")].reset_index(drop=True)
     month = test["order_purchase_timestamp"].dt.to_period("M").astype(str)
     rows = []
     for label, family, params, changed in entries:
         predicted = fit_predict(family, params, changed, train, test)
+        if predictions is not None:
+            predictions[f"{label['stage']}/{label['candidate']}"] = predicted
         rows.append({**label, "scope": "overall", "orders": len(test), **regression_metrics(test[TARGET], predicted)})
         for m, index in test.groupby(month).groups.items():
             rows.append({**label, "scope": m, "orders": len(index),
                          **regression_metrics(test.loc[index, TARGET], predicted[index])})
     return rows
+
+
+def weekly_bootstrap_gap(actual, a, b, weeks, n_boot=BOOTSTRAPS, seed=BOOTSTRAP_SEED):
+    """Paired MAE gap a - b with a 95% interval from resampling purchase calendar weeks (Monday-Sunday).
+
+    Each draw takes the same weeks for both predictors and keeps every order in a sampled week; predictions stay
+    fixed, so the interval reflects the mix of weeks observed, not refitting or later drift.
+    """
+    err_a, err_b = np.abs(np.asarray(a) - actual), np.abs(np.asarray(b) - actual)
+    codes, uniques = pd.factorize(weeks, sort=True)
+    sum_a = np.bincount(codes, weights=err_a, minlength=len(uniques))
+    sum_b = np.bincount(codes, weights=err_b, minlength=len(uniques))
+    count = np.bincount(codes, minlength=len(uniques))
+    rng = np.random.default_rng(seed)
+    draws = rng.integers(0, len(uniques), size=(n_boot, len(uniques)))
+    n = count[draws].sum(axis=1)
+    gaps = (sum_a[draws].sum(axis=1) - sum_b[draws].sum(axis=1)) / n
+    low, high = np.percentile(gaps, [2.5, 97.5])
+    return {"gap": float(err_a.mean() - err_b.mean()), "ci_low": float(low), "ci_high": float(high),
+            "weeks": int(len(uniques)), "n_boot": n_boot, "seed": seed}
+
+
+def coefficient_magnitudes(path, stage):
+    """Mean absolute coefficient of each numeric input over the validation fits (after scaling)."""
+    coef = pd.read_csv(path)
+    numeric = coef[~coef["feature"].str.startswith("category__")].copy()
+    numeric["abs"] = numeric["coefficient"].abs()
+    out = numeric.groupby("feature")["abs"].mean().sort_values(ascending=False).rename("mean_abs_coefficient")
+    return out.reset_index().assign(stage=stage)[["stage", "feature", "mean_abs_coefficient"]]
 
 
 def score_random_benchmark(table, spec, entries):
@@ -282,7 +345,7 @@ def run(root=ROOT):
     ladder_rows = []
     for stage in STAGE_FEATURES:
         ladder_rows += cross_validate(train, stage_spec(spec, stage), folds, *LADDER_MODEL,
-                                      {"stage": stage, "model": "ridge_100"})
+                                      {"stage": stage, "model": LADDER_NAME})
     pd.DataFrame(ladder_rows).to_csv(output / "ladder_windows.csv", index=False)
     ladder = summarize(ladder_rows, ["stage", "model"])
     ladder.to_csv(output / "ladder_summary.csv", index=False)
@@ -293,7 +356,7 @@ def run(root=ROOT):
     stage_specs = {stage: stage_spec(spec, stage) for stage in (CHECKOUT_STAGE, HANDOVER_STAGE)}
     cv_rows, stages = [], {}
     for stage, spec_s in stage_specs.items():
-        stage_candidates = [c for c in CANDIDATES if stage == HANDOVER_STAGE or c[1] != "rule"]
+        stage_candidates = [c for c in CANDIDATES if STAGE_ONLY.get(c[0], stage) == stage]
         stage_rows = []
         for name, family, params in stage_candidates:
             stage_rows += cross_validate(train, spec_s, folds, family, params,
@@ -302,7 +365,9 @@ def run(root=ROOT):
         frame = pd.DataFrame(stage_rows)
         per_window_mae = frame.pivot(index="window", columns="candidate", values="mae").to_dict("list")
         selected, lowest, reason, stage2 = select_candidate(per_window_mae)
-        stages[stage] = {"selected": selected, "lowest_mae_candidate": lowest, "reason": reason, "stage2": stage2}
+        tuned_ridge = min(RIDGE_CANDIDATES, key=lambda n: float(np.mean(per_window_mae[n])))
+        stages[stage] = {"selected": selected, "lowest_mae_candidate": lowest, "tuned_ridge": tuned_ridge,
+                         "reason": reason, "stage2": stage2}
 
     handover_scores = (pd.DataFrame([r for r in cv_rows if r["stage"] == HANDOVER_STAGE])
                        .groupby("candidate")["mae"].mean().to_dict())
@@ -315,28 +380,77 @@ def run(root=ROOT):
     voting = {"members": [(n, *lookup[n]) for n in winners.values()]}
     cv_rows += cross_validate(train, stage_specs[HANDOVER_STAGE], folds, "voting", voting,
                               {"stage": HANDOVER_STAGE, "candidate": "voting_family_winners", "algorithm": "voting"})
+
+    # Promise-free checkout variant: the selected checkout ridge without Olist's promise, for promise setting.
+    checkout_selected = stages[CHECKOUT_STAGE]["selected"]
+    no_promise_spec = copy.deepcopy(stage_specs[CHECKOUT_STAGE])
+    no_promise_spec["numeric_features"] = [c for c in no_promise_spec["numeric_features"] if c not in PROMISE_INPUTS]
+    no_promise_name = f"{checkout_selected}_no_promise"
+    cv_rows += cross_validate(train, no_promise_spec, folds, *lookup[checkout_selected],
+                              {"stage": CHECKOUT_STAGE, "candidate": no_promise_name, "algorithm": "ridge"})
     pd.DataFrame(cv_rows).to_csv(output / "cv_metrics.csv", index=False)
     summary = summarize(cv_rows, ["stage", "candidate", "algorithm"])
     summary.to_csv(output / "cv_summary.csv", index=False)
     handover_summary = summary[summary["stage"] == HANDOVER_STAGE]
     best_r2 = handover_summary.loc[handover_summary["mean_r2"].idxmax(), "candidate"]
 
+    # Paired validation comparisons against each stage's selected model (reference baselines and the ensemble).
+    mae = pd.DataFrame(cv_rows).pivot_table(index=["stage", "window"], columns="candidate", values="mae")
+    comparisons = []
+    for stage in (CHECKOUT_STAGE, HANDOVER_STAGE):
+        part, chosen = mae.loc[stage], stages[stage]["selected"]
+        for other in part.columns:
+            if other == chosen or part[other].isna().any():
+                continue
+            gap, se = paired_gap(part[other], part[chosen], higher_is_better=False)
+            comparisons.append({"stage": stage, "candidate": other, "selected": chosen,
+                                "mean_mae": float(part[other].mean()), "selected_mean_mae": float(part[chosen].mean()),
+                                "gap_to_selected": gap, "paired_se": se,
+                                "worse_in_windows": int((part[other] > part[chosen]).sum())})
+    pd.DataFrame(comparisons).to_csv(output / "paired_comparisons.csv", index=False)
+
     # 4. Later period and the random same-period benchmark, each stage's own selected model.
-    checkout_selected, handover_selected = stages[CHECKOUT_STAGE]["selected"], stages[HANDOVER_STAGE]["selected"]
+    handover_selected = stages[HANDOVER_STAGE]["selected"]
     checkout_model, selected_model = lookup[checkout_selected], lookup[handover_selected]
     tree_model = lookup[winners["tree_based"]]
     entries = [
-        ({"stage": CHECKOUT_STAGE, "candidate": "ridge_100"}, *LADDER_MODEL, stage_specs[CHECKOUT_STAGE]),
         ({"stage": CHECKOUT_STAGE, "candidate": checkout_selected}, *checkout_model, stage_specs[CHECKOUT_STAGE]),
+        ({"stage": CHECKOUT_STAGE, "candidate": PHASE2_REFERENCE}, *lookup[PHASE2_REFERENCE],
+         stage_specs[CHECKOUT_STAGE]),
         ({"stage": CHECKOUT_STAGE, "candidate": winners["tree_based"]}, *tree_model, stage_specs[CHECKOUT_STAGE]),
         ({"stage": HANDOVER_STAGE, "candidate": handover_selected}, *selected_model, stage_specs[HANDOVER_STAGE]),
+        ({"stage": HANDOVER_STAGE, "candidate": PHASE2_REFERENCE}, *lookup[PHASE2_REFERENCE],
+         stage_specs[HANDOVER_STAGE]),
         ({"stage": HANDOVER_STAGE, "candidate": winners["tree_based"]}, *tree_model, stage_specs[HANDOVER_STAGE]),
         ({"stage": HANDOVER_STAGE, "candidate": "voting_family_winners"}, "voting", voting,
          stage_specs[HANDOVER_STAGE]),
     ]
     entries = [e for i, e in enumerate(entries) if e[0] not in [x[0] for x in entries[:i]]]
-    pd.DataFrame(score_later_test(table, spec, entries)).to_csv(output / "test_metrics.csv", index=False)
+    # Reference predictors scored on the later period only (not part of the random benchmark).
+    references = [
+        ({"stage": CHECKOUT_STAGE, "candidate": "mean_baseline"}, *lookup["mean_baseline"], stage_specs[CHECKOUT_STAGE]),
+        ({"stage": CHECKOUT_STAGE, "candidate": "route_average_baseline"}, *lookup["route_average_baseline"],
+         stage_specs[CHECKOUT_STAGE]),
+        ({"stage": CHECKOUT_STAGE, "candidate": no_promise_name}, *checkout_model, no_promise_spec),
+        ({"stage": HANDOVER_STAGE, "candidate": "elapsed_plus_route_baseline"}, *lookup["elapsed_plus_route_baseline"],
+         stage_specs[HANDOVER_STAGE]),
+    ]
+    predictions = {}
+    pd.DataFrame(score_later_test(table, spec, entries + references, predictions)).to_csv(
+        output / "test_metrics.csv", index=False)
     pd.DataFrame(score_random_benchmark(table, spec, entries)).to_csv(output / "random_benchmark.csv", index=False)
+
+    test = table[table[spec["primary_split"]].eq("test")].reset_index(drop=True)
+    weeks = test["order_purchase_timestamp"].dt.to_period("W-SUN").astype(str)
+    frame = test[["order_id", "order_purchase_timestamp", TARGET]].assign(purchase_week=weeks)
+    for key, values in predictions.items():
+        frame[key] = values
+    frame.to_csv(output / "test_predictions.csv.gz", index=False, compression={"method": "gzip", "mtime": 0})
+    pairs = [(f"{CHECKOUT_STAGE}/{checkout_selected}", f"{CHECKOUT_STAGE}/route_average_baseline"),
+             (f"{HANDOVER_STAGE}/{handover_selected}", f"{HANDOVER_STAGE}/elapsed_plus_route_baseline"),
+             (f"{HANDOVER_STAGE}/{handover_selected}", f"{CHECKOUT_STAGE}/{checkout_selected}")]
+    pd.DataFrame([{"a": a, "b": b, **weekly_bootstrap_gap(test[TARGET].to_numpy(), frame[a], frame[b], weeks)}
+                  for a, b in pairs]).to_csv(output / "test_bootstrap.csv", index=False)
 
     # 5. Interpretation on validation windows, each stage's own selected model.
     files = {
@@ -347,6 +461,8 @@ def run(root=ROOT):
     if winners["tree_based"] != handover_selected:
         files[HANDOVER_STAGE].append(interpret(train, stage_specs[HANDOVER_STAGE], folds, *tree_model, output,
                                                 "tree_winner"))
+    pd.concat([coefficient_magnitudes(output / f, stage) for stage, names in files.items() for f in names
+               if f.endswith("coefficients.csv")]).to_csv(output / "coefficient_magnitudes.csv", index=False)
 
     selection = {
         "prediction_points": {"checkout": spec["prediction_point"],
@@ -357,11 +473,14 @@ def run(root=ROOT):
         "selected_candidate": handover_selected,
         "checkout_selected_candidate": checkout_selected,
         "lowest_mae_candidate": {stage: stages[stage]["lowest_mae_candidate"] for stage in stages},
+        "tuned_ridge": {stage: stages[stage]["tuned_ridge"] for stage in stages},
+        "ridge_alphas": RIDGE_ALPHAS, "ladder_model": LADDER_NAME, "phase2_reference": PHASE2_REFERENCE,
         "highest_r2_candidate": best_r2,
         "reason": {stage: stages[stage]["reason"] for stage in stages},
-        "rule": f"lowest mean validation MAE over {spec['n_folds']} chronological windows; the simplest candidate "
-                "within one standard error of the lowest wins (ISLR, James, Witten, Hastie and Tibshirani, Sec. "
-                "6.1.3, p. 214); baselines and the ensemble are reference only",
+        "rule": f"ridge alpha tuned on mean validation MAE over {spec['n_folds']} chronological windows; then, over "
+                "plain linear, the tuned ridge and the tree-based candidates, the simplest within one standard error "
+                "of the lowest mean MAE wins (ISLR, James, Witten, Hastie and Tibshirani, Sec. 6.1.3, p. 214); "
+                "baselines, the promise-free variant and the ensemble are reference only",
         "stage2": {stage: stages[stage]["stage2"] for stage in stages},
         "family_winners": winners, "simplicity_order": SIMPLICITY,
         "interpretation_files": files, "random_state": spec["random_state"],
