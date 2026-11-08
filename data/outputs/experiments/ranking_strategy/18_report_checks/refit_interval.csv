@@ -1,0 +1,3 @@
+a,b,metric,a_minus_b,ci_low,ci_high
+mix_refreshed,mix_single_fit,caught,8.0,-2.0,16.0
+mix_refreshed,mix_single_fit,pr_auc,0.005288718167968831,0.0015396583020170606,0.008322228114289771

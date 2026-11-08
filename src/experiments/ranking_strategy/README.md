@@ -6,19 +6,41 @@ Code lives here; results and saved models are in [`data/outputs/experiments/rank
 
 | Code | What it tests |
 | --- | --- |
+| `01_ranking_baselines/run.py` | The rule, the Phase 2 model, closest to deadline and the regression ranking (ridge alpha=100), before any mix |
 | `02_model_rule_mix/run.py` | Two fixed mixes of the model and the remaining-slack rule |
 | `03_improve_logistic/run.py` | Regularisation, training window and signal choices for the logistic model |
 | `07_promise_relative_inputs/run.py` | Promise-relative inputs in place of the Phase 2 inputs |
 | `04_mix_ratios/run.py` | Mix ratios for the Phase 2 and promise-relative models (uses 07) |
 | `05_recent_monthly_refits/run.py` | Monthly refits on recent history only |
+| `06_not_past_training/run.py` | The model fitted only on orders still before their promised date at handover |
 | `08_final_comparison/run.py` | Final comparison of rule, model, 50/50 mix and changing ratio (uses 04) |
 | `10_mix_monthly_refits/run.py` | The 50/50 mix under monthly refits |
 | `11_daily_rerank/run.py` | Daily 9am re-ranking simulation, following `src/reporting/complete_daily_replay.py` |
 | `12_rerank_monthly_refits/run.py` | Daily re-ranking combined with monthly refits |
 | `13_report_period_table/run.py` | Final report Table 18: PR-AUC by period for the rule, model, 50/50 blend, regression ranking (Phase 3 selected handover ridge, alpha=1000) and closest to deadline, with each ranking's largest shortfall |
+| `13_deadline_comparison/run.py` | Closest to deadline against the final strategy: daily replay, shortfalls and test comparisons (uses 01, 10 and 12) |
+| `15_weekly_intervals/run.py` | Test intervals from 2,000 resamples of whole weeks, for ranked lists and the daily replay (uses 12 and 13) |
+| `16_regression_comparator/run.py` | The regression ranking added to the shortfalls and weekly intervals (uses 01, 13 and 15) |
+| `17_regression_alpha1000/run.py` | The regression ranking rescored with the Phase 3 selection, ridge alpha=1000 (uses 01, 13, 15 and 16) |
+| `18_report_checks/run.py` | Review-list precision, recall, F1 and MCC for five rankings, and the weekly interval for monthly refits against a single fit |
+| `19_class_weights_insample/run.py` | Balanced class weights at each C of the extended grid, and the Phase 2 classifier's in-sample PR-AUC and ROC-AUC |
 | `task4_common.py` | Shared scoring and gate checks for experiments 05 onwards |
 
-Experiment 01 (ranking baselines) is referenced by 02's reproduction check but its code is not included.
+### Where the final report's late-warning numbers come from
+
+| Report content | Experiment |
+| --- | --- |
+| Phase 3 variants (Table 7): regularisation, recency, ZIP-3 and seller history | 03 |
+| Promise-relative inputs; fitted only on orders before their date | 07; 06 |
+| Monthly refits; blend weights and promise-varying weight | 05; 02 and 04 |
+| Recommended blend with monthly refits | 10 |
+| Rule, closest to deadline and regression comparators (Tables 7 and 8) | 01, 13, 17 |
+| Review shares of 1, 2, 5 and 20% | 08 |
+| Daily replay (Table 9) | 11, 12, 13 |
+| Test intervals | 15, 17, 18 |
+| Review-list quality (Table 17) | 18 |
+| Class weights (Section 5.3, Table 18) and the classifier's training scores (Table 4) | 19 |
+| PR-AUC by period and largest shortfalls (Table 19) | 13 and 17; also 13_report_period_table |
 
 Run each script from the repository root, in the order above, for example:
 
@@ -26,7 +48,7 @@ Run each script from the repository root, in the order above, for example:
 python src/experiments/ranking_strategy/02_model_rule_mix/run.py
 ```
 
-Each script stops if its baselines do not reproduce the Phase 2 results or the earlier experiments. Experiments 02–12 and the rebuild script use the Phase 2 regression (ridge alpha=100) as their reference; only experiment 13 uses the Phase 3 selection (alpha=1000) for the regression ranking.
+Each script stops if its baselines do not reproduce the Phase 2 results or the earlier experiments. Experiments 01–12, 13_deadline_comparison, 16 and the rebuild script use the Phase 2 regression (ridge alpha=100) as their reference; 13_report_period_table, 17 and 18 use the Phase 3 selection (alpha=1000) for the regression ranking.
 
 ## Final Phase 2 models used as the baseline
 

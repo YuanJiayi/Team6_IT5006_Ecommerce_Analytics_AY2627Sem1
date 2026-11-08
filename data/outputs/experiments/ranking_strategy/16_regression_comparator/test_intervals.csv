@@ -1,0 +1,9 @@
+a,b,metric,a_minus_b,ci_low,ci_high
+mix_refreshed,regression_gap,pr_auc,0.021724719445284757,-0.017087856083130938,0.05589620606503434
+mix_refreshed,regression_gap,caught,0.0,-24.0,11.0
+slack_rule,regression_gap,pr_auc,0.019145740181005344,-0.026834741986345268,0.0488461165687048
+slack_rule,regression_gap,caught,-13.0,-32.0,8.0
+model,regression_gap,pr_auc,-0.011559831842082924,-0.045251741200039275,0.01644240127266342
+model,regression_gap,caught,-34.0,-74.0,-9.0
+regression_gap,deadline,pr_auc,0.01330399043442726,-0.03236072675919538,0.10263214713080486
+regression_gap,deadline,caught,52.0,22.0,88.0

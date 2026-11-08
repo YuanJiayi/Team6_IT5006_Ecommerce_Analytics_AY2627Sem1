@@ -1,0 +1,2 @@
+validation_pr_auc,validation_roc_auc,validation_caught,test_pr_auc,test_caught,gap_to_model,paired_se,windows_behind_model
+0.333425422651486,0.7021023279977018,1122,0.4792021403994934,412,-0.05890970660692495,0.019149942858146005,5

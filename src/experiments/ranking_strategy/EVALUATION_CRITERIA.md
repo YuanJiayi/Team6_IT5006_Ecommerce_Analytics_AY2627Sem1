@@ -6,7 +6,7 @@ Task 4 asks whether the late-warning model, a simple rule or a mix gives the bes
 
 ## Baseline (test set, 26 May to August 2018)
 
-Each list is the top 10% of each purchase month. Source: experiment 01 (`01_ranking_baselines/metrics.csv`, not included in this folder).
+Each list is the top 10% of each purchase month. Source: experiment 01 (`01_ranking_baselines/metrics.csv`).
 
 | Ranking | Role | PR-AUC | ROC-AUC | Late caught (of 672) | Recall | Precision | Late caught, not past date (of 474) | PR-AUC, not past date |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -207,6 +207,42 @@ Experiment 13 fills the remaining gaps for closest to deadline, an existing refe
 **Daily simulation.** Closest to deadline runs under the rules and the same review capacity as experiment 11, in two versions. New parcels only ranks the previous day's handovers by days left at handover. Re-ranked ranks all open orders by days left each morning. Both are compared with the recommended and fallback versions from experiment 12, with intervals that resample mornings.
 
 **Shortfalls.** Each ranking's shortfall behind the best of the rule, the Phase 2 model, the 50/50 with monthly refits and closest to deadline, across W1 to W5 and June to August 2018, as in experiment 08.
+
+## Experiment 15: weekly intervals
+
+Experiment 15 recomputes the test intervals quoted in the report to match the team's convention: 2,000 resamples (seed 42) of whole calendar weeks. It adds no rankings, changes no scores and does not use the gates.
+
+**Ranked lists.** The four rankings of experiment 13. Each resample draws purchase weeks with replacement and rebuilds each purchase month's top-10% list. Measures: PR-AUC and late orders caught.
+
+**Daily queue.** The saved test replays of experiments 12 and 13, resampling the weeks of review mornings. Measures: late orders reached before their date, those with 1, 3 and 5 or more days left, and mean days left, an interval not reported before.
+
+**Why weeks.** Neighbouring days share open orders and delivery conditions, so orders and mornings are not independent. The test period has 15 weeks, so the intervals are approximate.
+
+## Experiment 16: regression ranking as a comparator
+
+Experiment 16 adds the regression ranking from experiment 01 (Phase 2 handover estimate minus promised days, largest first) to the comparisons quoted in the report. It adds no candidates, changes no scores and does not use the gates.
+
+- **Shortfalls:** each ranking's PR-AUC shortfall behind the best of five rankings (the four of experiment 13 plus the regression ranking), across W1 to W5 and June to August 2018, as in experiment 08.
+- **Test intervals:** the regression ranking against the 50/50 with monthly refits, the rule, the Phase 2 model and closest to deadline, with experiment 15's weekly resampling (2,000 resamples, seed 42), on PR-AUC and late caught in the top 10% of each purchase month.
+- **Not covered:** the regression ranking is not replayed in the daily queue.
+
+## Experiment 17: regression ranking with alpha = 1000
+
+Experiments 01 and 16 built the regression ranking from the Phase 2 handover ridge (alpha = 100). The Phase 3 report selects alpha = 1000 at both regression stages, so experiment 17 rescores the regression ranking with alpha = 1000, after first checking that alpha = 100 reproduces experiment 01. It reports the same windows, test months, shortfalls and weekly test intervals as experiment 16, adds no candidates and does not use the gates.
+
+## Experiment 18: report checks
+
+Experiment 18 makes two numbers quoted in the report reproducible. It adds no candidates, changes no scores and does not use the gates; it stops if any ranking's late orders caught differ from the report.
+
+- **Review-list quality:** precision, recall, F1 and the Matthews correlation coefficient of the top-10% list for the five rankings of experiment 17 (closest to deadline, regression ranking at alpha = 1000, rule, Phase 2 model, 50/50 with monthly refits). Validation pools the five windows' top-10% lists; test pools each purchase month's list. Orders on the list count as predicted late.
+- **Monthly refits against a single fit:** the 50/50 with monthly refits against the 50/50 fitted once, on late orders caught and PR-AUC, with experiment 15's weekly resampling (2,000 resamples, seed 42). Experiment 10 gave this interval by resampling orders within months, which does not match the report's stated method.
+
+## Experiment 19: class weights at strong penalties and in-sample scores
+
+Experiment 19 checks two classification statements in the report that no earlier experiment produces. It adds no candidates and does not use the gates.
+
+- **Class weights:** the logistic model fitted on all history at each C of experiment 03's grid (0.0001, 0.0003, 0.001, 0.003, 0.01), unweighted and with balanced class weights. Measure: mean PR-AUC over W1 to W5, with the paired SE of each balanced fit against the unweighted fit at the same C. It stops unless the unweighted values reproduce experiment 03 and C = 0.01 reproduces Phase 2 (0.392 unweighted, 0.385 balanced).
+- **In-sample scores:** PR-AUC and ROC-AUC of the saved Phase 2 classifier on its own fitting rows (the training split), for the train column of the report's summary table. In-sample scores are optimistic and are not used to choose anything.
 
 ## Reporting
 

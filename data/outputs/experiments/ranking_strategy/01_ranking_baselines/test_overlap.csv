@@ -1,0 +1,13 @@
+period,a,b,flagged_both,caught_both,caught_only_a,caught_only_b,caught_either
+test,model,slack_rule,837,322,55,76,453
+test,model,deadline,324,261,116,98,475
+test,model,regression_gap,1046,344,33,67,444
+test,slack_rule,deadline,1316,331,67,28,426
+test,slack_rule,regression_gap,1449,363,35,48,446
+test,deadline,regression_gap,1022,311,48,100,459
+2018-08,model,slack_rule,309,203,29,46,278
+2018-08,model,deadline,196,177,55,56,288
+2018-08,model,regression_gap,421,215,17,40,272
+2018-08,slack_rule,deadline,497,220,29,13,262
+2018-08,slack_rule,regression_gap,424,224,25,31,280
+2018-08,deadline,regression_gap,323,200,33,55,288
