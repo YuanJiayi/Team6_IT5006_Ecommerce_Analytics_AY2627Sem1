@@ -271,10 +271,21 @@ class ActionsService:
         # part of the volume that sets today's review size.
         return queue_module.daily_capacity(self.context.table, as_of)
 
+    def _ensure_loaded(self):
+        if self.context is not None:
+            return
+        with COMPUTE_LOCK:
+            if self.context is not None:
+                return
+            try:
+                self.load()
+            except Exception as error:
+                self.error = str(error)
+                raise ActionsUnavailable(self.error or "The champion queue is not loaded") from error
+
     def queue(self, date):
         """Return the queue payload for day ``date`` (a date or ISO string)."""
-        if self.context is None:
-            raise ActionsUnavailable(self.error or "The champion queue is not loaded")
+        self._ensure_loaded()
         from phase3 import queue as queue_module
 
         as_of = _parse_date(date)
@@ -527,8 +538,7 @@ class ActionsService:
 
     def promises(self, date):
         """Return the monthly promise table and month-to-date performance."""
-        if self.context is None:
-            raise ActionsUnavailable(self.error or "The champion queue is not loaded")
+        self._ensure_loaded()
         import pandas as pd
 
         as_of = _parse_date(date)
@@ -598,8 +608,7 @@ class ActionsService:
 
     def order_lookup(self, date, order_id):
         """Say whether one order is on the chosen morning's list, or why it is not."""
-        if self.context is None:
-            raise ActionsUnavailable(self.error or "The champion queue is not loaded")
+        self._ensure_loaded()
         import pandas as pd
 
         from phase3 import queue as queue_module
@@ -717,8 +726,7 @@ class ActionsService:
 
     def predict(self, date, order_id):
         """Score one handed-over, still-open parcel exactly as today's queue would."""
-        if self.context is None:
-            raise ActionsUnavailable(self.error or "The champion queue is not loaded")
+        self._ensure_loaded()
         import numpy as np
         import pandas as pd
 

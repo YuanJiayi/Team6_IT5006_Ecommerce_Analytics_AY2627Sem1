@@ -721,9 +721,350 @@
     .monitor-cards{grid-template-columns:1fr}
   }
   /* MONITOR:END */
+
+  /* Olist Operations Dispatch splash overlay */
+  .splash-backdrop{
+    position:fixed;inset:0;z-index:200;
+    background:var(--bg);color:var(--ink);
+    display:flex;align-items:center;justify-content:center;
+    padding:20px;overflow-y:auto;
+    transition:opacity .32s ease,visibility .32s ease;
+  }
+  .splash-backdrop.is-leaving{
+    opacity:0;visibility:hidden;pointer-events:none;
+  }
+  .splash-card{
+    max-width:460px;width:100%;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:16px;
+    box-shadow:var(--shadow);
+    padding:26px 26px 22px;
+    text-align:left;
+  }
+  .splash-top{
+    display:flex;align-items:center;justify-content:space-between;
+    gap:12px;margin-bottom:18px;
+  }
+  .splash-brand{
+    display:inline-flex;align-items:center;gap:10px;color:var(--ink);
+  }
+  .splash-art{
+    width:100%;height:104px;
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    border-radius:12px;
+    margin-bottom:18px;
+    display:flex;align-items:center;justify-content:center;
+    overflow:hidden;
+  }
+  .splash-art svg{width:100%;max-width:360px;height:96px;display:block;overflow:visible}
+  .splash-route-dash{
+    stroke-dashoffset:0;
+    animation:splash-dash 1.4s linear infinite;
+  }
+  .splash-van-group{
+    animation:splash-drive 2.4s ease-in-out infinite;
+    transform-origin:center;
+  }
+  .splash-pulse-ring{
+    animation:splash-pulse 1.8s ease-out infinite;
+    transform-origin:292px 58px;
+  }
+  @keyframes splash-dash{
+    to{stroke-dashoffset:-16}
+  }
+  @keyframes splash-drive{
+    0%,100%{transform:translate(0,0)}
+    50%{transform:translate(4px,-2px)}
+  }
+  @keyframes splash-pulse{
+    0%{transform:scale(.8);opacity:.85}
+    100%{transform:scale(2.1);opacity:0}
+  }
+  .splash-title{
+    font-size:clamp(20px,2.8vw,24px);line-height:1.18;
+    font-weight:600;letter-spacing:-.025em;color:var(--ink);
+    margin-bottom:6px;
+    transition:opacity .22s ease;
+  }
+  .splash-sub{
+    color:var(--muted);font-size:13px;line-height:1.48;
+    margin-bottom:18px;
+  }
+  .splash-bar-shell{
+    width:100%;height:7px;
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    border-radius:999px;overflow:hidden;
+    margin-bottom:9px;
+  }
+  .splash-bar-fill{
+    height:100%;width:8%;
+    background:linear-gradient(90deg,var(--accent),#179CA3);
+    border-radius:999px;
+    transition:width .18s linear;
+  }
+  .splash-status-row{
+    display:flex;justify-content:space-between;align-items:center;gap:12px;
+    font-family:var(--mono);font-size:11px;color:var(--muted);
+    margin-bottom:14px;
+  }
+  .splash-status-row span:last-child{white-space:nowrap;font-weight:500;color:var(--ink);font-variant-numeric:tabular-nums}
+  .splash-foot{
+    padding-top:12px;border-top:1px solid var(--line);
+    display:flex;align-items:center;justify-content:space-between;
+    gap:12px;flex-wrap:wrap;font-family:var(--mono);font-size:10.5px;color:var(--faint);
+  }
+  .splash-enter-btn{
+    font-family:var(--mono);font-size:11px;font-weight:500;
+    color:var(--accent);padding:3px 7px;border-radius:6px;
+    border:1px solid transparent;
+  }
+  .splash-enter-btn:hover{color:var(--ink);background:var(--accent-soft);border-color:#CBE6E7}
+  @media (max-width:520px){
+    .splash-card{padding:20px 18px 16px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .splash-route-dash,.splash-van-group,.splash-pulse-ring{animation:none}
+    .splash-bar-fill,.splash-backdrop,.splash-title{transition:none}
+  }
 </style>
 </head>
 <body>
+
+<div class="splash-backdrop" id="splash-screen" role="region" aria-label="Loading Olist Operations">
+  <div class="splash-card">
+    <div class="splash-top">
+      <div class="splash-brand">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 17h4.5c2.3 0 2.3-10 4.7-10H17"/>
+            <path d="M14 4l3 3-3 3"/>
+            <circle cx="3" cy="17" r="1.4" fill="currentColor" stroke="none"/>
+            <circle cx="17" cy="7" r="1.4" fill="currentColor" stroke="none"/>
+          </svg>
+        </span>
+        <span class="brand-text"><strong>Olist</strong><span>Operations</span></span>
+      </div>
+      <span class="chip" id="splash-chip">Historical replay</span>
+    </div>
+
+    <div class="splash-art" aria-hidden="true">
+      <svg viewBox="0 0 340 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Route track from SP hub to destination -->
+        <path d="M38 58 H292" stroke="#DCE6EC" stroke-width="2.5" stroke-linecap="round"/>
+        <path class="splash-route-dash" d="M52 58 H282" stroke="#0A787E" stroke-width="2.5" stroke-dasharray="6 10" stroke-linecap="round"/>
+
+        <!-- Origin node (SP) -->
+        <circle cx="44" cy="58" r="6" fill="#FFFFFF" stroke="#0A1F33" stroke-width="2.2"/>
+        <circle cx="44" cy="58" r="2.3" fill="#0A787E"/>
+        <text x="44" y="78" text-anchor="middle" fill="#5D7182" font-family="IBM Plex Mono, monospace" font-size="9" font-weight="500">SP HUB</text>
+
+        <!-- Destination node (BR) with radar pulse -->
+        <circle class="splash-pulse-ring" cx="292" cy="58" r="7" stroke="#0A787E" stroke-width="1.6" fill="none"/>
+        <circle cx="292" cy="58" r="6" fill="#EAF6F6" stroke="#0A787E" stroke-width="2.2"/>
+        <circle cx="292" cy="58" r="2.5" fill="#0A787E"/>
+        <text x="292" y="78" text-anchor="middle" fill="#5D7182" font-family="IBM Plex Mono, monospace" font-size="9" font-weight="500">27 STATES</text>
+
+        <!-- Animated delivery van + parcel -->
+        <g class="splash-van-group">
+          <!-- Speed lines -->
+          <path d="M104 36 H118" stroke="#8FC5CC" stroke-width="1.8" stroke-linecap="round"/>
+          <path d="M98 44 H114" stroke="#CFE3E8" stroke-width="1.8" stroke-linecap="round"/>
+          <!-- Van cargo body -->
+          <rect x="126" y="25" width="52" height="28" rx="5" fill="#FFFFFF" stroke="#0A1F33" stroke-width="2.2"/>
+          <!-- Parcel badge inside van -->
+          <rect x="135" y="31" width="18" height="15" rx="2.5" fill="#FBF3E4" stroke="#9C6210" stroke-width="1.6"/>
+          <path d="M135 36.5 H153" stroke="#9C6210" stroke-width="1.4"/>
+          <!-- Route accent stripe -->
+          <path d="M159 39 H172" stroke="#0A787E" stroke-width="2.2" stroke-linecap="round"/>
+          <!-- Van cab -->
+          <path d="M178 32 H193 C196 32 198.5 34 200 37 L204 45 C204.6 46.3 205 47.6 205 49 V53 H178 V32 Z" fill="#0A787E" stroke="#0A1F33" stroke-width="2.2" stroke-linejoin="round"/>
+          <!-- Windshield -->
+          <path d="M183 36 H194 L198 44 H183 V36 Z" fill="#EAF6F6" stroke="#0A1F33" stroke-width="1.5" stroke-linejoin="round"/>
+          <!-- Headlight glow -->
+          <path d="M206 49 H213" stroke="#F4B942" stroke-width="2.4" stroke-linecap="round"/>
+          <!-- Wheels -->
+          <circle cx="143" cy="54" r="6" fill="#0A1F33"/>
+          <circle cx="143" cy="54" r="2.3" fill="#FFFFFF"/>
+          <circle cx="191" cy="54" r="6" fill="#0A1F33"/>
+          <circle cx="191" cy="54" r="2.3" fill="#FFFFFF"/>
+        </g>
+      </svg>
+    </div>
+
+    <h2 class="splash-title" id="splash-headline">Preparing the morning dispatch&hellip;</h2>
+    <p class="splash-sub" id="splash-subtext">99,441 Brazilian orders, the 09:00 rescue queue, and 3 MLflow models.</p>
+
+    <div class="splash-bar-shell" aria-hidden="true">
+      <div class="splash-bar-fill" id="splash-bar"></div>
+    </div>
+    <div class="splash-status-row">
+      <span id="splash-stage" role="status" aria-live="polite">Loading 99,441 order records&hellip;</span>
+      <span id="splash-timer">0.0s / 5.0s</span>
+    </div>
+
+    <div class="splash-foot">
+      <span>Data as of <strong>22 Aug 2018</strong></span>
+      <button type="button" class="splash-enter-btn" id="splash-skip">Skip &rarr;</button>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  var splash = document.getElementById("splash-screen");
+  if (!splash) return;
+  var bar = document.getElementById("splash-bar");
+  var stage = document.getElementById("splash-stage");
+  var timer = document.getElementById("splash-timer");
+  var headline = document.getElementById("splash-headline");
+  var subtext = document.getElementById("splash-subtext");
+  var chip = document.getElementById("splash-chip");
+  var skipBtn = document.getElementById("splash-skip");
+
+  var startedAt = Date.now();
+  var isFileProtocol = window.location.protocol === "file:";
+  var cardVisibleAt = 0;
+  var serverLive = true;
+  var statusChecked = isFileProtocol;
+  var serverProgress = 0;
+  var serverMessage = "";
+  var closed = false;
+  var lastColdHeadlineIdx = -1;
+
+  splash.style.opacity = "0";
+  splash.style.pointerEvents = "none";
+
+  function showSplashCard() {
+    if (cardVisibleAt > 0 || closed) return;
+    cardVisibleAt = Date.now();
+    splash.style.opacity = "";
+    splash.style.pointerEvents = "";
+  }
+
+  var coldHeadlines = [
+    "Waking up the S\u00e3o Paulo dispatch hub\u2026",
+    "Staging 99,441 Brazilian e-commerce orders\u2026",
+    "Loading the 3 MLflow champion models\u2026",
+    "Scoring the 09:00 parcel rescue queue\u2026",
+    "Checking regional delivery promise buffers\u2026"
+  ];
+
+  var coldStages = [
+    [0, "Waking up cloud container & local SQLite store\u2026"],
+    [8, "Compressing 99,441 order records for replay\u2026"],
+    [18, "Starting MLflow model registry & champion pipelines\u2026"],
+    [30, "Scoring morning parcel queue & late-risk percentiles\u2026"],
+    [42, "Computing regional delivery promises\u2026 almost ready"]
+  ];
+
+  function dismissSplash(immediate) {
+    if (closed) return;
+    closed = true;
+    if (immediate || cardVisibleAt === 0) {
+      splash.hidden = true;
+      return;
+    }
+    splash.classList.add("is-leaving");
+    window.setTimeout(function () {
+      if (splash && splash.parentNode) splash.hidden = true;
+    }, 320);
+  }
+
+  if (skipBtn) {
+    skipBtn.addEventListener("click", function () { dismissSplash(false); });
+  }
+
+  function tick() {
+    if (closed) return;
+    var now = Date.now();
+    var elapsedMs = now - startedAt;
+    var elapsedSec = Math.floor(elapsedMs / 1000);
+    var dataReady = !!window.OVERVIEW_DATA;
+
+    if (serverLive) {
+      if (dataReady && statusChecked) {
+        if (cardVisibleAt === 0) {
+          dismissSplash(true);
+          return;
+        }
+        if (now - cardVisibleAt >= 600) {
+          if (bar) bar.style.width = "100%";
+          if (timer) timer.textContent = "Ready";
+          dismissSplash(false);
+          return;
+        }
+      }
+      if (cardVisibleAt === 0 && elapsedMs > 1200) {
+        showSplashCard();
+      }
+      if (cardVisibleAt > 0) {
+        var pct = dataReady ? 96 : Math.min(92, Math.max(15, Math.round((elapsedMs / 4000) * 90)));
+        if (bar) bar.style.width = pct + "%";
+        if (timer) timer.textContent = (elapsedMs / 1000).toFixed(1) + "s";
+      }
+    } else {
+      showSplashCard();
+      var timePct = Math.min(95, Math.max(12, Math.round((elapsedSec / 45) * 92)));
+      var pctCold = Math.max(timePct, serverProgress || 0);
+      if (bar) bar.style.width = pctCold + "%";
+      if (timer) timer.textContent = elapsedSec + "s \u00b7 cold start";
+
+      var rotIdx = Math.floor(elapsedSec / 7) % coldHeadlines.length;
+      if (rotIdx !== lastColdHeadlineIdx && headline) {
+        lastColdHeadlineIdx = rotIdx;
+        headline.textContent = coldHeadlines[rotIdx];
+      }
+
+      if (serverMessage && stage) {
+        stage.textContent = serverMessage;
+      } else if (stage) {
+        for (var j = 0; j < coldStages.length; j++) {
+          if (elapsedSec >= coldStages[j][0]) stage.textContent = coldStages[j][1];
+        }
+      }
+    }
+    window.requestAnimationFrame(tick);
+  }
+
+  function pollStatus() {
+    if (closed || isFileProtocol) return;
+    fetch("/api/status", { cache: "no-store" })
+      .then(function (res) { return res.ok ? res.json() : null; })
+      .then(function (data) {
+        if (!data || closed) return;
+        statusChecked = true;
+        if (typeof data.progress === "number") serverProgress = data.progress;
+        if (typeof data.message === "string" && data.message) serverMessage = data.message;
+        if (data.live) {
+          serverLive = true;
+          if (chip) chip.textContent = "Historical replay";
+          if (window.OVERVIEW_DATA && (cardVisibleAt === 0 || Date.now() - cardVisibleAt >= 600)) {
+            if (bar) bar.style.width = "100%";
+            if (stage) stage.textContent = "Dispatch ready \u2014 opening Olist Operations\u2026";
+            dismissSplash(cardVisibleAt === 0);
+            return;
+          }
+        } else {
+          serverLive = false;
+          showSplashCard();
+          if (chip) chip.textContent = "Waking server";
+          if (subtext) subtext.textContent = "Waking up the cloud container and warming the 99k-order database & MLflow models (~30\u201340s).";
+        }
+      })
+      .catch(function () {
+        statusChecked = true;
+      })
+      .finally(function () {
+        if (!closed) window.setTimeout(pollStatus, 1500);
+      });
+  }
+
+  window.requestAnimationFrame(tick);
+  pollStatus();
+})();
+</script>
 
 <a class="skip-link" href="#main">Skip to content</a>
 

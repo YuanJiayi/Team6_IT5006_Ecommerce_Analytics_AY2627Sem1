@@ -20,9 +20,11 @@ if ! python3 -c 'import mlflow' >/dev/null 2>&1; then
   exit 1
 fi
 
-cp "$APP_DIR/data/analytics.sqlite" /tmp/analytics.sqlite.partial
-mv /tmp/analytics.sqlite.partial /tmp/analytics.sqlite
 export VAMOS_ANALYTICS_DB=/tmp/analytics.sqlite
+(
+  cp "$APP_DIR/data/analytics.sqlite" /tmp/analytics.sqlite.partial &&
+  mv /tmp/analytics.sqlite.partial /tmp/analytics.sqlite
+) &
 
 rm -rf /tmp/mlflow.partial /tmp/mlflow
 cp -R "$APP_DIR/mlflow" /tmp/mlflow.partial
@@ -62,24 +64,25 @@ trap cleanup EXIT INT TERM
 ) &
 MLFLOW_PID=$!
 
-# Network storage makes the first cold start slow; allow two minutes.
-echo "Waiting for MLflow at $UPSTREAM/mlflow/ ..."
-HEALTHY=""
-for _ in $(seq 1 120); do
-  if ! kill -0 "$MLFLOW_PID" 2>/dev/null; then
-    break
+# Start server.py immediately so Azure's front-end proxy sees the HTTP port open
+# right away and serves the loading screen while MLflow and the default-date
+# prewarm complete in the background.
+(
+  HEALTHY=""
+  for _ in $(seq 1 120); do
+    if ! kill -0 "$MLFLOW_PID" 2>/dev/null; then
+      break
+    fi
+    if python3 -c "import urllib.request; urllib.request.urlopen('$UPSTREAM/mlflow/health', timeout=1)" >/dev/null 2>&1; then
+      HEALTHY=1
+      break
+    fi
+    sleep 1
+  done
+  if [ -z "$HEALTHY" ]; then
+    echo "MLflow did not become healthy at $UPSTREAM/mlflow/health." >&2
   fi
-  if python3 -c "import urllib.request; urllib.request.urlopen('$UPSTREAM/mlflow/health', timeout=1)" >/dev/null 2>&1; then
-    HEALTHY=1
-    break
-  fi
-  sleep 1
-done
-if [ -z "$HEALTHY" ]; then
-  echo "MLflow did not become healthy at $UPSTREAM/mlflow/health." >&2
-  echo "Check the MLflow output above for the reason." >&2
-  exit 1
-fi
+) &
 
 PRAZO_MLFLOW_DB="$DB" PRAZO_MLFLOW_UI="$UPSTREAM" \
   exec python3 "$APP_DIR/server.py" --host 0.0.0.0 --port "$DASHBOARD_PORT"

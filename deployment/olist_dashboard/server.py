@@ -14,6 +14,7 @@ sent back to the browser or written to logs.
 from __future__ import annotations
 
 import argparse
+import gzip
 import json
 import os
 import secrets
@@ -353,18 +354,55 @@ class PinStore:
         )
 
 
+_STATIC_GZIP_CACHE = {}
+_STATIC_GZIP_LOCK = threading.Lock()
+
+
 class VamosHandler(BaseHTTPRequestHandler):
     server_version = "Vamos/1.0"
     protocol_version = "HTTP/1.1"
 
-    def _send_bytes(self, status, body, content_type):
+    def _accepts_gzip(self):
+        header = (self.headers.get("Accept-Encoding") or "").lower()
+        for part in header.split(","):
+            tokens = [item.strip() for item in part.split(";") if item.strip()]
+            if not tokens or tokens[0] != "gzip":
+                continue
+            if any(token.startswith("q=") and token[2:].strip() in ("0", "0.0", "0.00", "0.000") for token in tokens[1:]):
+                return False
+            return True
+        return False
+
+    def _send_bytes(self, status, body, content_type, cache_control="no-store", etag=None, precompressed=None):
+        use_gzip = False
+        payload = body
+        if status == 200 and self._accepts_gzip():
+            if precompressed is not None:
+                payload = precompressed
+                use_gzip = True
+            elif len(body) >= 1024:
+                payload = gzip.compress(body, compresslevel=6)
+                use_gzip = True
         self.send_response(status)
         self.send_header("Content-Type", content_type)
-        self.send_header("Content-Length", str(len(body)))
-        self.send_header("Cache-Control", "no-store")
+        if use_gzip:
+            self.send_header("Content-Encoding", "gzip")
+        self.send_header("Vary", "Accept-Encoding")
+        if etag is not None:
+            self.send_header("ETag", etag)
+        self.send_header("Content-Length", str(len(payload)))
+        self.send_header("Cache-Control", cache_control)
         self.send_header("X-Content-Type-Options", "nosniff")
         self.end_headers()
-        self.wfile.write(body)
+        self.wfile.write(payload)
+
+    def _send_not_modified(self, etag, cache_control="no-cache"):
+        self.send_response(304)
+        self.send_header("ETag", etag)
+        self.send_header("Vary", "Accept-Encoding")
+        self.send_header("Cache-Control", cache_control)
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.end_headers()
 
     def _send_json(self, status, payload):
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
@@ -713,6 +751,19 @@ class VamosHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         parsed = urlparse(self.path)
+        if parsed.path == "/api/status":
+            status_state = getattr(self.server, "startup_status", None)
+            if isinstance(status_state, dict):
+                self._send_json(200, {"ok": True, **status_state})
+            else:
+                self._send_json(200, {
+                    "ok": True,
+                    "live": True,
+                    "stage": "ready",
+                    "progress": 100,
+                    "message": "Ready! Opening Olist Operations\u2026",
+                })
+            return
         if parsed.path.startswith("/api/pins/") and parsed.path != "/api/pins/":
             self._handle_get_pin(parsed)
             return
@@ -804,7 +855,24 @@ class VamosHandler(BaseHTTPRequestHandler):
             )
             return
         try:
-            body = candidate.read_bytes()
+            stat = candidate.stat()
+            etag = '"{:x}-{:x}"'.format(stat.st_mtime_ns, stat.st_size)
+            if self.headers.get("If-None-Match") == etag:
+                self._send_not_modified(etag, cache_control="no-cache")
+                return
+            cache_key = (str(candidate), stat.st_mtime_ns, stat.st_size)
+            precompressed = None
+            body = b""
+            if self._accepts_gzip() and stat.st_size >= 1024:
+                with _STATIC_GZIP_LOCK:
+                    precompressed = _STATIC_GZIP_CACHE.get(cache_key)
+                if precompressed is None:
+                    raw = candidate.read_bytes()
+                    precompressed = gzip.compress(raw, compresslevel=6)
+                    with _STATIC_GZIP_LOCK:
+                        _STATIC_GZIP_CACHE[cache_key] = precompressed
+            else:
+                body = candidate.read_bytes()
         except OSError:
             self._send_json(
                 500,
@@ -815,6 +883,9 @@ class VamosHandler(BaseHTTPRequestHandler):
             200,
             body,
             CONTENT_TYPES.get(candidate.suffix.lower(), "application/octet-stream"),
+            cache_control="no-cache",
+            etag=etag,
+            precompressed=precompressed,
         )
 
     def do_POST(self):
@@ -1013,6 +1084,12 @@ class VamosServer(ThreadingHTTPServer):
             TRUSTED_HOSTS if trusted_hosts is None else trusted_hosts
         )
         self.public_mode = bool(public_mode)
+        self.startup_status = {
+            "live": True,
+            "stage": "ready",
+            "progress": 100,
+            "message": "Ready! Opening Olist Operations\u2026",
+        }
         super().__init__(address, VamosHandler)
 
 
@@ -1025,6 +1102,7 @@ def create_server(
     actions_service=None,
     pin_store=None,
     seed_answers=None,
+    preload_actions=True,
 ):
     if allowed_hosts is None:
         allowed_hosts = os.environ.get("VAMOS_ALLOWED_HOSTS", "")
@@ -1036,7 +1114,7 @@ def create_server(
         model = LLMClient(config) if config else None
         ask_service = AskService(store, model)
     if actions_service is None:
-        actions_service = actions_api.ActionsService()
+        actions_service = actions_api.ActionsService(preload=preload_actions)
     if pin_store is None:
         if seed_answers is None:
             seed_answers = load_seed_answers()
@@ -1074,25 +1152,106 @@ def public_mode_problems(ask_service):
 DEFAULT_PREWARM_DATE = "2018-08-22"
 
 
+def _set_startup_status(server, live, stage, progress, message):
+    if server is None:
+        return
+    server.startup_status = {
+        "live": bool(live),
+        "stage": str(stage),
+        "progress": int(progress),
+        "message": str(message),
+    }
+
+
+def _wait_for_mlflow_upstream(timeout_seconds=120):
+    """If PRAZO_MLFLOW_UI is set, wait briefly for MLflow /mlflow/health to answer."""
+    ui = os.environ.get("PRAZO_MLFLOW_UI")
+    if not ui:
+        return True
+    import urllib.request
+
+    health_url = ui.rstrip("/") + "/mlflow/health"
+    deadline = time.monotonic() + timeout_seconds
+    while time.monotonic() < deadline:
+        try:
+            with urllib.request.urlopen(health_url, timeout=1.5) as response:
+                if response.status == 200:
+                    return True
+        except Exception:
+            pass
+        time.sleep(1.0)
+    return False
+
+
 def _prewarm_default_date(server, date=DEFAULT_PREWARM_DATE):
     """Warm the default demo date sequentially in the background after startup."""
     if os.environ.get("VAMOS_PREWARM", "1") == "0":
+        _set_startup_status(
+            server, True, "ready", 100, "Ready! Opening Olist Operations\u2026"
+        )
         return None
+
+    _set_startup_status(
+        server,
+        False,
+        "overview",
+        18,
+        "Compressing 99,441 Olist order records for historical replay\u2026",
+    )
 
     def _run():
         try:
+            overview_js = (APP_ROOT / "data" / "overview-data.js").resolve()
+            if overview_js.is_file():
+                stat = overview_js.stat()
+                cache_key = (str(overview_js), stat.st_mtime_ns, stat.st_size)
+                gz = gzip.compress(overview_js.read_bytes(), compresslevel=6)
+                with _STATIC_GZIP_LOCK:
+                    _STATIC_GZIP_CACHE[cache_key] = gz
+            _set_startup_status(
+                server,
+                False,
+                "mlflow",
+                36,
+                "Connecting to the MLflow model registry & champion pipelines\u2026",
+            )
+            _wait_for_mlflow_upstream(timeout_seconds=120)
             models_api.models_response(date)
+            for model_name in getattr(models_api, "MODELS", ()):
+                models_api.importance_response(model_name)
             actions_api._release_free_memory()
             service = getattr(server, "actions_service", None)
             if service is not None:
+                _set_startup_status(
+                    server,
+                    False,
+                    "queue",
+                    64,
+                    "Scoring the 22 Aug 2018 morning parcel queue & late-risk percentiles\u2026",
+                )
                 service.queue_response(date)
                 actions_api._release_free_memory()
+                _set_startup_status(
+                    server,
+                    False,
+                    "promises",
+                    82,
+                    "Computing regional delivery promise buffers & drift checks\u2026",
+                )
                 service.promises_response(date)
                 actions_api._release_free_memory()
             monitor_api.monitor_response(date)
             actions_api._release_free_memory()
         except Exception:
             pass
+        finally:
+            _set_startup_status(
+                server,
+                True,
+                "ready",
+                100,
+                "Dispatch ready \u2014 opening Olist Operations\u2026",
+            )
 
     thread = threading.Thread(target=_run, name="vamos-prewarm", daemon=True)
     thread.start()
@@ -1106,7 +1265,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
 
     try:
-        server = create_server(args.host, args.port)
+        server = create_server(args.host, args.port, preload_actions=False)
     except SeedChatsError as error:
         print("Vamos cannot start: {}".format(error), file=sys.stderr)
         return 1

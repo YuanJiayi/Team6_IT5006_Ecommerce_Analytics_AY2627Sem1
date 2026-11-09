@@ -628,6 +628,12 @@
   function bind() {
     var host = $("actions-root");
     if (!host) return;
+    var downX = 0;
+    var downY = 0;
+    host.addEventListener("mousedown", function (event) {
+      downX = event.clientX;
+      downY = event.clientY;
+    });
     host.addEventListener("click", function (event) {
       var find = event.target.closest ? event.target.closest("[data-actions-find]") : null;
       if (find) {
@@ -658,9 +664,10 @@
       }
       var row = event.target.closest ? event.target.closest("[data-actions-row]") : null;
       if (row) {
-        if (event.target.closest(".actions-order")) return;
+        var dragged = Math.hypot(event.clientX - downX, event.clientY - downY) > 6;
         var selection = window.getSelection && window.getSelection().toString();
-        if (selection) return;
+        if (dragged && selection) return;
+        if (event.detail > 1 && event.target.closest(".actions-order") && selection) return;
         toggleRow(row);
       }
     });

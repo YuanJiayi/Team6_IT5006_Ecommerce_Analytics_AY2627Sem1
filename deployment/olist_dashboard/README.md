@@ -176,7 +176,7 @@ promised date is on time.
 
 The SQL guard is intentionally narrow: one statement, no writes, no `ATTACH`, no
 `PRAGMA`, no private or unknown tables, no risky string/encoding functions, a
-two-second deadline, at most 200 rows, 30 columns and 200 KB of output. Raw
+15-second deadline, at most 200 rows, 30 columns and 200 KB of output. Raw
 identifier columns and identifier-shaped output values are blocked even when
 aliased or concatenated; address columns and review text are not in the public
 views. Constant numeric projections are rejected, but this lexical guard cannot
@@ -317,9 +317,9 @@ check they also have Python 3.13 wheels.
 `deploy/start.sh` starts a local MLflow server for the shipped store (as
 `run_local.sh` does), waits for it to become healthy, then starts the dashboard
 on Azure's port, with `src/` on `PYTHONPATH` and `EVIDENTLY_DISABLE_TELEMETRY=1`.
-It fails loudly if either process cannot start. The analytics database is
-copied to local disk at startup, because the app folder is on network storage
-where queries exceed Ask's 2-second limit.
+It fails loudly if either process cannot start. The analytics database and
+MLflow store are copied to local disk at startup, because the app folder is on
+network storage.
 
 The link (`olist-ops-e5abckh8h0hfahdp.eastasia-01.azurewebsites.net`) is tied
 to this Azure account, so `delete` followed by `create` gives the same link.

@@ -24,6 +24,7 @@ deployment/
 docs/
   phase1/         Submitted Phase 1 report, marker feedback, validation notes
   phase2/         Phase 2 report source, evidence map, assumptions
+  phase3/         Submitted Phase 3 report and presentation slides
   reference/      Course project description
 tests/            Unit and data-contract tests
 ```
@@ -73,5 +74,6 @@ Notebooks find `data/` from any folder inside the repository, so open them from 
 
 - [Phase 1: exploratory analysis and dashboard](docs/phase1/README.md)
 - [Phase 2: delivery-time estimation and late-order prioritisation](docs/phase2/README.md)
+- [Phase 3: submitted report](docs/phase3/report/Team6_Phase3_IT5006_AY2627Sem1.pdf) and [slides](docs/phase3/report/IT5006%20Project%20-%20Group%206-1.pdf)
 - [Deployment](deployment/README.md)
 - [Project description](docs/reference/IT5006%20Project%20Description%20-%20AY%202026_27%20Semester%201.pdf)

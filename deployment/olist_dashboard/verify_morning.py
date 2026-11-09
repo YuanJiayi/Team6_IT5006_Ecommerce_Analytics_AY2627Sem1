@@ -549,6 +549,19 @@ def check_redesign_contract():
     running = (HERE / "README.md").read_text(encoding="utf-8")
     check("analytics.sqlite" in running and "analytics_db.py" in running,
           "running docs must explain the local analytics database")
+    check(
+        'id="splash-screen"' in html
+        and 'id="splash-bar"' in html
+        and 'id="splash-stage"' in html
+        and 'id="splash-skip"' in html
+        and 'fetch("/api/status"' in html,
+        "index.html must include the same-URL splash screen and poll /api/status",
+    )
+    check(
+        'parsed.path == "/api/status"' in server
+        and "startup_status" in server,
+        "server.py must expose GET /api/status with startup readiness progress",
+    )
 
 
 def main():

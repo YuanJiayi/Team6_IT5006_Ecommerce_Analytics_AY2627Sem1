@@ -960,18 +960,27 @@ class AnalyticsStore:
         self.max_output_bytes = max_output_bytes
         self._metadata = None
 
+    def _active_path(self):
+        if self.path.is_file():
+            return self.path
+        fallback = (Path(__file__).resolve().parent / "data" / "analytics.sqlite")
+        if fallback.is_file() and str(self.path).startswith("/tmp/"):
+            return fallback
+        return self.path
+
     def ready(self):
-        return self.path.is_file()
+        return self._active_path().is_file()
 
     def metadata(self):
         if self._metadata is None:
-            if not self.ready():
+            active = self._active_path()
+            if not active.is_file():
                 raise QueryError(
                     "analytics_not_ready",
                     "The local analytics database is missing. Build it with "
                     "python3 deployment/olist_dashboard/analytics_db.py.",
                 )
-            self._metadata = load_metadata(self.path)
+            self._metadata = load_metadata(active)
         return self._metadata
 
     def schema_context(self, as_of):
@@ -979,14 +988,15 @@ class AnalyticsStore:
 
     def execute(self, sql, as_of, params=None):
         sql = validate_sql_text(sql)
-        if not self.ready():
+        active = self._active_path()
+        if not active.is_file():
             raise QueryError(
                 "analytics_not_ready",
                 "The local analytics database is missing. Build it with "
                 "python3 deployment/olist_dashboard/analytics_db.py.",
             )
         self.metadata()
-        connection = _open_read_only(self.path, query_only=False)
+        connection = _open_read_only(active, query_only=False)
         try:
             _create_as_of_views(connection, as_of)
             connection.execute("PRAGMA query_only=ON")
