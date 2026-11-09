@@ -60,14 +60,14 @@ def free_port():
         return sock.getsockname()[1]
 
 
-def request(port, path, method="GET", payload=None):
+def request(port, path, method="GET", payload=None, headers=None):
     data = None
-    headers = {}
+    req_headers = dict(headers or {})
     if payload is not None:
         data = json.dumps(payload).encode("utf-8")
-        headers["Content-Type"] = "application/json"
+        req_headers["Content-Type"] = "application/json"
     req = urllib.request.Request("http://127.0.0.1:{}{}".format(port, path),
-                                 data=data, headers=headers, method=method)
+                                 data=data, headers=req_headers, method=method)
     try:
         with urllib.request.urlopen(req, timeout=30) as response:
             body = response.read()
@@ -492,6 +492,26 @@ class ModelsApiTests(unittest.TestCase):
                                        msg="{} {}".format(name, row["name"]))
 
     def test_proxy_refuses_writes_and_reports_a_missing_upstream(self):
+        external_headers = {
+            "Origin": "https://olist-ops-e5abckh8h0hfahdp.eastasia-01.azurewebsites.net",
+            "Referer": "https://olist-ops-e5abckh8h0hfahdp.eastasia-01.azurewebsites.net/mlflow/",
+        }
+        status, _, body = request(
+            self.port,
+            "/mlflow/ajax-api/2.0/mlflow/logged-models/search",
+            "POST",
+            {"experiment_ids": ["1"]},
+            headers=external_headers,
+        )
+        self.assertEqual(status, 200, body.decode("utf-8", "ignore"))
+        status, _, body = request(
+            self.port,
+            "/mlflow/graphql",
+            "POST",
+            {"query": "{ __typename }"},
+            headers=external_headers,
+        )
+        self.assertEqual(status, 200, body.decode("utf-8", "ignore"))
         status, _, body = request(self.port, "/mlflow/api/2.0/mlflow/runs/delete", "POST", {})
         self.assertEqual(status, 403)
         self.assertEqual(json_body(body)["error"]["code"], "forbidden_proxy_request")

@@ -2,7 +2,7 @@
 # Stage the complete dashboard for Azure App Service.
 #
 # The staged layout mirrors the repository so every repo-root-relative path in
-# the code keeps working once the zip lands in /home/site/wwwroot:
+# the code keeps working once the zip lands in the app folder Azure runs it from:
 #
 #   requirements.txt                          (read by the App Service build)
 #   src/{olist,phase3}                        (Actions/Models/Monitor code)

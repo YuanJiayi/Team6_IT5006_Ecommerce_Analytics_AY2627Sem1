@@ -53,6 +53,8 @@
   .nav button:hover{color:var(--ink)}
   .nav button[aria-current="page"]{color:var(--ink);font-weight:500}
   .nav button[aria-current="page"]::after{content:"";position:absolute;left:10px;right:10px;bottom:0;height:2px;background:var(--accent);border-radius:2px 2px 0 0}
+  .nav button.has-unread{color:var(--ink);font-weight:500}
+  .nav button.has-unread::before{content:"";order:1;width:7px;height:7px;margin-left:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);flex:none}
   .date-cluster{display:flex;align-items:center;gap:6px;justify-self:end;min-width:0}
   .asof-line{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);white-space:nowrap;min-width:0}
   .asof-input{
@@ -212,7 +214,8 @@
   .empty .btn{margin-top:10px}
 
   .actions-root{display:flex;flex-direction:column;gap:18px}
-  .actions-loading{font-size:12px;color:var(--muted)}
+  .actions-loading{font-size:12px;color:var(--accent);display:flex;align-items:center;gap:8px;animation:ask-pulse 1.6s ease-in-out infinite}
+  .actions-loading::before,.models-loading::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);flex:none}
   .actions-panel{padding:0;overflow:hidden}
   .actions-head{padding:20px 22px 16px;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap}
   .actions-head h2{font-size:18px;font-weight:600;letter-spacing:-.02em;margin-top:2px}
@@ -306,7 +309,7 @@
   .drift-list strong{color:var(--ink);font-weight:500}
 
   .models-root{display:block}
-  .models-loading{font-size:12px;color:var(--muted)}
+  .models-loading{font-size:12px;color:var(--accent);display:flex;align-items:center;gap:8px;animation:ask-pulse 1.6s ease-in-out infinite}
   #view-drift .page-head{margin-bottom:18px}
   .model-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:14px}
   .model-tile{display:flex;flex-direction:column;gap:5px;text-align:left;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;box-shadow:var(--shadow);transition:border-color .22s ease-out,box-shadow .22s ease-out,background .22s ease-out}
@@ -490,10 +493,12 @@
   .assistant-content .ask-answer.ask-unsupported{background:var(--amber-soft);border:1px solid var(--amber-line);border-radius:10px;padding:13px 15px}
   .assistant-content .ask-answer-head{margin-bottom:6px}
   .assistant-content .ask-answer-head h3{font-size:15px}
-  .ask-turn.is-thinking .assistant-content h2{color:var(--accent)}
+  .ask-turn.is-thinking .assistant-content h2{color:var(--accent);display:inline-flex;align-items:center;gap:8px;animation:ask-pulse 1.6s ease-in-out infinite}
+  .ask-turn.is-thinking .assistant-content h2::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);flex:none}
   .ask-status{margin:0;padding:0 clamp(18px,3vw,30px) 10px;font-size:11.5px;color:var(--muted);min-height:0}
   .ask-status:empty{display:none}
-  .ask-status.is-loading{color:var(--accent)}
+  .ask-status.is-loading{color:var(--accent);animation:ask-pulse 1.6s ease-in-out infinite}
+  @keyframes ask-pulse{0%,100%{opacity:1}50%{opacity:.4}}
   .ask-status.is-error{color:var(--red)}
   .ask-status.is-refusal{color:var(--amber)}
   .ask-answer{min-width:0}
@@ -947,9 +952,6 @@
         <p class="eyebrow">Grounded questions</p>
         <h1 id="ask-title">Ask</h1>
         <p class="page-sub">Ask about orders, deliveries, sellers, payments or reviews.</p>
-      </div>
-      <div class="page-meta">
-        <span class="chip">Local data &middot; read-only</span>
       </div>
     </header>
 

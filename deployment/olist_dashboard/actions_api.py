@@ -19,7 +19,9 @@ rather than taking the whole dashboard down.
 
 from __future__ import annotations
 
+import ctypes
 import datetime
+import gc
 import json
 import re
 import sys
@@ -44,6 +46,7 @@ PROMISE_MIN_ORDERS = MIN_SAMPLE
 PROMISE_DUE_SHARE = 0.99
 PREDICTION_LOG_MAX_LINES = 10000
 PREDICTION_LOG_LOCK = threading.Lock()
+COMPUTE_LOCK = threading.RLock()
 NO_CAPACITY_NOTE = (
     "No parcels to act on this morning: the daily list is 10% of yesterday's "
     "handovers, and there were none."
@@ -58,6 +61,15 @@ class ActionsUnavailable(Exception):
     def __init__(self, message):
         super().__init__(message)
         self.message = message
+
+
+def _release_free_memory():
+    """Return freed heap pages to the OS on Linux after large DataFrame work."""
+    gc.collect()
+    try:
+        ctypes.CDLL("libc.so.6").malloc_trim(0)
+    except Exception:
+        pass
 
 
 def promise_cohort(frame, as_of, policy_start):
@@ -184,6 +196,7 @@ class ActionsService:
         self._raw_order_ids = None
         self._month_states = {}
         self.error = None
+        _release_free_memory()
         return self
 
     # ------------------------------------------------------------------ queue
@@ -272,45 +285,52 @@ class ActionsService:
             payload["cached"] = True
             return payload
 
-        started = time.perf_counter()
-        state = self._date_state(as_of)
-        versions = self._state_versions(state)
-        capacity = self._daily_capacity(as_of)
-        frame = queue_module.winnie_queue(as_of, context=state["context"], capacity=capacity)
-        frame["tier"] = _tier(frame, capacity)
-        import pandas as pd
+        with COMPUTE_LOCK:
+            cached = self._queue_cache.get(key)
+            if cached is not None:
+                payload = dict(cached)
+                payload["cached"] = True
+                return payload
+            started = time.perf_counter()
+            state = self._date_state(as_of)
+            versions = self._state_versions(state)
+            capacity = self._daily_capacity(as_of)
+            frame = queue_module.winnie_queue(as_of, context=state["context"], capacity=capacity)
+            frame["tier"] = _tier(frame, capacity)
+            import pandas as pd
 
-        past = frame[frame["past_promise"]].sort_values(
-            ["promise_date", "order_id"], kind="stable", na_position="last")
-        ranked = frame[~frame["past_promise"]].sort_values(
-            ["rank", "order_id"], kind="stable", na_position="last")
-        frame = pd.concat([ranked, past], ignore_index=True)
-        why, why_base_value = self._explanations(frame, as_of, state)
-        performance = self._queue_performance(as_of, state)
-        rows = [_row(row, versions, why[str(row["order_id"])])
-                for _, row in frame.iterrows()]
-        counts = {"act": int(frame["tier"].eq("act").sum()),
-                  "watch": int(frame["tier"].eq("watch").sum()),
-                  "none": int((frame["tier"].eq("none") & ~frame["past_promise"]).sum())}
-        payload = {
-            "ok": True,
-            "date": str(as_of.date()),
-            "as_of": (as_of + datetime.timedelta(hours=9)).isoformat(),
-            "method": "blend",
-            "capacity": capacity,
-            "capacity_note": NO_CAPACITY_NOTE if capacity == 0 else None,
-            "model_versions": versions,
-            "why_base_value": float(why_base_value),
-            "why_scale": "logit",
-            "tiers": counts,
-            "customer_update": int(frame["past_promise"].sum()),
-            "performance": performance,
-            "rows": rows,
-            "elapsed_ms": _millis(started),
-            "cached": False,
-        }
-        self._queue_cache[key] = payload
-        return payload
+            past = frame[frame["past_promise"]].sort_values(
+                ["promise_date", "order_id"], kind="stable", na_position="last")
+            ranked = frame[~frame["past_promise"]].sort_values(
+                ["rank", "order_id"], kind="stable", na_position="last")
+            frame = pd.concat([ranked, past], ignore_index=True)
+            why, why_base_value = self._explanations(frame, as_of, state)
+            performance = self._queue_performance(as_of, state)
+            rows = [_row(row, versions, why[str(row["order_id"])])
+                    for _, row in frame.iterrows()]
+            counts = {"act": int(frame["tier"].eq("act").sum()),
+                      "watch": int(frame["tier"].eq("watch").sum()),
+                      "none": int((frame["tier"].eq("none") & ~frame["past_promise"]).sum())}
+            payload = {
+                "ok": True,
+                "date": str(as_of.date()),
+                "as_of": (as_of + datetime.timedelta(hours=9)).isoformat(),
+                "method": "blend",
+                "capacity": capacity,
+                "capacity_note": NO_CAPACITY_NOTE if capacity == 0 else None,
+                "model_versions": versions,
+                "why_base_value": float(why_base_value),
+                "why_scale": "logit",
+                "tiers": counts,
+                "customer_update": int(frame["past_promise"].sum()),
+                "performance": performance,
+                "rows": rows,
+                "elapsed_ms": _millis(started),
+                "cached": False,
+            }
+            self._queue_cache[key] = payload
+            _release_free_memory()
+            return payload
 
     def _queue_performance(self, as_of, state):
         """Winnie's rescue metrics over the four weeks before ``as_of``.
@@ -354,9 +374,6 @@ class ActionsService:
                 slack_detail["morning"].ge(start) & slack_detail["morning"].le(end)]
         known = slack_detail[slack_detail["outcome_available_at"].lt(cutoff)]
         performance["slack"] = queue_module.rescue_metrics(known)
-        for metrics in (performance["blend"], performance["slack"]):
-            if metrics["caught"] < MIN_SAMPLE:
-                metrics["mean_days_left"] = None
         return performance
 
     # --------------------------------------------------------------- promises
@@ -447,7 +464,7 @@ class ActionsService:
             rows = []
             for _, base in full.iterrows():
                 selected = known[known["region"].eq(base["region"])]
-                enough = len(selected) >= MIN_SAMPLE
+                enough = len(selected) > 0
                 rows.append({
                     "region": base["region"],
                     "buffer_days": float(base["buffer_days"]),
@@ -522,37 +539,44 @@ class ActionsService:
             payload["cached"] = True
             return payload
 
-        started = time.perf_counter()
-        self._ensure_policy()
-        month = as_of.to_period("M")
-        self._check_promise_month(month)
-        table = self._promise_table(month, as_of)
-        regions = [
-            {
-                "region": str(row["region"]),
-                "buffer_days": float(row["buffer_days"]),
-                "our_mean_promise_days": (None if pd.isna(row["our_mean_promise_days"])
-                                          else float(row["our_mean_promise_days"])),
-                "olist_mean_promise_days": (None if pd.isna(row["olist_mean_promise_days"])
-                                            else float(row["olist_mean_promise_days"])),
-                "n_orders": int(row["n_orders"]),
+        with COMPUTE_LOCK:
+            cached = self._promise_cache.get(key)
+            if cached is not None:
+                payload = dict(cached)
+                payload["cached"] = True
+                return payload
+            started = time.perf_counter()
+            self._ensure_policy()
+            month = as_of.to_period("M")
+            self._check_promise_month(month)
+            table = self._promise_table(month, as_of)
+            regions = [
+                {
+                    "region": str(row["region"]),
+                    "buffer_days": float(row["buffer_days"]),
+                    "our_mean_promise_days": (None if pd.isna(row["our_mean_promise_days"])
+                                              else float(row["our_mean_promise_days"])),
+                    "olist_mean_promise_days": (None if pd.isna(row["olist_mean_promise_days"])
+                                                else float(row["olist_mean_promise_days"])),
+                    "n_orders": int(row["n_orders"]),
+                }
+                for _, row in table.sort_values("n_orders", ascending=False).iterrows()
+            ]
+            payload = {
+                "ok": True,
+                "date": str(as_of.date()),
+                "month": str(month),
+                "run": PROMISE_RUN,
+                "target": PROMISE_TARGET,
+                "model_label": "Checkout delivery-time model without Olist's promise as an input",
+                "regions": regions,
+                "performance": self._promise_performance(as_of),
+                "elapsed_ms": _millis(started),
+                "cached": False,
             }
-            for _, row in table.sort_values("n_orders", ascending=False).iterrows()
-        ]
-        payload = {
-            "ok": True,
-            "date": str(as_of.date()),
-            "month": str(month),
-            "run": PROMISE_RUN,
-            "target": PROMISE_TARGET,
-            "model_label": "Checkout delivery-time model without Olist's promise as an input",
-            "regions": regions,
-            "performance": self._promise_performance(as_of),
-            "elapsed_ms": _millis(started),
-            "cached": False,
-        }
-        self._promise_cache[key] = payload
-        return payload
+            self._promise_cache[key] = payload
+            _release_free_memory()
+            return payload
 
     def _raw_order_ids_set(self):
         """Every order ID in the raw Olist orders file, for not-scored lookups."""
@@ -655,7 +679,11 @@ class ActionsService:
             fit_rows = queue_module._winnie_fit_rows(state["context"])
             model_ref = fit_rows["risk"].to_numpy(dtype=float)
             rule_ref = queue_module.winnie_rule_scores(fit_rows, fit_rows)
-            state["refs"] = (fit_rows, model_ref, rule_ref)
+            state["refs"] = (
+                fit_rows[["route_transit_90d_at_handover"]].reset_index(drop=True),
+                model_ref,
+                rule_ref,
+            )
         return state["refs"]
 
     def _handover_times(self):

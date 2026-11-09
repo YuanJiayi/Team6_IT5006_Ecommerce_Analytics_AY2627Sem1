@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Evidently must never phone home from the dashboard.
+# Evidently must never phone home from the dashboard, and the read-only MLflow
+# server does not run background Huey job workers.
 export EVIDENTLY_DISABLE_TELEMETRY="${EVIDENTLY_DISABLE_TELEMETRY:-1}"
+export MLFLOW_DISABLE_AGENT_HINT="${MLFLOW_DISABLE_AGENT_HINT:-1}"
+export MLFLOW_SERVER_ENABLE_JOB_EXECUTION="${MLFLOW_SERVER_ENABLE_JOB_EXECUTION:-false}"
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"

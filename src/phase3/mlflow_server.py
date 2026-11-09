@@ -53,6 +53,7 @@ def mlflow_server(store, timeout=STARTUP_TIMEOUT):
     log = tempfile.TemporaryFile(mode="w+", encoding="utf-8")
     environment = dict(os.environ)
     environment.setdefault("MLFLOW_DISABLE_AGENT_HINT", "1")
+    environment.setdefault("MLFLOW_SERVER_ENABLE_JOB_EXECUTION", "false")
     command = [
         sys.executable, "-m", "mlflow", "server",
         "--backend-store-uri", "sqlite:///{}".format(store / "mlflow.db"),

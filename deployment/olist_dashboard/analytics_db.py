@@ -51,8 +51,28 @@ TABLES = {
         "primary_key": ["order_id"],
         "indexes": [
             ("idx_orders_customer", ["customer_id"]),
-            ("idx_orders_purchase", ["order_purchase_timestamp"]),
-            ("idx_orders_delivered", ["order_delivered_customer_date"]),
+            (
+                "idx_orders_purchase",
+                [
+                    "order_purchase_timestamp",
+                    "order_id",
+                    "customer_id",
+                    "order_delivered_customer_date",
+                    "order_estimated_delivery_date",
+                    "order_delivered_carrier_date",
+                    "order_approved_at",
+                ],
+            ),
+            (
+                "idx_orders_delivered",
+                [
+                    "order_delivered_customer_date",
+                    "order_purchase_timestamp",
+                    "order_id",
+                    "customer_id",
+                    "order_estimated_delivery_date",
+                ],
+            ),
             ("idx_orders_estimated", ["order_estimated_delivery_date"]),
             ("idx_orders_status", ["order_status"]),
         ],
@@ -71,9 +91,20 @@ TABLES = {
         ],
         "primary_key": ["order_id", "order_item_id"],
         "indexes": [
-            ("idx_items_order", ["order_id"]),
-            ("idx_items_product", ["product_id"]),
-            ("idx_items_seller", ["seller_id"]),
+            (
+                "idx_items_order",
+                [
+                    "order_id",
+                    "product_id",
+                    "seller_id",
+                    "price",
+                    "freight_value",
+                    "shipping_limit_date",
+                    "order_item_id",
+                ],
+            ),
+            ("idx_items_product", ["product_id", "order_id", "price", "freight_value"]),
+            ("idx_items_seller", ["seller_id", "order_id", "price", "freight_value"]),
         ],
     },
     "customers": {
@@ -88,7 +119,7 @@ TABLES = {
         ],
         "primary_key": ["customer_id"],
         "indexes": [
-            ("idx_customers_state", ["customer_state"]),
+            ("idx_customers_id_state", ["customer_id", "customer_state"]),
             ("idx_customers_unique", ["customer_unique_id"]),
         ],
     },
@@ -102,7 +133,7 @@ TABLES = {
             ("seller_state", "TEXT"),
         ],
         "primary_key": ["seller_id"],
-        "indexes": [("idx_sellers_state", ["seller_state"])],
+        "indexes": [("idx_sellers_id_state", ["seller_id", "seller_state"])],
     },
     "payments": {
         "source": "olist_order_payments_dataset.csv",
@@ -116,7 +147,16 @@ TABLES = {
         ],
         "primary_key": ["order_id", "payment_sequential"],
         "indexes": [
-            ("idx_payments_order", ["order_id"]),
+            (
+                "idx_payments_order",
+                [
+                    "order_id",
+                    "payment_type",
+                    "payment_value",
+                    "payment_installments",
+                    "payment_sequential",
+                ],
+            ),
             ("idx_payments_type", ["payment_type"]),
         ],
     },
@@ -134,7 +174,16 @@ TABLES = {
         ],
         "primary_key": [],
         "indexes": [
-            ("idx_reviews_order", ["order_id"]),
+            (
+                "idx_reviews_order",
+                [
+                    "order_id",
+                    "review_answer_timestamp",
+                    "review_creation_date",
+                    "review_score",
+                    "review_id",
+                ],
+            ),
             ("idx_reviews_score", ["review_score"]),
             ("idx_reviews_creation", ["review_creation_date"]),
         ],
@@ -154,7 +203,10 @@ TABLES = {
             ("product_width_cm", "INTEGER"),
         ],
         "primary_key": ["product_id"],
-        "indexes": [("idx_products_category", ["product_category_name"])],
+        "indexes": [
+            ("idx_products_id_cat", ["product_id", "product_category_name"]),
+            ("idx_products_category", ["product_category_name"]),
+        ],
     },
     "geolocation": {
         "source": "olist_geolocation_dataset.csv",
@@ -384,6 +436,7 @@ def build_database(source_dir=None, output_path=None, quiet=False):
                         ", ".join(_quote(column) for column in columns),
                     )
                 )
+        connection.execute("ANALYZE")
         metadata = {
             "format_version": FORMAT_VERSION,
             "source": "Olist public CSVs (data/raw)",

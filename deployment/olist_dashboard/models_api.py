@@ -15,6 +15,7 @@ import re
 import statistics
 import sys
 import tempfile
+import threading
 from http import client as http_client
 from pathlib import Path
 from urllib.parse import urlencode, urlparse
@@ -94,7 +95,9 @@ BENCHMARK_LABELS = {
 }
 
 _CACHE = {"key": None, "payload": None}
+_BASE_CACHE = {}
 _IMPORTANCE_CACHE = {}
+_COMPUTE_LOCK = threading.RLock()
 MONTH_ABBR = ("Jan", "Feb", "Mar", "Apr", "May", "Jun",
               "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
 
@@ -749,12 +752,28 @@ def models_response(date=None):
     try:
         uri = _tracking_uri()
         key = (uri, str(date))
-        if _CACHE["key"] == key and _CACHE["payload"] is not None:
+        if _CACHE.get("key") == key and _CACHE.get("payload") is not None:
             return 200, _CACHE["payload"]
-        client = _client()
-        payload = [_model_payload(client, name, date) for name in MODELS]
-        _CACHE.update({"key": key, "payload": payload})
-        return 200, payload
+        with _COMPUTE_LOCK:
+            if "key" not in _CACHE:
+                _BASE_CACHE.clear()
+            if _CACHE.get("key") == key and _CACHE.get("payload") is not None:
+                return 200, _CACHE["payload"]
+            client = _client()
+            base = _BASE_CACHE.get(uri)
+            if base is None:
+                base = [_model_payload(client, name, None) for name in MODELS]
+                _BASE_CACHE[uri] = base
+            payload = []
+            for item in base:
+                if item.get("kind") == "classification":
+                    copy_item = dict(item)
+                    copy_item["live_model"] = _live_model(client, date) if date else None
+                    payload.append(copy_item)
+                else:
+                    payload.append(item)
+            _CACHE.update({"key": key, "payload": payload})
+            return 200, payload
     except ModelsUnavailable as error:
         return 503, {"ok": False, "error": {"code": "models_unavailable", "message": error.message}}
     except Exception as error:
@@ -771,32 +790,35 @@ def importance_response(name):
     if name not in MODELS:
         return 404, {"ok": False, "error": {"code": "not_found", "message": "Unknown model."}}
     try:
-        client = _client()
         uri = _tracking_uri()
         key = (uri, name)
-        if key not in _IMPORTANCE_CACHE:
-            version = client.get_model_version_by_alias(name, "champion")
-            with tempfile.TemporaryDirectory() as tmp:
-                path = Path(client.download_artifacts(version.run_id, "permutation_importance.csv", tmp))
-                with path.open(newline="", encoding="utf-8") as handle:
-                    rows = list(csv.DictReader(handle))
-            rows.sort(key=lambda row: float(row["importance_mean"]), reverse=True)
-            _IMPORTANCE_CACHE[key] = {
-                "model": name,
-                "total": len(rows),
-                "inputs": [
-                    {
-                        "input": row["input"],
-                        "key": row.get("key") or "",
-                        "members": row.get("members") or "",
-                        "importance_mean": float(row["importance_mean"]),
-                        "importance_std": float(row["importance_std"]),
-                        "direction": row.get("direction") or "",
-                    }
-                    for row in rows[:15]
-                ],
-            }
-        return 200, _IMPORTANCE_CACHE[key]
+        if key in _IMPORTANCE_CACHE:
+            return 200, _IMPORTANCE_CACHE[key]
+        with _COMPUTE_LOCK:
+            if key not in _IMPORTANCE_CACHE:
+                client = _client()
+                version = client.get_model_version_by_alias(name, "champion")
+                with tempfile.TemporaryDirectory() as tmp:
+                    path = Path(client.download_artifacts(version.run_id, "permutation_importance.csv", tmp))
+                    with path.open(newline="", encoding="utf-8") as handle:
+                        rows = list(csv.DictReader(handle))
+                rows.sort(key=lambda row: float(row["importance_mean"]), reverse=True)
+                _IMPORTANCE_CACHE[key] = {
+                    "model": name,
+                    "total": len(rows),
+                    "inputs": [
+                        {
+                            "input": row["input"],
+                            "key": row.get("key") or "",
+                            "members": row.get("members") or "",
+                            "importance_mean": float(row["importance_mean"]),
+                            "importance_std": float(row["importance_std"]),
+                            "direction": row.get("direction") or "",
+                        }
+                        for row in rows[:15]
+                    ],
+                }
+            return 200, _IMPORTANCE_CACHE[key]
     except ModelsUnavailable as error:
         return 503, {"ok": False, "error": {"code": "models_unavailable", "message": error.message}}
     except Exception as error:
@@ -879,7 +901,7 @@ def proxy(handler):
     headers = {}
     for key, value in handler.headers.items():
         lower = key.lower()
-        if lower in HOP_BY_HOP or lower in ("host", "content-length"):
+        if lower in HOP_BY_HOP or lower in ("host", "content-length", "origin", "referer"):
             continue
         headers[key] = value
     headers["Host"] = upstream.netloc

@@ -638,14 +638,14 @@ def main():
 
     small = builder.summarize_as_of(payload, date(2018, 10, 18))
     check(
-        small["deliveries_completed"] < payload["meta"]["min_sample"],
-        "18 Oct 2018 must rest on fewer orders than the minimum sample",
+        small["deliveries_completed"] > 0,
+        "18 Oct 2018 still has completed deliveries in its 30-day window",
     )
-    check(small["late_share"] is None, "18 Oct 2018 late share must be suppressed")
-    check(small["on_time_share"] is None, "18 Oct 2018 on-time share must be suppressed")
-    check(small["avg_days_late"] is None, "18 Oct 2018 average days late must be suppressed")
-    check(small["on_time_review_avg"] is None, "18 Oct 2018 on-time review average must be suppressed")
-    check(small["late_review_avg"] is None, "18 Oct 2018 late review average must be suppressed")
+    check(small["late_share"] is not None, "18 Oct 2018 late share must be computed when deliveries > 0")
+    check(small["on_time_share"] is not None, "18 Oct 2018 on-time share must be computed when deliveries > 0")
+    check(small["avg_days_late"] is not None, "18 Oct 2018 average days late must be computed when late > 0")
+    check(small["on_time_review_avg"] is None, "18 Oct 2018 on-time review average is None when on_time_reviews == 0")
+    check(small["late_review_avg"] is not None, "18 Oct 2018 late review average must be computed when late_reviews > 0")
     normal = builder.summarize_as_of(payload, date(2018, 8, 22))
     check(normal["late_share"] is not None, "22 Aug 2018 late share must still show")
     check(normal["avg_days_late"] is not None, "22 Aug 2018 average days late must still show")

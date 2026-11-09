@@ -19,6 +19,7 @@ import os
 import secrets
 import sqlite3
 import sys
+import threading
 import time
 from datetime import timedelta
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -1070,6 +1071,34 @@ def public_mode_problems(ask_service):
     return problems
 
 
+DEFAULT_PREWARM_DATE = "2018-08-22"
+
+
+def _prewarm_default_date(server, date=DEFAULT_PREWARM_DATE):
+    """Warm the default demo date sequentially in the background after startup."""
+    if os.environ.get("VAMOS_PREWARM", "1") == "0":
+        return None
+
+    def _run():
+        try:
+            models_api.models_response(date)
+            actions_api._release_free_memory()
+            service = getattr(server, "actions_service", None)
+            if service is not None:
+                service.queue_response(date)
+                actions_api._release_free_memory()
+                service.promises_response(date)
+                actions_api._release_free_memory()
+            monitor_api.monitor_response(date)
+            actions_api._release_free_memory()
+        except Exception:
+            pass
+
+    thread = threading.Thread(target=_run, name="vamos-prewarm", daemon=True)
+    thread.start()
+    return thread
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Serve the Vamos app and local Ask API.")
     parser.add_argument("--host", default="127.0.0.1", help="Bind address (default: 127.0.0.1)")
@@ -1109,6 +1138,7 @@ def main(argv=None):
             "uncommitted .env file.",
             file=sys.stderr,
         )
+    _prewarm_default_date(server)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

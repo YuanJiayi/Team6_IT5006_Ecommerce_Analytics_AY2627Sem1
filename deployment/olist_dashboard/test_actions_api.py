@@ -653,15 +653,15 @@ class ActionsApiTests(unittest.TestCase):
                 "count": 1443,
                 "ids_sha256": "c3843bac681889b67d8504ab17b9ee895bbdeff58fa6ba3c9332ecfd1fb4d00f",
                 "capacity": 30,
-                "blend": {"caught": 16, "caught_3plus_days": 8, "mean_days_left": None},
-                "slack": {"caught": 16, "caught_3plus_days": 8, "mean_days_left": None},
+                "blend": {"caught": 16, "caught_3plus_days": 8, "mean_days_left": 3.3750000000000004},
+                "slack": {"caught": 16, "caught_3plus_days": 8, "mean_days_left": 3.375},
             },
             "2018-07-16": {
                 "count": 362,
                 "ids_sha256": "708e634762a3f33cd28393ad278307b47c4d9e9e04dfadec40f63a9ae48eda0e",
                 "capacity": 0,
-                "blend": {"caught": 7, "caught_3plus_days": 5, "mean_days_left": None},
-                "slack": {"caught": 14, "caught_3plus_days": 10, "mean_days_left": None},
+                "blend": {"caught": 7, "caught_3plus_days": 5, "mean_days_left": 6.625},
+                "slack": {"caught": 14, "caught_3plus_days": 10, "mean_days_left": 5.267857142857143},
             },
             "2018-08-22": {
                 "count": 1396,
@@ -695,7 +695,7 @@ class ActionsApiTests(unittest.TestCase):
 
         expected = {
             "2018-08-22": "553b96d82194423eda97d96e48b2f9cd76b5e0015ce3a93e3ab9b4baedf1d935",
-            "2018-06-15": "8677697d5e0e093b9fb714386f36f4483e1af88bcf415c6b8fd5c51db024fd92",
+            "2018-06-15": "caa452ca7db39cea02e3ee2328b5adad600bfcc474f4e242593e77ab3b16d633",
         }
         for date, digest in expected.items():
             payload = self.queue(date)

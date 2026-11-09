@@ -24,8 +24,16 @@ cp "$APP_DIR/data/analytics.sqlite" /tmp/analytics.sqlite.partial
 mv /tmp/analytics.sqlite.partial /tmp/analytics.sqlite
 export VAMOS_ANALYTICS_DB=/tmp/analytics.sqlite
 
-# Evidently must never phone home from the dashboard.
+rm -rf /tmp/mlflow.partial /tmp/mlflow
+cp -R "$APP_DIR/mlflow" /tmp/mlflow.partial
+mv /tmp/mlflow.partial /tmp/mlflow
+DB="/tmp/mlflow/mlflow.db"
+
+# Evidently must never phone home from the dashboard, and the read-only MLflow
+# server does not run background Huey job workers.
 export EVIDENTLY_DISABLE_TELEMETRY=1
+export MLFLOW_DISABLE_AGENT_HINT=1
+export MLFLOW_SERVER_ENABLE_JOB_EXECUTION=false
 export PYTHONPATH="$ROOT/src${PYTHONPATH:+:$PYTHONPATH}"
 
 DASHBOARD_PORT="${PORT:-8000}"
@@ -42,14 +50,15 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 (
-  cd "$APP_DIR/mlflow"
+  cd /tmp/mlflow
   exec python3 -m mlflow server \
     --backend-store-uri "sqlite:///$DB" \
     --serve-artifacts \
-    --artifacts-destination "$APP_DIR/mlflow/artifacts" \
+    --artifacts-destination "/tmp/mlflow/artifacts" \
     --static-prefix /mlflow \
     --host 127.0.0.1 \
-    --port "$MLFLOW_PORT"
+    --port "$MLFLOW_PORT" \
+    --workers 1
 ) &
 MLFLOW_PID=$!
 

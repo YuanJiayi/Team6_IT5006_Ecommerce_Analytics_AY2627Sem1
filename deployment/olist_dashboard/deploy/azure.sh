@@ -69,12 +69,16 @@ settings["VAMOS_ALLOWED_HOSTS"] = host
 # The App Service build installs the staged requirements.txt (Oryx) before
 # start.sh runs; without it the MLflow server and pandas are missing.
 settings["SCM_DO_BUILD_DURING_DEPLOYMENT"] = "true"
+# Unpacking the build and loading the models takes longer than the default 230 s start-up probe.
+settings["WEBSITES_CONTAINER_START_TIME_LIMIT"] = "1800"
 Path(out).write_text(json.dumps(settings), encoding="utf-8")
 PY
   az webapp config appsettings set -g "$GROUP" -n "$APP" --settings "@$settings" -o none
   az webapp config set -g "$GROUP" -n "$APP" \
-    --startup-file "sh /home/site/wwwroot/deployment/olist_dashboard/deploy/start.sh" -o none
+    --startup-file "sh deployment/olist_dashboard/deploy/start.sh" -o none
 
+  # Settings changes restart the deployment service; a deploy sent straight after is cancelled.
+  sleep 90
   (cd "$BUILD_DIR" && zip -qr "$zip_path" .)
   az webapp deploy -g "$GROUP" -n "$APP" --src-path "$zip_path" --type zip -o none
   rm -rf "$BUILD_DIR"
@@ -84,11 +88,14 @@ PY
 size() {
   [[ "${1:-}" =~ ^(F1|B1|B2)$ ]] || { echo "usage: $0 size F1|B1|B2" >&2; exit 2; }
   local host
-  az appservice plan update -g "$GROUP" -n "$PLAN" --sku "$1" -o none
-  # A paid plan alone does not keep the app warm; Always On must be set on the app (F1 cannot have it).
-  local always_on=true
-  [[ "$1" == F1 ]] && always_on=false
-  az webapp config set -g "$GROUP" -n "$APP" --always-on "$always_on" -o none
+  # F1 does not allow Always On, so turn it off before downsizing to F1 and on after upgrading.
+  if [[ "$1" == F1 ]]; then
+    az webapp config set -g "$GROUP" -n "$APP" --always-on false -o none
+    az appservice plan update -g "$GROUP" -n "$PLAN" --sku "$1" -o none
+  else
+    az appservice plan update -g "$GROUP" -n "$PLAN" --sku "$1" -o none
+    az webapp config set -g "$GROUP" -n "$APP" --always-on true -o none
+  fi
   host="$(app_host)"
   echo "Plan is now $1 (link unchanged: https://$host/)"
 }

@@ -631,21 +631,21 @@ def summarize_as_of(payload, as_of: date):
         "overdue_not_delivered_due": overdue_due[2],
         "deliveries_completed": delivered,
         "on_time": on_time,
-        "on_time_share": round(on_time / delivered, 4) if delivered >= MIN_SAMPLE else None,
+        "on_time_share": round(on_time / delivered, 4) if delivered else None,
         "late": late,
-        "late_share": round(late / delivered, 4) if delivered >= MIN_SAMPLE else None,
+        "late_share": round(late / delivered, 4) if delivered else None,
         "late_days_sum": late_days,
-        "avg_days_late": round(late_days / late, 4) if late >= MIN_SAMPLE else None,
+        "avg_days_late": round(late_days / late, 4) if late else None,
         "on_time_reviews": on_time_reviews,
         "on_time_review_avg": (
             round(on_time_review_score / on_time_reviews, 4)
-            if on_time_reviews >= MIN_SAMPLE
+            if on_time_reviews
             else None
         ),
         "late_reviews": late_reviews,
         "late_review_avg": (
             round(late_review_score / late_reviews, 4)
-            if late_reviews >= MIN_SAMPLE
+            if late_reviews
             else None
         ),
         "top_states": states[:8],

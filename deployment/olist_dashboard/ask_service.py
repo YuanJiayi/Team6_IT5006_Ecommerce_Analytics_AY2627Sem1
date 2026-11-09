@@ -1890,9 +1890,9 @@ def validate_synthesis(raw, result, question, sql, as_of):
             raise ModelResponseError(
                 "Chart y column has no numeric values.", "chart_spec"
             )
-        if len(result["rows"]) > 60:
+        if len(result["rows"]) > 200:
             raise ModelResponseError(
-                "Chart has too many categories; aggregate to 60 rows or use a table.",
+                "Chart has too many categories; aggregate to 200 rows or use a table.",
                 "chart_spec",
             )
         labels = chart.get("labels")

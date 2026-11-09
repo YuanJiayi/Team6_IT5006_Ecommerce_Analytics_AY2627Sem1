@@ -28,12 +28,15 @@ Run from the repository root:
 from __future__ import annotations
 
 import argparse
+import ctypes
+import gc
 import hashlib
 import json
 import math
 import os
 import statistics
 import tempfile
+import threading
 import time
 from pathlib import Path
 
@@ -144,6 +147,7 @@ _LEVEL_ORDER = {"none": 0, "watch": 1, "act": 2}
 _STATE_CACHE = {}
 _MONITOR_CACHE = {}
 _REPORT_CACHE = {}
+_COMPUTE_LOCK = threading.RLock()
 _STAT_TESTS_READY = False
 
 
@@ -538,6 +542,7 @@ def load_state(root=REPO_ROOT):
         "importance": {},
     }
     _STATE_CACHE[key] = state
+    _release_free_memory()
     return state
 
 
@@ -1297,13 +1302,13 @@ def _late_risk_refit(state, begin):
     columns = sum(drift.feature_columns(state["contracts"]["late_warning"]), [])
     known = table[table["order_purchase_timestamp"].lt(begin)
                   & table["handover_time"].lt(begin)
-                  & table["outcome_available_at"].lt(begin)].reset_index(drop=True)
+                  & table["outcome_available_at"].lt(begin)]
     pipeline, version = serving.load_late_risk_for_date(begin, uri=_tracking_uri())
     cached[begin] = {
         "pipeline": pipeline,
         "version": int(version.version),
         "columns": columns,
-        "known": known,
+        "known": known[["route_transit_90d_at_handover"]].reset_index(drop=True),
         "model_fit": pipeline.predict_proba(known[columns])[:, 1],
         "rule_fit": queue.winnie_rule_scores(known, known),
     }
@@ -1636,45 +1641,53 @@ def build_monitor(date, root=REPO_ROOT):
         payload = dict(cached)
         payload["cached"] = True
         return payload
-    started = time.perf_counter()
-    state = load_state(root)
-    cutoff = cutoff_for(date_str)
-    cohort = state["cohort"]
-    visible = cohort[cohort["order_purchase_timestamp"] < cutoff]
-    test_visible = visible[visible["split"].eq("test")]
-    test_month = drift.month_label(test_visible["order_purchase_timestamp"])
-    window_names = sorted(str(value) for value in pd.unique(test_month))
-    mismatches = []
-    inputs = input_monitor(visible, state, window_names, mismatches, cutoff)
-    outcomes = outcome_monitor(visible, cutoff, window_names,
-                               state["spec"].get("primary_cutoff"))
-    model_checks = model_monitor(visible, cutoff, outcomes, state, mismatches, inputs)
-    alerts = build_alerts(model_checks)
-    latest = window_names[-1] if window_names else None
-    payload = {
-        "ok": True,
-        "as_of": date_str,
-        "cutoff": cutoff.isoformat(),
-        "note": NOTE,
-        "latest_window": latest,
-        "report_url": (f"/api/models/monitor/report?date={date_str}" if latest else None),
-        "first_load_ms": None,
-        "cached": False,
-        "reference": {
-            "period": "Phase 2 training split",
-            "orders": int(visible["split"].eq("train").sum()),
-            "cutoff": state["spec"].get("primary_cutoff"),
-        },
-        "alerts": alerts,
-        "status_cards": model_checks["status_cards"],
-        "inputs": inputs,
-        "outcomes": outcomes,
-        "model_checks": model_checks,
-        "mismatches": mismatches,
-    }
-    payload["first_load_ms"] = int(round((time.perf_counter() - started) * 1000))
-    _MONITOR_CACHE[key] = payload
-    return payload
+    with _COMPUTE_LOCK:
+        cached = _MONITOR_CACHE.get(key)
+        if cached is not None:
+            payload = dict(cached)
+            payload["cached"] = True
+            return payload
+        started = time.perf_counter()
+        state = load_state(root)
+        cutoff = cutoff_for(date_str)
+        cohort = state["cohort"]
+        visible = cohort[cohort["order_purchase_timestamp"] < cutoff]
+        test_visible = visible[visible["split"].eq("test")]
+        test_month = drift.month_label(test_visible["order_purchase_timestamp"])
+        window_names = sorted(str(value) for value in pd.unique(test_month))
+        mismatches = []
+        inputs = input_monitor(visible, state, window_names, mismatches, cutoff)
+        _release_free_memory()
+        outcomes = outcome_monitor(visible, cutoff, window_names,
+                                   state["spec"].get("primary_cutoff"))
+        model_checks = model_monitor(visible, cutoff, outcomes, state, mismatches, inputs)
+        alerts = build_alerts(model_checks)
+        latest = window_names[-1] if window_names else None
+        payload = {
+            "ok": True,
+            "as_of": date_str,
+            "cutoff": cutoff.isoformat(),
+            "note": NOTE,
+            "latest_window": latest,
+            "report_url": (f"/api/models/monitor/report?date={date_str}" if latest else None),
+            "first_load_ms": None,
+            "cached": False,
+            "reference": {
+                "period": "Phase 2 training split",
+                "orders": int(visible["split"].eq("train").sum()),
+                "cutoff": state["spec"].get("primary_cutoff"),
+            },
+            "alerts": alerts,
+            "status_cards": model_checks["status_cards"],
+            "inputs": inputs,
+            "outcomes": outcomes,
+            "model_checks": model_checks,
+            "mismatches": mismatches,
+        }
+        payload["first_load_ms"] = int(round((time.perf_counter() - started) * 1000))
+        _MONITOR_CACHE[key] = payload
+        _release_free_memory()
+        return payload
 
 
 def _report_frames(visible, window_names):
@@ -1753,7 +1766,17 @@ def build_report_html(date, root=REPO_ROOT):
         1,
     )
     _REPORT_CACHE[key] = html
+    _release_free_memory()
     return html
+
+
+def _release_free_memory():
+    """Return freed heap pages to the OS on Linux after large DataFrame work."""
+    gc.collect()
+    try:
+        ctypes.CDLL("libc.so.6").malloc_trim(0)
+    except Exception:
+        pass
 
 
 def clear_cache():

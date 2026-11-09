@@ -44,8 +44,8 @@ MAX_ROWS = 200
 MAX_COLUMNS = 30
 MAX_CELL_CHARS = 2_000
 MAX_OUTPUT_BYTES = 200_000
-DEFAULT_TIMEOUT_SECONDS = 2.0
-PROGRESS_INTERVAL = 1_000
+DEFAULT_TIMEOUT_SECONDS = 15.0
+PROGRESS_INTERVAL = 50_000
 
 ALLOWED_ACTIONS = {
     sqlite3.SQLITE_SELECT,
@@ -99,7 +99,7 @@ SELECT_TERMINATORS = frozenset(
 AGGREGATE_FUNCTIONS = frozenset(
     {"count", "sum", "avg", "total", "min", "max", "group_concat"}
 )
-CUTOFF_METADATA_FUNCTIONS = frozenset({"date", "datetime", "time"})
+CUTOFF_METADATA_FUNCTIONS = frozenset({"date", "datetime", "time", "strftime", "coalesce"})
 SQL_KEYWORDS = frozenset(
     {
         "ALL",
@@ -361,14 +361,22 @@ def _is_cutoff_metadata(tokens):
         return False
     if tokens[0][1].lower() not in CUTOFF_METADATA_FUNCTIONS:
         return False
-    if tokens[1][1] != "(" or tokens[2][0] != "param":
-        return False
-    if tokens[2][1].lower() != ":as_of":
-        return False
-    for token in tokens[3:]:
-        if token[0] == "word" and token[1].upper() not in SQL_KEYWORDS:
+    has_as_of = False
+    for position, token in enumerate(tokens):
+        if token[0] == "number":
             return False
-    return True
+        if token[0] == "param":
+            if token[1].lower() not in ALLOWED_BIND_PARAMETERS:
+                return False
+            if token[1].lower() == ":as_of":
+                has_as_of = True
+        elif token[0] == "word":
+            if _is_function_call(tokens, position):
+                if token[1].lower() not in CUTOFF_METADATA_FUNCTIONS:
+                    return False
+            elif token[1].upper() not in SQL_KEYWORDS:
+                return False
+    return has_as_of
 
 
 def _is_constant_projection(tokens, depth):
@@ -669,8 +677,11 @@ def _open_read_only(path, query_only=True):
     connection = sqlite3.connect(
         "{}?mode=ro".format(Path(path).resolve().as_uri()),
         uri=True,
-        timeout=2.0,
+        timeout=DEFAULT_TIMEOUT_SECONDS,
     )
+    connection.execute("PRAGMA temp_store=MEMORY")
+    connection.execute("PRAGMA cache_size=-16000")
+    connection.execute("PRAGMA mmap_size=67108864")
     if query_only:
         connection.execute("PRAGMA query_only=ON")
     connection.execute("PRAGMA trusted_schema=OFF")

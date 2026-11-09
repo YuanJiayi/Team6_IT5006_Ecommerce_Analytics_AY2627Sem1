@@ -159,9 +159,12 @@ def fit_selected_models(fit_rows, spec):
     }
 
 
+HISTORY_COLUMNS = ("route", "transit_days", "outcome_available_at", "handover_time")
+
+
 def score_rows(models, rows):
     """Attach the selected Phase 2 risk and purchase-to-delivery ETA to a copy of ``rows``."""
-    out = rows.copy()
+    out = rows.copy(deep=False)
     out["risk"] = models["classifier"].predict_proba(out[models["classifier_columns"]])[:, 1]
     out["eta_days"] = models["eta"].predict(out[models["eta_columns"]])
     return out
@@ -183,7 +186,8 @@ def build_context(fit_rows, rows_to_score, history, spec, label="", models=None)
     scored = score_rows(models, rows_to_score)
     # Open parcels are query rows, never history: their missing outcomes must not
     # change as-of route averages or the daily list size.
-    history = history[history["outcome_available_at"].notna()]
+    history_columns = [column for column in HISTORY_COLUMNS if column in history.columns]
+    history = history.loc[history["outcome_available_at"].notna(), history_columns]
     return QueueContext(table=scored, history=history, spec=spec,
                         median_transit=models["median_transit"], label=label)
 

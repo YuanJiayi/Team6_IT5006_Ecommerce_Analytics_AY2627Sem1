@@ -122,7 +122,7 @@ def add_stage_features(table, orders):
 def load_stage_table(root=ROOT):
     """Prepared order table with stage inputs, restricted to orders with a usable carrier handover."""
     root = Path(root)
-    _, spec = load_primary_training(root)
+    spec = json.loads((root / "data/processed/phase2_feature_spec.json").read_text())
     table = pd.read_csv(root / "data/processed/phase2_order_table.csv",
                         parse_dates=["order_purchase_timestamp", "outcome_available_at"])
     orders = pd.read_csv(root / "data/raw/olist_orders_dataset.csv",

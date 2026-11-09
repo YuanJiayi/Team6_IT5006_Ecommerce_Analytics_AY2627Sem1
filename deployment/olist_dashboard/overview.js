@@ -46,7 +46,8 @@
     askChats: [],
     askActiveChatId: null,
     askSeedsAdded: [],
-    askRenamingId: null
+    askRenamingId: null,
+    askUnread: false
   };
   let pinRenderToken = 0;
 
@@ -329,8 +330,18 @@
     if (next) next.disabled = state.asOf >= META.as_of_max;
   }
 
+  function updateAskUnreadIndicator() {
+    all('[data-view="ask"]').forEach(function (button) {
+      button.classList.toggle("has-unread", Boolean(state.askUnread));
+    });
+  }
+
   function setView(name) {
     state.view = name;
+    if (name === "ask" && state.askUnread) {
+      state.askUnread = false;
+      updateAskUnreadIndicator();
+    }
     all("[data-view]").forEach(function (button) {
       if (button.getAttribute("data-view") === name) button.setAttribute("aria-current", "page");
       else button.removeAttribute("aria-current");
@@ -414,18 +425,18 @@
     const carrier = overdue ? overdue.carrier : 0;
     const notShipped = overdue ? overdue.count - overdue.carrier : 0;
 
-    const enoughDelivered = hasSample(totals.delivered);
-    const enoughPriorDelivered = hasSample(previous ? previous.delivered : null);
-    const enoughLate = hasSample(totals.late);
-    const enoughPriorLate = hasSample(previous ? previous.late : null);
-    const enoughOnTimeReviews = hasSample(totals.onTimeReviewCount);
-    const enoughPriorOnTimeReviews = hasSample(previous ? previous.onTimeReviewCount : null);
-    const enoughLateReviews = hasSample(totals.lateReviewCount);
-    const enoughPriorLateReviews = hasSample(previous ? previous.lateReviewCount : null);
-    const enoughOrders = hasSample(totals.orders);
-    const enoughPriorOrders = hasSample(previous ? previous.orders : null);
-    const enoughOverdue = hasSample(overdue ? overdue.count : null);
-    const enoughPriorOverdue = hasSample(overdue ? overdue.previous : null);
+    const enoughDelivered = totals.delivered > 0;
+    const enoughPriorDelivered = Boolean(previous && previous.delivered > 0);
+    const enoughLate = totals.late > 0;
+    const enoughPriorLate = Boolean(previous && previous.late > 0);
+    const enoughOnTimeReviews = totals.onTimeReviewCount > 0;
+    const enoughPriorOnTimeReviews = Boolean(previous && previous.onTimeReviewCount > 0);
+    const enoughLateReviews = totals.lateReviewCount > 0;
+    const enoughPriorLateReviews = Boolean(previous && previous.lateReviewCount > 0);
+    const enoughOrders = totals.orders > 0;
+    const enoughPriorOrders = Boolean(previous && previous.orders > 0);
+    const enoughOverdue = Boolean(overdue && overdue.count !== null && overdue.count !== undefined);
+    const enoughPriorOverdue = Boolean(overdue && overdue.previous !== null && overdue.previous !== undefined && overdue.previous > 0);
     const onTimeReviewText = enoughOnTimeReviews ? fmtScore(totals.onTimeReviewAvg) : "\u2014";
     const lateReviewText = enoughLateReviews ? fmtScore(totals.lateReviewAvg) : "\u2014";
 
@@ -597,7 +608,7 @@
     const points = window.points;
     const monthly = window.granularity === "month";
     const rates = points.map(function (point) {
-      if (point.deliveriesNoData || !point.delivered || !hasSample(point.delivered)) return null;
+      if (point.deliveriesNoData || !point.delivered) return null;
       return (point.onTime / point.delivered) * 100;
     });
     const valid = rates.filter(function (value) { return value !== null; });
@@ -685,7 +696,7 @@
       if (point.deliveriesNoData) {
         tip = pointTitle(point) + ": no data";
       } else {
-        const rateText = point.delivered && hasSample(point.delivered)
+        const rateText = point.delivered
           ? fmtPct(point.onTime / point.delivered) + " on time"
           : "\u2014 on-time rate";
         tip = pointTitle(point) + ": " + fmtInt(point.delivered) + " delivered \u00b7 " +
@@ -810,12 +821,9 @@
     const window = Core.buildHotspotsWindow(MODEL, state.asOf, state.hotspotDays);
     const overall = $("hotspot-overall");
     if (overall) {
-      const enough = hasSample(window.totals.delivered);
       overall.innerHTML = window.totals.delivered
-        ? "<strong>" + esc(enough ? fmtPct(window.totals.rate) : "\u2014") + "</strong> late \u00b7 " +
-          (enough
-            ? esc(fmtInt(window.totals.late)) + " of " + esc(fmtInt(window.totals.delivered)) + " deliveries"
-            : esc(fmtInt(window.totals.delivered)) + " deliveries")
+        ? "<strong>" + esc(fmtPct(window.totals.rate)) + "</strong> late \u00b7 " +
+          esc(fmtInt(window.totals.late)) + " of " + esc(fmtInt(window.totals.delivered)) + " deliveries"
         : "No completed deliveries";
     }
     const windowLabel = $("hotspot-window");
@@ -840,7 +848,7 @@
         '<div class="hotspot-bar-wrap"><span class="hotspot-bar" aria-hidden="true"><i style="width:' +
         width.toFixed(1) + '%"></i></span><span class="hotspot-late">' + fmtInt(row.late) + "</span></div>" +
         '<div class="hotspot-denom">' + fmtInt(row.delivered) + " delivered</div>" +
-        '<div class="hotspot-rate">' + (hasSample(row.delivered) ? fmtPct(rate) : "\u2014") + "</div></li>";
+        '<div class="hotspot-rate">' + (row.delivered ? fmtPct(rate) : "\u2014") + "</div></li>";
     });
     html += "</ol>";
     host.innerHTML = html;
@@ -1830,11 +1838,17 @@
       }
     } finally {
       persistAsk();
+      if (state.view !== "ask") {
+        state.askUnread = true;
+        updateAskUnreadIndicator();
+      }
       if (state.askActiveChatId === targetChatId) {
         renderAsk();
-        const input = $("ask-input");
-        if (input && !input.disabled) input.focus();
-        scrollToElement($("ask-thread") ? $("ask-thread").lastElementChild : null, "nearest");
+        if (state.view === "ask") {
+          const input = $("ask-input");
+          if (input && !input.disabled) input.focus();
+          scrollToElement($("ask-thread") ? $("ask-thread").lastElementChild : null, "nearest");
+        }
       } else {
         renderAskHistory();
         updateAskStatus(activeAskChat());
