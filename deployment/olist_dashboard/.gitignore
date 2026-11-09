@@ -1,0 +1,14 @@
+.env
+__pycache__/
+
+# Local generated analytics database
+analytics.sqlite
+analytics.sqlite-*
+data/analytics.sqlite
+data/analytics.sqlite-*
+
+# Live prediction log
+data/prediction_log.jsonl
+
+# Staged Azure build context
+deploy/build/

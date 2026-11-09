@@ -4,8 +4,8 @@ Run from the repository root:
     python -m olist.export_models   (with src/ on PYTHONPATH or after `pip install -e .`)
 
 Step 7, save: each selected model is refitted on all primary training orders, exactly as for the reported test
-scores, and saved with joblib as one sklearn Pipeline (preprocessing + estimator), so the API passes raw input
-columns and needs no separate encoder. model_metadata.json records what the API needs to call each pipeline and the
+scores, and saved with joblib as one sklearn Pipeline (preprocessing + estimator), so a caller passes raw input
+columns and needs no separate encoder. model_metadata.json records what a caller needs to call each pipeline and the
 test results it should reproduce; feature_stats.json records training distributions for drift checks.
 
 Step 8, verify: every file is reloaded as a fresh object. Its test predictions must equal those of the model that

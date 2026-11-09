@@ -1,0 +1,57 @@
+artifact_path: mlflow-artifacts:/3/models/m-ec329343b41b4f6db65e3d662781b6a9/artifacts
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.skops
+    predict_fn: predict
+    python_version: 3.14.7
+  sklearn:
+    code: null
+    pickled_model: model.skops
+    serialization_format: skops
+    sklearn_version: 1.9.1
+    skops_trusted_types:
+    - numpy.dtype
+    - olist.classification.hour_components
+    - olist.classification.hour_names
+is_signature_from_type_hint: false
+mlflow_version: 3.18.0
+model_id: m-ec329343b41b4f6db65e3d662781b6a9
+model_size_bytes: 364120
+model_uuid: m-ec329343b41b4f6db65e3d662781b6a9
+prompts: null
+run_id: 93223a1dc255414f937ad05a101800f8
+saved_input_example_info:
+  artifact_path: input_example.json
+  pandas_orient: split
+  serving_input_path: serving_input_example.json
+  type: dataframe
+signature:
+  inputs: '[{"type": "double", "name": "promised_days", "required": true}, {"type":
+    "double", "name": "promise_slack", "required": true}, {"type": "double", "name":
+    "route_typical_days", "required": true}, {"type": "double", "name": "seller_ship_days",
+    "required": true}, {"type": "double", "name": "distance_km", "required": true},
+    {"type": "double", "name": "same_state", "required": true}, {"type": "long", "name":
+    "purchase_hour", "required": true}, {"type": "double", "name": "n_items", "required":
+    true}, {"type": "double", "name": "n_products", "required": true}, {"type": "double",
+    "name": "n_sellers", "required": true}, {"type": "double", "name": "total_price",
+    "required": true}, {"type": "double", "name": "total_freight", "required": true},
+    {"type": "double", "name": "total_weight_g", "required": true}, {"type": "double",
+    "name": "total_volume_cm3", "required": true}, {"type": "double", "name": "max_installments",
+    "required": true}, {"type": "double", "name": "approval_days", "required": false},
+    {"type": "double", "name": "handover_days", "required": true}, {"type": "double",
+    "name": "route_transit_90d_at_handover", "required": true}, {"type": "double",
+    "name": "remaining_slack", "required": true}, {"type": "double", "name": "past_promise_at_handover",
+    "required": true}, {"type": "double", "name": "slack_shortfall", "required": true},
+    {"type": "double", "name": "state_backlog_recent_vs_8wk", "required": true}, {"type":
+    "string", "name": "customer_state", "required": true}, {"type": "string", "name":
+    "seller_state", "required": true}, {"type": "string", "name": "product_category",
+    "required": true}, {"type": "string", "name": "payment_type", "required": true},
+    {"type": "string", "name": "purchase_dayofweek", "required": true}]'
+  outputs: '[{"type": "tensor", "tensor-spec": {"dtype": "float64", "shape": [-1]}}]'
+  params: null
+type_hint_from_example: false
+utc_time_created: '2026-11-01 19:54:58.748060'

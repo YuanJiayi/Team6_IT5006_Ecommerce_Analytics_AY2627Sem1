@@ -51,7 +51,7 @@ Each script stops if its baselines do not reproduce the Phase 2 results or the e
 
 ## Final Phase 2 models used as the baseline
 
-The three models presented in the Phase 2 report, refitted and saved for this work in [`data/outputs/experiments/ranking_strategy/models/`](../../../data/outputs/experiments/ranking_strategy/models/). They are separate from the deployment pipelines in `deployment/api/models/`.
+The three models presented in the Phase 2 report, refitted and saved for this work in [`data/outputs/experiments/ranking_strategy/models/`](../../../data/outputs/experiments/ranking_strategy/models/). They are separate from the saved models in `data/outputs/models/`.
 
 | File | Model | Output |
 | --- | --- | --- |

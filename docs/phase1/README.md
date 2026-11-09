@@ -11,7 +11,7 @@ Paths are relative to the repository root.
 | Path | Purpose |
 | --- | --- |
 | [`notebooks/phase1_eda/`](../../notebooks/phase1_eda/) | Seven EDA notebooks covering overview, delivery lead time, reviews and route distance, capacity, products and payments, plus the getting-started notebook. Saved plots make the analysis readable without a rerun. |
-| [`deployment/app/app.py`](../../deployment/app/app.py) | Streamlit dashboard. |
+| [`deployment/phase1_dashboard/app.py`](../../deployment/phase1_dashboard/app.py) | Streamlit dashboard. |
 | [`src/olist/eda.py`](../../src/olist/eda.py), [`src/olist/geomapper.py`](../../src/olist/geomapper.py), [`src/olist/map_layers/`](../../src/olist/map_layers/) | Dashboard data helpers (plain pandas) and geographic layers. |
 | [`data/raw/`](../../data/raw/), [`data/processed/smartcommerce_consolidated.csv`](../../data/processed/smartcommerce_consolidated.csv), [`data/geo/`](../../data/geo/) and [`data/outputs/phase1/brazil_order_density_map.html`](../../data/outputs/phase1/brazil_order_density_map.html) | Olist source tables, consolidated data and Brazil map files used by the notebooks and dashboard. |
 | [`tests/test_dashboard_*.py`](../../tests/) | Focused dashboard checks. |
@@ -19,6 +19,6 @@ Paths are relative to the repository root.
 
 ## Run
 
-From the repository root, install `requirements.txt`, then run `streamlit run deployment/app/app.py` for the dashboard. `deployment/app/run_dashboard.sh` is an optional local setup script. Open notebooks from `notebooks/phase1_eda/`; they locate `data/raw/` and `data/processed/` from any folder inside the repository. To rebuild the map, run `PYTHONPATH=src python -m olist.geomapper`.
+From the repository root, install `requirements.txt`, then run `streamlit run deployment/phase1_dashboard/app.py` for the dashboard. `deployment/phase1_dashboard/run_dashboard.sh` is an optional local setup script. Open notebooks from `notebooks/phase1_eda/`; they locate `data/raw/` and `data/processed/` from any folder inside the repository. To rebuild the map, run `PYTHONPATH=src python -m olist.geomapper`.
 
 The notebooks are exploratory, not a single automated pipeline. The submitted PDF is preserved as an original artifact rather than rewritten to imply its figures changed after submission.

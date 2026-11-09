@@ -13,5 +13,5 @@ fi
 # scripts (bin/pip, bin/streamlit missing) even though the packages installed
 # fine. Invoking via "python3 -m <tool>" sidesteps that entirely.
 it5006-proj/bin/python3 -m ensurepip --upgrade >/dev/null 2>&1 || true
-it5006-proj/bin/python3 -m pip install -q -r deployment/app/requirements.txt
-exec it5006-proj/bin/python3 -m streamlit run deployment/app/app.py
+it5006-proj/bin/python3 -m pip install -q -r deployment/phase1_dashboard/requirements.txt
+exec it5006-proj/bin/python3 -m streamlit run deployment/phase1_dashboard/app.py

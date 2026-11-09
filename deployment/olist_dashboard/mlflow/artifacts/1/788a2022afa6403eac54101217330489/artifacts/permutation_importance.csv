@@ -1,0 +1,19 @@
+input,key,members,importance_mean,importance_std,direction
+Promise and usual route time,promise-and-usual-route-time,"promised_days,promise_slack,route_typical_days",0.4065143531126568,0.004422205500472813,mixed/overlapping
+Distance,distance_km,distance_km,0.3641716289843885,0.0026593200513162314,higher → more days
+Customer state,customer_state,customer_state,0.19836829687280283,0.0031027384045459565,mixed/overlapping
+Freight,total_freight,total_freight,0.1623924693812569,0.002889822943908708,higher → more days
+Seller dispatch time,seller_ship_days,seller_ship_days,0.08911727178094467,0.0027147670069967655,higher → more days
+Same state,same_state,same_state,0.04981890479364655,0.001130236330967241,higher → fewer days
+Items,n_items,n_items,0.03137163898702662,0.0020871921273131447,higher → fewer days
+Payment type,payment_type,payment_type,0.030435432845548328,0.001288199670926882,mixed/overlapping
+Seller state,seller_state,seller_state,0.029371313981966997,0.0016639715466383917,mixed/overlapping
+Purchase weekday,purchase_dayofweek,purchase_dayofweek,0.025952435257830597,0.0012884434129222418,mixed/overlapping
+Sellers,n_sellers,n_sellers,0.016558512757269207,0.0013889797600042469,higher → fewer days
+Product category,product_category,product_category,0.0153244900461468,0.0010105294866610502,mixed/overlapping
+Weight,total_weight_g,total_weight_g,0.0026582963416925233,0.0006040201732277129,higher → more days
+Purchase hour,purchase_hour,purchase_hour,0.0019282028236455417,0.0006086211962073801,mixed/overlapping
+Volume,total_volume_cm3,total_volume_cm3,0.0008441964380017097,0.0005670139010574027,higher → fewer days
+Products,n_products,n_products,0.0006113266963123642,0.0004038739817322492,higher → fewer days
+Item value,total_price,total_price,0.00042741530207521803,0.0001607652433801845,higher → more days
+Installments,max_installments,max_installments,8.068275932862078e-05,0.00016654033707665295,higher → more days

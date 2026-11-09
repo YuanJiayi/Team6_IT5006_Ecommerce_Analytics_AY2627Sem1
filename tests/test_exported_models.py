@@ -1,4 +1,4 @@
-"""The saved deployment models load and predict from raw input columns, as the API will call them."""
+"""The saved deployment models load and predict from raw input columns, as a caller would."""
 
 import json
 import sys

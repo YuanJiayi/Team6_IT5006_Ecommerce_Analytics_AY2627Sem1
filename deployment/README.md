@@ -1,15 +1,13 @@
 # Deployment
 
-The Phase 3 deployment follows the course's two-service pattern. A model API loads the saved pipelines and serves predictions. A separate Streamlit app is the user interface and calls the API over HTTP.
+Two dashboards live here. The deployed Phase 3 app is `olist_dashboard/`; the Phase 1 Streamlit EDA dashboard is kept in `phase1_dashboard/` because the Phase 1 report links to it.
 
 | Folder | Service | Status |
 | --- | --- | --- |
-| `api/` | FastAPI prediction service for Render: `main.py`, `requirements.txt`, `Procfile`, `.python-version`, and [`models/`](api/models/) holding the saved pipelines, `model_metadata.json` and `feature_stats.json`. | Models saved; service to be built. |
-| [`app/`](app/) | Streamlit app for Streamlit Community Cloud. It currently holds the Phase 1 EDA dashboard; prediction tabs that call the API will be added. | Dashboard runs. |
+| [`olist_dashboard/`](olist_dashboard/) | The deployed Phase 3 app: the Olist dashboard with Overview, Actions, Models and Ask. It loads its models from its own MLflow store in `deployment/olist_dashboard/mlflow/`, rebuilt by `python -m phase3.registry`. | Runs. |
+| [`phase1_dashboard/`](phase1_dashboard/) | Phase 1 Streamlit EDA dashboard. Not the deployed Phase 3 app. Kept because the Phase 1 report links to it. | Runs. |
 
-## Saved models
-
-`python -m olist.export_models` (from the repository root) refits each selected Phase 2 model on all training orders, saves it as one scikit-learn Pipeline with joblib, and reloads every file to check it. It follows the L6 lecture's Step 7 (save pipelines and metadata) and Step 8 (verify saved pipelines).
+**Saved models:** the three chosen models as standalone files, with `model_metadata.json` (the inputs each model expects, scores, an example) and `feature_stats.json` (training data summary for drift checks). Made by `python -m olist.export_models`. They are in `data/outputs/models/`.
 
 | File | Model | Output |
 | --- | --- | --- |
@@ -19,17 +17,27 @@ The Phase 3 deployment follows the course's two-service pattern. A model API loa
 | `model_metadata.json` | Input columns, categories, selection reason, test metrics, example input, environment | |
 | `feature_stats.json` | Training mean, spread and missing share of every numeric input, for drift checks | |
 
-Loading a pipeline needs the `olist` package importable and scikit-learn 1.9.1, the version that saved it. The history inputs (route and seller averages, remaining slack) are computed before the pipeline from earlier orders only, so the API must supply them; they are not raw order fields.
+Loading a pipeline needs the `olist` package importable and scikit-learn 1.9.1, the version that saved it. The history inputs (route and seller averages, remaining slack) are computed before the pipeline from earlier orders only, so a caller must supply them; they are not raw order fields.
 
-Both services import shared feature code from [`src/olist/`](../src/olist/) instead of copying it, so prediction-time features are computed exactly as in training.
+The dashboard imports shared feature code from [`src/olist/`](../src/olist/) and [`src/phase3/`](../src/phase3/) instead of copying it, so prediction-time features are computed exactly as in training.
 
-## Run the dashboard locally
+## Run the Olist dashboard
 
 From the repository root:
 
 ```bash
-pip install -r deployment/app/requirements.txt
-streamlit run deployment/app/app.py
+bash deployment/olist_dashboard/run_local.sh
 ```
 
-`deployment/app/run_dashboard.sh` does the same inside the repository's `it5006-proj` virtual environment. Streamlit reads its theme from `.streamlit/config.toml` at the repository root, so run it from there. On Streamlit Community Cloud, set the main file path to `deployment/app/app.py`.
+`deployment/olist_dashboard/README.md` covers the analytics database, the Ask provider settings, the model store and the checks.
+
+## Run the Phase 1 dashboard locally
+
+From the repository root:
+
+```bash
+pip install -r deployment/phase1_dashboard/requirements.txt
+streamlit run deployment/phase1_dashboard/app.py
+```
+
+`deployment/phase1_dashboard/run_dashboard.sh` does the same inside the repository's `it5006-proj` virtual environment. Streamlit reads its theme from `.streamlit/config.toml` at the repository root, so run it from there. On Streamlit Community Cloud, set the main file path to `deployment/phase1_dashboard/app.py`.

@@ -1,0 +1,13 @@
+# Runtime dependencies the Azure App Service build installs at deploy time
+# (Oryx reads this file from the zip root). The dashboard code ships in the
+# staged zip under src/ and is put on PYTHONPATH by deploy/start.sh.
+numpy==2.5.3
+pandas==3.0.6
+scikit-learn==1.9.1
+scipy==1.18.1
+threadpoolctl==3.7.0
+joblib==1.6.0
+mlflow==3.18.0
+skops==0.16.0
+evidently==0.7.23
+matplotlib==3.11.2

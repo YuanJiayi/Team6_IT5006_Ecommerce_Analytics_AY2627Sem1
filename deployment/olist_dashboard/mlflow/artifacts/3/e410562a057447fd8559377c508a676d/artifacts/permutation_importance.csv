@@ -1,0 +1,21 @@
+input,key,members,importance_mean,importance_std,direction
+"Promise, handover time and spare time",promise-handover-spare-time,"promised_days,promise_slack,route_typical_days,handover_days,route_transit_90d_at_handover,remaining_slack,past_promise_at_handover,slack_shortfall",0.27160310798018644,0.00238906558443161,mixed/overlapping
+Distance,distance_km,distance_km,0.02301096026567575,0.001302425474274361,higher → more likely late
+Regional backlog,state_backlog_recent_vs_8wk,state_backlog_recent_vs_8wk,0.022581242922417318,0.001182661415509486,higher → more likely late
+Customer state,customer_state,customer_state,0.010225168301020483,0.0017783831716646373,mixed/overlapping
+Freight,total_freight,total_freight,0.004812495171602998,0.0006986275517235497,higher → more likely late
+Items,n_items,n_items,0.003500012998945873,0.00039385549007052797,higher → less likely late
+Seller state,seller_state,seller_state,0.0031090590239011007,0.000600146919570483,mixed/overlapping
+Same state,same_state,same_state,0.002089190855355122,0.00024433758749953406,higher → more likely late
+Sellers,n_sellers,n_sellers,0.0015830213026391926,0.00044987659023092196,higher → less likely late
+Weight,total_weight_g,total_weight_g,0.001518148610761,0.00043071784404636926,higher → less likely late
+Product category,product_category,product_category,0.0014232946619297914,0.0002925970601576209,mixed/overlapping
+Seller dispatch time,seller_ship_days,seller_ship_days,0.0010709108147404778,0.00030971137266960975,higher → less likely late
+Volume,total_volume_cm3,total_volume_cm3,0.0006599815866935865,0.000486421123108348,higher → less likely late
+Payment type,payment_type,payment_type,0.00048143216729887306,0.00024668789155695504,mixed/overlapping
+Products,n_products,n_products,0.00035469339033099566,0.00015999510190710237,higher → less likely late
+Purchase weekday,purchase_dayofweek,purchase_dayofweek,0.00018327696043271557,0.00020603208558823407,mixed/overlapping
+Installments,max_installments,max_installments,0.0001483679268078908,3.266168267454907e-05,higher → more likely late
+Item value,total_price,total_price,-0.00012640448586654363,3.475868551688504e-05,higher → more likely late
+Purchase hour,purchase_hour,purchase_hour,-0.0002560783296980063,0.00022717114895494522,mixed/overlapping
+Approval days,approval_days,approval_days,-0.0003504154828292305,0.00012338507890984366,higher → less likely late

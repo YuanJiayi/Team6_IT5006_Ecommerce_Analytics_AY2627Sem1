@@ -1,0 +1,21 @@
+input,key,members,importance_mean,importance_std,direction
+Days from purchase to handover,handover_days,handover_days,1.299069854589057,0.016330998316353925,higher → more days
+Promise and route time,promise-and-route-time,"promised_days,promise_slack,route_typical_days,route_transit_90d_at_handover",0.744030821695368,0.005346482530016571,mixed/overlapping
+Distance,distance_km,distance_km,0.4191944051464766,0.0038106371890698296,higher → more days
+Customer state,customer_state,customer_state,0.1377059485907794,0.0026455154027620865,mixed/overlapping
+Freight,total_freight,total_freight,0.10180475419755526,0.0014847353629379204,higher → more days
+Items,n_items,n_items,0.02484756493234084,0.0018317824666882559,higher → fewer days
+Seller state,seller_state,seller_state,0.01585618923189518,0.0014140879199179856,mixed/overlapping
+Product category,product_category,product_category,0.012812974127600452,0.0012926516253589863,mixed/overlapping
+Same state,same_state,same_state,0.010797771256247212,0.0004966043784783747,higher → fewer days
+Sellers,n_sellers,n_sellers,0.008160617244364055,0.0009922897871807868,higher → fewer days
+Volume,total_volume_cm3,total_volume_cm3,0.004350534173449105,0.0006427698328785406,higher → fewer days
+Purchase weekday,purchase_dayofweek,purchase_dayofweek,0.002789731302636422,0.0006231803433554498,mixed/overlapping
+Weight,total_weight_g,total_weight_g,0.0027380636553526296,0.00044439986639275566,higher → fewer days
+Approval days,approval_days,approval_days,0.001452605106621352,0.00035549834447050376,higher → fewer days
+Seller dispatch time,seller_ship_days,seller_ship_days,0.0005557535787588108,0.0002585569205706416,higher → fewer days
+Payment type,payment_type,payment_type,0.00022940516931280186,0.0002459336935102555,mixed/overlapping
+Purchase hour,purchase_hour,purchase_hour,0.00019136663330732162,0.00020857401171077628,mixed/overlapping
+Item value,total_price,total_price,-0.00014493097812016132,8.793833801872682e-05,higher → fewer days
+Installments,max_installments,max_installments,-0.00025746995938993324,5.5632937452628076e-05,higher → more days
+Products,n_products,n_products,-0.001110518089254331,0.00029696018015310573,higher → fewer days

@@ -1,0 +1,553 @@
+{
+  "prediction_points": {
+    "checkout": "after checkout and payment submission, before approval or dispatch",
+    "handover": "when the carrier records receiving the parcel from the seller"
+  },
+  "target": "delivery_days",
+  "population": "delivered orders with a carrier handover after purchase and before delivery",
+  "coverage": {
+    "orders": 96470,
+    "handover_cohort": 96272,
+    "excluded_no_valid_handover": 198,
+    "train_orders": 75039,
+    "test_orders": 19230
+  },
+  "stage_features": {
+    "checkout": [],
+    "checkout_transit": [
+      "route_transit_90d"
+    ],
+    "handover_elapsed": [
+      "route_transit_90d",
+      "approval_days",
+      "handover_days"
+    ],
+    "handover": [
+      "approval_days",
+      "handover_days",
+      "route_transit_90d_at_handover"
+    ]
+  },
+  "selected_candidate": "ridge_1000",
+  "checkout_selected_candidate": "ridge_1000",
+  "lowest_mae_candidate": {
+    "checkout": "ridge_1000",
+    "handover": "ridge_1000"
+  },
+  "highest_r2_candidate": "ridge_1000",
+  "reason": {
+    "checkout": "ridge_1000 has the lowest mean validation MAE (5.7568)",
+    "handover": "ridge_1000 has the lowest mean validation MAE (5.0548)"
+  },
+  "rule": "lowest mean validation MAE over 5 chronological windows; the simplest candidate within one standard error of the lowest wins (ISLR, James, Witten, Hastie and Tibshirani, Sec. 6.1.3, p. 214); baselines and the ensemble are reference only",
+  "stage2": {
+    "checkout": [
+      {
+        "candidate": "linear_baseline",
+        "mean": 5.860312872410603,
+        "gap_to_best": 0.10347941892856002,
+        "se_of_gap": 0.03153160740855988,
+        "within_one_se": false
+      },
+      {
+        "candidate": "ridge_0.01",
+        "mean": 5.8602582248552775,
+        "gap_to_best": 0.10342477137323529,
+        "se_of_gap": 0.03159697431713734,
+        "within_one_se": false
+      },
+      {
+        "candidate": "ridge_0.1",
+        "mean": 5.860039079331844,
+        "gap_to_best": 0.10320562584980256,
+        "se_of_gap": 0.031687718101062926,
+        "within_one_se": false
+      },
+      {
+        "candidate": "ridge_1",
+        "mean": 5.858245718303063,
+        "gap_to_best": 0.10141226482102113,
+        "se_of_gap": 0.03179257663362386,
+        "within_one_se": false
+      },
+      {
+        "candidate": "ridge_10",
+        "mean": 5.848423956765368,
+        "gap_to_best": 0.09159050328332521,
+        "se_of_gap": 0.03222281952743036,
+        "within_one_se": false
+      },
+      {
+        "candidate": "ridge_100",
+        "mean": 5.808535091853213,
+        "gap_to_best": 0.0517016383711705,
+        "se_of_gap": 0.025005425713252163,
+        "within_one_se": false
+      },
+      {
+        "candidate": "ridge_1000",
+        "mean": 5.7568334534820425,
+        "gap_to_best": 0.0,
+        "se_of_gap": 0.0,
+        "within_one_se": true
+      },
+      {
+        "candidate": "ridge_10000",
+        "mean": 5.800858677578754,
+        "gap_to_best": 0.04402522409671157,
+        "se_of_gap": 0.011129844449873787,
+        "within_one_se": false
+      },
+      {
+        "candidate": "ridge_100000",
+        "mean": 6.204697403106939,
+        "gap_to_best": 0.44786394962489773,
+        "se_of_gap": 0.012392099268754994,
+        "within_one_se": false
+      },
+      {
+        "candidate": "tree_depth6",
+        "mean": 5.932524868421388,
+        "gap_to_best": 0.1756914149393456,
+        "se_of_gap": 0.02916677819592106,
+        "within_one_se": false
+      },
+      {
+        "candidate": "tree_baseline",
+        "mean": 7.754225048639677,
+        "gap_to_best": 1.997391595157635,
+        "se_of_gap": 0.04049576137496103,
+        "within_one_se": false
+      },
+      {
+        "candidate": "forest_leaf20",
+        "mean": 5.782851401162271,
+        "gap_to_best": 0.026017947680229626,
+        "se_of_gap": 0.018691465826384278,
+        "within_one_se": false
+      },
+      {
+        "candidate": "boost_baseline",
+        "mean": 5.830217609859458,
+        "gap_to_best": 0.07338415637741598,
+        "se_of_gap": 0.015654785202469396,
+        "within_one_se": false
+      },
+      {
+        "candidate": "boost_slow",
+        "mean": 5.81612017598771,
+        "gap_to_best": 0.059286722505668264,
+        "se_of_gap": 0.016452355879935127,
+        "within_one_se": false
+      }
+    ],
+    "handover": [
+      {
+        "candidate": "linear_baseline",
+        "mean": 5.146201978046019,
+        "gap_to_best": 0.09142510217031115,
+        "se_of_gap": 0.015133910457896898,
+        "within_one_se": false
+      },
+      {
+        "candidate": "ridge_0.01",
+        "mean": 5.146095248977409,
+        "gap_to_best": 0.09131837310170159,
+        "se_of_gap": 0.015214932495048038,
+        "within_one_se": false
+      },
+      {
+        "candidate": "ridge_0.1",
+        "mean": 5.146020505472675,
+        "gap_to_best": 0.09124362959696697,
+        "se_of_gap": 0.015203040338753165,
+        "within_one_se": false
+      },
+      {
+        "candidate": "ridge_1",
+        "mean": 5.14478467483074,
+        "gap_to_best": 0.09000779895503275,
+        "se_of_gap": 0.01539757184396516,
+        "within_one_se": false
+      },
+      {
+        "candidate": "ridge_10",
+        "mean": 5.136014879330657,
+        "gap_to_best": 0.08123800345494843,
+        "se_of_gap": 0.017244834671728167,
+        "within_one_se": false
+      },
+      {
+        "candidate": "ridge_100",
+        "mean": 5.098561044315561,
+        "gap_to_best": 0.04378416843985331,
+        "se_of_gap": 0.016111432544569593,
+        "within_one_se": false
+      },
+      {
+        "candidate": "ridge_1000",
+        "mean": 5.0547768758757075,
+        "gap_to_best": 0.0,
+        "se_of_gap": 0.0,
+        "within_one_se": true
+      },
+      {
+        "candidate": "ridge_10000",
+        "mean": 5.142170719785558,
+        "gap_to_best": 0.08739384390984987,
+        "se_of_gap": 0.023636055364508402,
+        "within_one_se": false
+      },
+      {
+        "candidate": "ridge_100000",
+        "mean": 5.821948892100635,
+        "gap_to_best": 0.7671720162249275,
+        "se_of_gap": 0.06485014517996517,
+        "within_one_se": false
+      },
+      {
+        "candidate": "tree_depth6",
+        "mean": 5.313429607237534,
+        "gap_to_best": 0.25865273136182615,
+        "se_of_gap": 0.021730304859464835,
+        "within_one_se": false
+      },
+      {
+        "candidate": "tree_baseline",
+        "mean": 6.887719392174219,
+        "gap_to_best": 1.8329425162985118,
+        "se_of_gap": 0.08625889836273505,
+        "within_one_se": false
+      },
+      {
+        "candidate": "forest_leaf20",
+        "mean": 5.345795352844421,
+        "gap_to_best": 0.2910184769687133,
+        "se_of_gap": 0.05236604438869893,
+        "within_one_se": false
+      },
+      {
+        "candidate": "boost_baseline",
+        "mean": 5.214455231887596,
+        "gap_to_best": 0.15967835601188982,
+        "se_of_gap": 0.03954995463946323,
+        "within_one_se": false
+      },
+      {
+        "candidate": "boost_slow",
+        "mean": 5.215336436637951,
+        "gap_to_best": 0.1605595607622435,
+        "se_of_gap": 0.06051481756408987,
+        "within_one_se": false
+      }
+    ]
+  },
+  "selected_model": {
+    "checkout": {
+      "candidate": "ridge_1000",
+      "family": "ridge",
+      "parameters": {
+        "alpha": 1000.0
+      }
+    },
+    "handover": {
+      "candidate": "ridge_1000",
+      "family": "ridge",
+      "parameters": {
+        "alpha": 1000.0
+      }
+    }
+  },
+  "ladder_model": {
+    "candidate": "ridge_1000",
+    "family": "ridge",
+    "parameters": {
+      "alpha": 1000.0
+    }
+  },
+  "ridge_grid": [
+    0.01,
+    0.1,
+    1.0,
+    10.0,
+    100.0,
+    1000.0,
+    10000.0,
+    100000.0
+  ],
+  "islr_order_sensitivity": {
+    "checkout": {
+      "rule": "largest ridge alpha treated as simplest (ISLR/glmnet convention); report only, not selection",
+      "order": [
+        "ridge_100000",
+        "ridge_10000",
+        "ridge_1000",
+        "ridge_100",
+        "ridge_10",
+        "ridge_1",
+        "ridge_0.1",
+        "ridge_0.01",
+        "linear_baseline",
+        "tree_depth6",
+        "tree_baseline",
+        "forest_leaf20",
+        "boost_baseline",
+        "boost_slow"
+      ],
+      "chosen": "ridge_1000",
+      "best": "ridge_1000",
+      "rows": [
+        {
+          "candidate": "ridge_100000",
+          "mean": 6.204697403106939,
+          "gap_to_best": 0.44786394962489773,
+          "se_of_gap": 0.012392099268754994,
+          "within_one_se": false
+        },
+        {
+          "candidate": "ridge_10000",
+          "mean": 5.800858677578754,
+          "gap_to_best": 0.04402522409671157,
+          "se_of_gap": 0.011129844449873787,
+          "within_one_se": false
+        },
+        {
+          "candidate": "ridge_1000",
+          "mean": 5.7568334534820425,
+          "gap_to_best": 0.0,
+          "se_of_gap": 0.0,
+          "within_one_se": true
+        },
+        {
+          "candidate": "ridge_100",
+          "mean": 5.808535091853213,
+          "gap_to_best": 0.0517016383711705,
+          "se_of_gap": 0.025005425713252163,
+          "within_one_se": false
+        },
+        {
+          "candidate": "ridge_10",
+          "mean": 5.848423956765368,
+          "gap_to_best": 0.09159050328332521,
+          "se_of_gap": 0.03222281952743036,
+          "within_one_se": false
+        },
+        {
+          "candidate": "ridge_1",
+          "mean": 5.858245718303063,
+          "gap_to_best": 0.10141226482102113,
+          "se_of_gap": 0.03179257663362386,
+          "within_one_se": false
+        },
+        {
+          "candidate": "ridge_0.1",
+          "mean": 5.860039079331844,
+          "gap_to_best": 0.10320562584980256,
+          "se_of_gap": 0.031687718101062926,
+          "within_one_se": false
+        },
+        {
+          "candidate": "ridge_0.01",
+          "mean": 5.8602582248552775,
+          "gap_to_best": 0.10342477137323529,
+          "se_of_gap": 0.03159697431713734,
+          "within_one_se": false
+        },
+        {
+          "candidate": "linear_baseline",
+          "mean": 5.860312872410603,
+          "gap_to_best": 0.10347941892856002,
+          "se_of_gap": 0.03153160740855988,
+          "within_one_se": false
+        },
+        {
+          "candidate": "tree_depth6",
+          "mean": 5.932524868421388,
+          "gap_to_best": 0.1756914149393456,
+          "se_of_gap": 0.02916677819592106,
+          "within_one_se": false
+        },
+        {
+          "candidate": "tree_baseline",
+          "mean": 7.754225048639677,
+          "gap_to_best": 1.997391595157635,
+          "se_of_gap": 0.04049576137496103,
+          "within_one_se": false
+        },
+        {
+          "candidate": "forest_leaf20",
+          "mean": 5.782851401162271,
+          "gap_to_best": 0.026017947680229626,
+          "se_of_gap": 0.018691465826384278,
+          "within_one_se": false
+        },
+        {
+          "candidate": "boost_baseline",
+          "mean": 5.830217609859458,
+          "gap_to_best": 0.07338415637741598,
+          "se_of_gap": 0.015654785202469396,
+          "within_one_se": false
+        },
+        {
+          "candidate": "boost_slow",
+          "mean": 5.81612017598771,
+          "gap_to_best": 0.059286722505668264,
+          "se_of_gap": 0.016452355879935127,
+          "within_one_se": false
+        }
+      ]
+    },
+    "handover": {
+      "rule": "largest ridge alpha treated as simplest (ISLR/glmnet convention); report only, not selection",
+      "order": [
+        "ridge_100000",
+        "ridge_10000",
+        "ridge_1000",
+        "ridge_100",
+        "ridge_10",
+        "ridge_1",
+        "ridge_0.1",
+        "ridge_0.01",
+        "linear_baseline",
+        "tree_depth6",
+        "tree_baseline",
+        "forest_leaf20",
+        "boost_baseline",
+        "boost_slow"
+      ],
+      "chosen": "ridge_1000",
+      "best": "ridge_1000",
+      "rows": [
+        {
+          "candidate": "ridge_100000",
+          "mean": 5.821948892100635,
+          "gap_to_best": 0.7671720162249275,
+          "se_of_gap": 0.06485014517996517,
+          "within_one_se": false
+        },
+        {
+          "candidate": "ridge_10000",
+          "mean": 5.142170719785558,
+          "gap_to_best": 0.08739384390984987,
+          "se_of_gap": 0.023636055364508402,
+          "within_one_se": false
+        },
+        {
+          "candidate": "ridge_1000",
+          "mean": 5.0547768758757075,
+          "gap_to_best": 0.0,
+          "se_of_gap": 0.0,
+          "within_one_se": true
+        },
+        {
+          "candidate": "ridge_100",
+          "mean": 5.098561044315561,
+          "gap_to_best": 0.04378416843985331,
+          "se_of_gap": 0.016111432544569593,
+          "within_one_se": false
+        },
+        {
+          "candidate": "ridge_10",
+          "mean": 5.136014879330657,
+          "gap_to_best": 0.08123800345494843,
+          "se_of_gap": 0.017244834671728167,
+          "within_one_se": false
+        },
+        {
+          "candidate": "ridge_1",
+          "mean": 5.14478467483074,
+          "gap_to_best": 0.09000779895503275,
+          "se_of_gap": 0.01539757184396516,
+          "within_one_se": false
+        },
+        {
+          "candidate": "ridge_0.1",
+          "mean": 5.146020505472675,
+          "gap_to_best": 0.09124362959696697,
+          "se_of_gap": 0.015203040338753165,
+          "within_one_se": false
+        },
+        {
+          "candidate": "ridge_0.01",
+          "mean": 5.146095248977409,
+          "gap_to_best": 0.09131837310170159,
+          "se_of_gap": 0.015214932495048038,
+          "within_one_se": false
+        },
+        {
+          "candidate": "linear_baseline",
+          "mean": 5.146201978046019,
+          "gap_to_best": 0.09142510217031115,
+          "se_of_gap": 0.015133910457896898,
+          "within_one_se": false
+        },
+        {
+          "candidate": "tree_depth6",
+          "mean": 5.313429607237534,
+          "gap_to_best": 0.25865273136182615,
+          "se_of_gap": 0.021730304859464835,
+          "within_one_se": false
+        },
+        {
+          "candidate": "tree_baseline",
+          "mean": 6.887719392174219,
+          "gap_to_best": 1.8329425162985118,
+          "se_of_gap": 0.08625889836273505,
+          "within_one_se": false
+        },
+        {
+          "candidate": "forest_leaf20",
+          "mean": 5.345795352844421,
+          "gap_to_best": 0.2910184769687133,
+          "se_of_gap": 0.05236604438869893,
+          "within_one_se": false
+        },
+        {
+          "candidate": "boost_baseline",
+          "mean": 5.214455231887596,
+          "gap_to_best": 0.15967835601188982,
+          "se_of_gap": 0.03954995463946323,
+          "within_one_se": false
+        },
+        {
+          "candidate": "boost_slow",
+          "mean": 5.215336436637951,
+          "gap_to_best": 0.1605595607622435,
+          "se_of_gap": 0.06051481756408987,
+          "within_one_se": false
+        }
+      ]
+    }
+  },
+  "family_winners": {
+    "linear": "ridge_1000",
+    "tree_based": "boost_baseline"
+  },
+  "simplicity_order": [
+    "linear_baseline",
+    "ridge_0.01",
+    "ridge_0.1",
+    "ridge_1",
+    "ridge_10",
+    "ridge_100",
+    "ridge_1000",
+    "ridge_10000",
+    "ridge_100000",
+    "tree_depth6",
+    "tree_baseline",
+    "forest_leaf20",
+    "boost_baseline",
+    "boost_slow"
+  ],
+  "interpretation_files": {
+    "checkout": [
+      "checkout_selected_coefficients.csv"
+    ],
+    "handover": [
+      "selected_coefficients.csv",
+      "tree_winner_permutation_importance.csv"
+    ]
+  },
+  "random_state": 42,
+  "test_status": "scored separately from chronological model selection"
+}

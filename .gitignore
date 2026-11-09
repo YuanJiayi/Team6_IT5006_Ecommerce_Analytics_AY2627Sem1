@@ -20,3 +20,10 @@ build/
 
 # Large regenerated experiment outputs
 data/outputs/experiments/handover_regression/predictions.csv.gz
+
+# Regenerated Phase 3 inputs/outputs
+data/processed/phase2_open_orders.csv
+data/outputs/phase3/
+
+# Local secrets (Ask provider key)
+.env

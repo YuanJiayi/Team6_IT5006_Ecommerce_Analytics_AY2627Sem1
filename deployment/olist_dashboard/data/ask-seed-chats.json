@@ -1,0 +1,467 @@
+{
+ "as_of": "2018-08-22",
+ "asked_at": "2026-11-09T05:19:10+08:00",
+ "chats": [
+  {
+   "id": "seed-1",
+   "question": "Which states had the worst late delivery rate last month?",
+   "answer": {
+    "kind": "query",
+    "answer_id": "1b696447a46acfd32b4c6f0c40f35b63",
+    "title": "Highest late-delivery rates by state",
+    "text": "As of 22 Aug 2018, PI had the highest late-delivery rate in the selected period at 34.3%, followed by MA at 16.7% — both on small delivery counts — then BA and ES at 4.7% each. Most other states sit at or near zero.",
+    "sql": "WITH delivered AS (\n  SELECT c.customer_state AS state,\n         CASE WHEN date(o.order_delivered_customer_date) > date(o.order_estimated_delivery_date) THEN 1 ELSE 0 END AS late\n  FROM orders o\n  JOIN customers c ON c.customer_id = o.customer_id\n  WHERE o.order_delivered_customer_date IS NOT NULL\n    AND o.order_estimated_delivery_date IS NOT NULL\n    AND date(o.order_delivered_customer_date) >= '2018-07-01'\n    AND date(o.order_delivered_customer_date) < '2018-08-01'\n    AND date(o.order_delivered_customer_date) < date(:as_of)\n)\nSELECT state,\n       ROUND(100.0 * SUM(late) / COUNT(*), 1) AS late_pct,\n       COUNT(*) AS deliveries\nFROM delivered\nGROUP BY state\nORDER BY late_pct DESC, deliveries DESC;",
+    "chart": {
+     "type": "bar",
+     "x": "state",
+     "y": "late_pct",
+     "labels": {
+      "state": "State",
+      "late_pct": "Late deliveries (%)"
+     }
+    },
+    "table": {
+     "columns": [
+      "state",
+      "late_pct",
+      "deliveries"
+     ],
+     "rows": [
+      {
+       "state": "PI",
+       "late_pct": 34.3,
+       "deliveries": 35
+      },
+      {
+       "state": "MA",
+       "late_pct": 16.7,
+       "deliveries": 36
+      },
+      {
+       "state": "BA",
+       "late_pct": 4.7,
+       "deliveries": 232
+      },
+      {
+       "state": "ES",
+       "late_pct": 4.7,
+       "deliveries": 128
+      },
+      {
+       "state": "MS",
+       "late_pct": 2.8,
+       "deliveries": 36
+      },
+      {
+       "state": "PB",
+       "late_pct": 2.0,
+       "deliveries": 49
+      },
+      {
+       "state": "RJ",
+       "late_pct": 1.7,
+       "deliveries": 651
+      },
+      {
+       "state": "CE",
+       "late_pct": 1.1,
+       "deliveries": 94
+      },
+      {
+       "state": "SP",
+       "late_pct": 1.0,
+       "deliveries": 2500
+      },
+      {
+       "state": "PE",
+       "late_pct": 0.9,
+       "deliveries": 107
+      },
+      {
+       "state": "GO",
+       "late_pct": 0.8,
+       "deliveries": 119
+      },
+      {
+       "state": "DF",
+       "late_pct": 0.7,
+       "deliveries": 137
+      },
+      {
+       "state": "MG",
+       "late_pct": 0.0,
+       "deliveries": 664
+      },
+      {
+       "state": "PR",
+       "late_pct": 0.0,
+       "deliveries": 319
+      },
+      {
+       "state": "RS",
+       "late_pct": 0.0,
+       "deliveries": 317
+      },
+      {
+       "state": "SC",
+       "late_pct": 0.0,
+       "deliveries": 201
+      },
+      {
+       "state": "PA",
+       "late_pct": 0.0,
+       "deliveries": 54
+      },
+      {
+       "state": "MT",
+       "late_pct": 0.0,
+       "deliveries": 53
+      },
+      {
+       "state": "RN",
+       "late_pct": 0.0,
+       "deliveries": 30
+      },
+      {
+       "state": "AL",
+       "late_pct": 0.0,
+       "deliveries": 21
+      },
+      {
+       "state": "TO",
+       "late_pct": 0.0,
+       "deliveries": 15
+      },
+      {
+       "state": "RO",
+       "late_pct": 0.0,
+       "deliveries": 14
+      },
+      {
+       "state": "SE",
+       "late_pct": 0.0,
+       "deliveries": 14
+      },
+      {
+       "state": "AM",
+       "late_pct": 0.0,
+       "deliveries": 7
+      },
+      {
+       "state": "RR",
+       "late_pct": 0.0,
+       "deliveries": 3
+      },
+      {
+       "state": "AC",
+       "late_pct": 0.0,
+       "deliveries": 2
+      },
+      {
+       "state": "AP",
+       "late_pct": 0.0,
+       "deliveries": 1
+      }
+     ]
+    },
+    "row_count": 27,
+    "pin": {
+     "answer_id": "1b696447a46acfd32b4c6f0c40f35b63",
+     "kind": "rolling",
+     "label": "last 30 days",
+     "period": "Last 30 days to 21 Aug 2018",
+     "button_label": "Pin to Overview · moves with the date (last 30 days)",
+     "windows": [
+      "30d",
+      "90d",
+      "12mo",
+      "ytd"
+     ],
+     "window_labels": {
+      "30d": "30 d",
+      "90d": "90 d",
+      "12mo": "12 mo",
+      "ytd": "Year to date"
+     },
+     "default_window": "30d",
+     "period_start": null,
+     "period_end": null
+    },
+    "provenance": {
+     "as_of": "2018-08-22",
+     "plain": "Data as of 22 Aug 2018. Counted deliveries completed before the cutoff. Dates use the delivery date.",
+     "cutoff": "Exclusive cutoff: events dated before 2018-08-22 are visible; the latest complete day is 2018-08-21.",
+     "source": "deployment/olist_dashboard/data/analytics.sqlite, built from the public Olist CSVs in data/raw. Local SQLite only; no cloud database. The cutoff is enforced with per-request views over private base tables.",
+     "method": "The configured model proposed the SQL; the server validated and executed it read-only, then the model summarized only the returned rows. Numeric constant-output projections are rejected, but this lexical guard cannot formally prove that every SQL expression derives from source rows, so values are query output rather than an audited lineage.",
+     "privacy": "Raw identifier columns, identifier-shaped output values, address columns and review text are blocked by the server. This is a defense-in-depth filter, not a formal guarantee against every possible derived inference."
+    }
+   }
+  },
+  {
+   "id": "seed-2",
+   "question": "Do late deliveries get worse reviews than on-time ones?",
+   "answer": {
+    "kind": "query",
+    "answer_id": "d3ea193fd9c874ca61cd2e580677804e",
+    "title": "Late deliveries score lower reviews",
+    "text": "As of 22 Aug 2018, among delivered orders with reviews, late deliveries averaged 2.25 versus 4.29 for on-time ones. Late orders were far fewer: 6,138 reviewed orders versus 86,018 on time.",
+    "sql": "SELECT CASE WHEN date(o.order_delivered_customer_date) <= date(o.order_estimated_delivery_date) THEN 'On time' ELSE 'Late' END AS delivery_status, ROUND(AVG(r.review_score), 2) AS avg_review_score, COUNT(DISTINCT r.order_id) AS reviewed_orders FROM orders o JOIN reviews r ON r.order_id = o.order_id WHERE o.order_delivered_customer_date IS NOT NULL AND o.order_estimated_delivery_date IS NOT NULL AND o.order_delivered_customer_date < :as_of GROUP BY delivery_status ORDER BY delivery_status;",
+    "chart": {
+     "type": "bar",
+     "x": "delivery_status",
+     "y": "avg_review_score"
+    },
+    "table": {
+     "columns": [
+      "delivery_status",
+      "avg_review_score",
+      "reviewed_orders"
+     ],
+     "rows": [
+      {
+       "delivery_status": "Late",
+       "avg_review_score": 2.25,
+       "reviewed_orders": 6138
+      },
+      {
+       "delivery_status": "On time",
+       "avg_review_score": 4.29,
+       "reviewed_orders": 86018
+      }
+     ]
+    },
+    "row_count": 2,
+    "pin": {
+     "answer_id": "d3ea193fd9c874ca61cd2e580677804e",
+     "kind": "all",
+     "label": "All history to 21 Aug 2018",
+     "period": "All history to 21 Aug 2018",
+     "button_label": "Pin to Overview · all history to 21 Aug 2018",
+     "windows": [],
+     "window_labels": {},
+     "default_window": null,
+     "period_start": null,
+     "period_end": null
+    },
+    "provenance": {
+     "as_of": "2018-08-22",
+     "plain": "Data as of 22 Aug 2018. Counted deliveries completed before the cutoff. Dates use the delivery date.",
+     "cutoff": "Exclusive cutoff: events dated before 2018-08-22 are visible; the latest complete day is 2018-08-21.",
+     "source": "deployment/olist_dashboard/data/analytics.sqlite, built from the public Olist CSVs in data/raw. Local SQLite only; no cloud database. The cutoff is enforced with per-request views over private base tables.",
+     "method": "The configured model proposed the SQL; the server validated and executed it read-only, then the model summarized only the returned rows. Numeric constant-output projections are rejected, but this lexical guard cannot formally prove that every SQL expression derives from source rows, so values are query output rather than an audited lineage.",
+     "privacy": "Raw identifier columns, identifier-shaped output values, address columns and review text are blocked by the server. This is a defense-in-depth filter, not a formal guarantee against every possible derived inference."
+    }
+   }
+  },
+  {
+   "id": "seed-3",
+   "question": "Which product categories had the most late deliveries in the last 3 months?",
+   "answer": {
+    "kind": "query",
+    "answer_id": "199992e7ed697dd25264491282cf2128",
+    "title": "Most late deliveries by category",
+    "text": "As of 22 Aug 2018, among delivered orders in the last 3 months, Health beauty had the most late deliveries at 183, followed by Watches gifts at 90 and Housewares and Bed bath table at 71 each.",
+    "sql": "WITH late_deliveries AS (SELECT o.order_id, p.product_category_display AS category FROM orders o JOIN order_items oi ON oi.order_id = o.order_id JOIN products p ON p.product_id = oi.product_id WHERE o.order_delivered_customer_date IS NOT NULL AND o.order_estimated_delivery_date IS NOT NULL AND date(o.order_delivered_customer_date) > date(o.order_estimated_delivery_date) AND date(o.order_delivered_customer_date) >= COALESCE(:window_start, date(:as_of, '-3 months')) AND date(o.order_delivered_customer_date) < :as_of AND p.product_category_display IS NOT NULL) SELECT category, COUNT(DISTINCT order_id) AS late_deliveries FROM late_deliveries GROUP BY category ORDER BY late_deliveries DESC LIMIT 10;",
+    "chart": {
+     "type": "bar",
+     "x": "category",
+     "y": "late_deliveries"
+    },
+    "table": {
+     "columns": [
+      "category",
+      "late_deliveries"
+     ],
+     "rows": [
+      {
+       "category": "Health beauty",
+       "late_deliveries": 183
+      },
+      {
+       "category": "Watches gifts",
+       "late_deliveries": 90
+      },
+      {
+       "category": "Housewares",
+       "late_deliveries": 71
+      },
+      {
+       "category": "Bed bath table",
+       "late_deliveries": 71
+      },
+      {
+       "category": "Sports leisure",
+       "late_deliveries": 57
+      },
+      {
+       "category": "Auto",
+       "late_deliveries": 57
+      },
+      {
+       "category": "Furniture decor",
+       "late_deliveries": 54
+      },
+      {
+       "category": "Computers accessories",
+       "late_deliveries": 44
+      },
+      {
+       "category": "Baby",
+       "late_deliveries": 40
+      },
+      {
+       "category": "Perfumery",
+       "late_deliveries": 34
+      }
+     ]
+    },
+    "row_count": 10,
+    "pin": {
+     "answer_id": "199992e7ed697dd25264491282cf2128",
+     "kind": "rolling",
+     "label": "last 3 months",
+     "period": "Last 3 months to 21 Aug 2018",
+     "button_label": "Pin to Overview · moves with the date (last 3 months)",
+     "windows": [
+      "30d",
+      "90d",
+      "12mo",
+      "ytd"
+     ],
+     "window_labels": {
+      "30d": "30 d",
+      "90d": "90 d",
+      "12mo": "12 mo",
+      "ytd": "Year to date"
+     },
+     "default_window": null,
+     "period_start": null,
+     "period_end": null
+    },
+    "provenance": {
+     "as_of": "2018-08-22",
+     "plain": "Data as of 22 Aug 2018. Counted deliveries completed before the cutoff. Dates use the delivery date.",
+     "cutoff": "Exclusive cutoff: events dated before 2018-08-22 are visible; the latest complete day is 2018-08-21.",
+     "source": "deployment/olist_dashboard/data/analytics.sqlite, built from the public Olist CSVs in data/raw. Local SQLite only; no cloud database. The cutoff is enforced with per-request views over private base tables.",
+     "method": "The configured model proposed the SQL; the server validated and executed it read-only, then the model summarized only the returned rows. Numeric constant-output projections are rejected, but this lexical guard cannot formally prove that every SQL expression derives from source rows, so values are query output rather than an audited lineage.",
+     "privacy": "Raw identifier columns, identifier-shaped output values, address columns and review text are blocked by the server. This is a defense-in-depth filter, not a formal guarantee against every possible derived inference."
+    }
+   }
+  },
+  {
+   "id": "seed-4",
+   "question": "How many deliveries did we make each week over the last 3 months?",
+   "answer": {
+    "kind": "query",
+    "answer_id": "097a0e96b77d04fee5370b0925fe4fda",
+    "title": "Weekly deliveries, last 3 months",
+    "text": "As of 22 Aug 2018, weekly deliveries peaked at 2,021 in the week starting 13 Aug 2018. The first and last weeks in the window are partial, so their counts are lower.",
+    "sql": "WITH deliveries AS (SELECT order_id, date(order_delivered_customer_date) AS delivery_date FROM orders WHERE order_delivered_customer_date IS NOT NULL AND date(order_delivered_customer_date) < :as_of AND date(order_delivered_customer_date) >= COALESCE(:window_start, date(:as_of, '-3 months'))) SELECT date(delivery_date, 'weekday 0', '-6 days') AS week_start, COUNT(DISTINCT order_id) AS deliveries FROM deliveries GROUP BY week_start ORDER BY week_start;",
+    "chart": {
+     "type": "line",
+     "x": "week_start",
+     "y": "deliveries",
+     "labels": {
+      "week_start": "Week starting",
+      "deliveries": "Deliveries"
+     }
+    },
+    "table": {
+     "columns": [
+      "week_start",
+      "deliveries"
+     ],
+     "rows": [
+      {
+       "week_start": "2018-05-21",
+       "deliveries": 1063
+      },
+      {
+       "week_start": "2018-05-28",
+       "deliveries": 634
+      },
+      {
+       "week_start": "2018-06-04",
+       "deliveries": 1772
+      },
+      {
+       "week_start": "2018-06-11",
+       "deliveries": 1514
+      },
+      {
+       "week_start": "2018-06-18",
+       "deliveries": 1678
+      },
+      {
+       "week_start": "2018-06-25",
+       "deliveries": 1536
+      },
+      {
+       "week_start": "2018-07-02",
+       "deliveries": 1414
+      },
+      {
+       "week_start": "2018-07-09",
+       "deliveries": 1482
+      },
+      {
+       "week_start": "2018-07-16",
+       "deliveries": 367
+      },
+      {
+       "week_start": "2018-07-23",
+       "deliveries": 1840
+      },
+      {
+       "week_start": "2018-07-30",
+       "deliveries": 1697
+      },
+      {
+       "week_start": "2018-08-06",
+       "deliveries": 1778
+      },
+      {
+       "week_start": "2018-08-13",
+       "deliveries": 2021
+      },
+      {
+       "week_start": "2018-08-20",
+       "deliveries": 773
+      }
+     ]
+    },
+    "row_count": 14,
+    "pin": {
+     "answer_id": "097a0e96b77d04fee5370b0925fe4fda",
+     "kind": "rolling",
+     "label": "last 3 months",
+     "period": "Last 3 months to 21 Aug 2018",
+     "button_label": "Pin to Overview · moves with the date (last 3 months)",
+     "windows": [
+      "30d",
+      "90d",
+      "12mo",
+      "ytd"
+     ],
+     "window_labels": {
+      "30d": "30 d",
+      "90d": "90 d",
+      "12mo": "12 mo",
+      "ytd": "Year to date"
+     },
+     "default_window": null,
+     "period_start": null,
+     "period_end": null
+    },
+    "provenance": {
+     "as_of": "2018-08-22",
+     "plain": "Data as of 22 Aug 2018. Counted deliveries completed before the cutoff. Dates use the delivery date.",
+     "cutoff": "Exclusive cutoff: events dated before 2018-08-22 are visible; the latest complete day is 2018-08-21.",
+     "source": "deployment/olist_dashboard/data/analytics.sqlite, built from the public Olist CSVs in data/raw. Local SQLite only; no cloud database. The cutoff is enforced with per-request views over private base tables.",
+     "method": "The configured model proposed the SQL; the server validated and executed it read-only, then the model summarized only the returned rows. Numeric constant-output projections are rejected, but this lexical guard cannot formally prove that every SQL expression derives from source rows, so values are query output rather than an audited lineage.",
+     "privacy": "Raw identifier columns, identifier-shaped output values, address columns and review text are blocked by the server. This is a defense-in-depth filter, not a formal guarantee against every possible derived inference."
+    }
+   }
+  }
+ ]
+}

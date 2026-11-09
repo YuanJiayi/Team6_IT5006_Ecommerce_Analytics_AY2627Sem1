@@ -1,0 +1,94 @@
+[
+  {
+    "name": "promised_days",
+    "dtype": "float64"
+  },
+  {
+    "name": "promise_slack",
+    "dtype": "float64"
+  },
+  {
+    "name": "route_typical_days",
+    "dtype": "float64"
+  },
+  {
+    "name": "seller_ship_days",
+    "dtype": "float64"
+  },
+  {
+    "name": "distance_km",
+    "dtype": "float64"
+  },
+  {
+    "name": "same_state",
+    "dtype": "int64"
+  },
+  {
+    "name": "purchase_hour",
+    "dtype": "int64"
+  },
+  {
+    "name": "n_items",
+    "dtype": "int64"
+  },
+  {
+    "name": "n_products",
+    "dtype": "int64"
+  },
+  {
+    "name": "n_sellers",
+    "dtype": "int64"
+  },
+  {
+    "name": "total_price",
+    "dtype": "float64"
+  },
+  {
+    "name": "total_freight",
+    "dtype": "float64"
+  },
+  {
+    "name": "total_weight_g",
+    "dtype": "float64"
+  },
+  {
+    "name": "total_volume_cm3",
+    "dtype": "float64"
+  },
+  {
+    "name": "max_installments",
+    "dtype": "float64"
+  },
+  {
+    "name": "approval_days",
+    "dtype": "float64"
+  },
+  {
+    "name": "handover_days",
+    "dtype": "float64"
+  },
+  {
+    "name": "route_transit_90d_at_handover",
+    "dtype": "float64"
+  },
+  {
+    "name": "customer_state",
+    "dtype": "str"
+  },
+  {
+    "name": "seller_state",
+    "dtype": "str"
+  },
+  {
+    "name": "product_category",
+    "dtype": "str"
+  },
+  {
+    "name": "payment_type",
+    "dtype": "str"
+  },
+  {
+    "name": "purchase_dayofweek",
+    "dtype": "str"
+  }
+]

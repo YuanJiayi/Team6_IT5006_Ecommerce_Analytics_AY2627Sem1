@@ -1,5 +1,5 @@
 # Full project: modelling, notebooks, tests and the dashboard.
-# The deployed Streamlit app installs deployment/app/requirements.txt instead.
+# The deployed Streamlit app installs deployment/phase1_dashboard/requirements.txt instead.
 numpy>=2.5,<3
 pandas>=3.0,<3.1
 scikit-learn==1.9.1
@@ -17,3 +17,8 @@ jinja2
 ipython
 scipy
 pyarrow
+
+# Phase 3 dashboard
+mlflow==3.18.0
+skops==0.16.0
+evidently==0.7.23

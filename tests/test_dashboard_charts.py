@@ -9,7 +9,7 @@ from streamlit.testing.v1 import AppTest
 
 class DashboardChartPayloadTest(unittest.TestCase):
     def test_every_chart_has_decodable_nonempty_data(self):
-        app_path = Path(__file__).resolve().parents[1] / "deployment" / "app" / "app.py"
+        app_path = Path(__file__).resolve().parents[1] / "deployment" / "phase1_dashboard" / "app.py"
         app = AppTest.from_file(str(app_path)).run(timeout=120)
         self.assertFalse(app.exception)
 

@@ -9,7 +9,7 @@ data/
   raw/            Olist source CSVs (Canvas copy, unchanged)
   geo/            Brazil boundary and state GeoJSON for the maps
   processed/      Prepared tables: Phase 1 consolidated line items, Phase 2 order table and feature spec
-  outputs/        Saved results: phase1 map, phase2 model outputs, experiment and data-quality results
+  outputs/        Saved results: saved models, phase1 map, phase2 model outputs, experiment and data-quality results
 notebooks/
   phase1_eda/     Exploratory analysis notebooks
   phase2_modelling/  Data preparation, regression and classification notebooks
@@ -19,8 +19,8 @@ src/
   reporting/      Scripts that generate report numbers, tables and figures from saved outputs
   quality/        Great Expectations contract for the prepared table
 deployment/
-  api/            FastAPI model service; models/ holds the saved pipelines (service to be built)
-  app/            Streamlit app (Phase 1 dashboard now; prediction tabs to come)
+  olist_dashboard/   The deployed Phase 3 app (Olist dashboard: Overview, Actions, Models, Ask)
+  phase1_dashboard/  Phase 1 Streamlit EDA dashboard
 docs/
   phase1/         Submitted Phase 1 report, marker feedback, validation notes
   phase2/         Phase 2 report source, evidence map, assumptions
@@ -48,7 +48,7 @@ pip install -r requirements.txt
 pip install -e .
 ```
 
-The last command makes the `olist` package in `src/` importable from any folder. Scripts under `src/experiments/`, `src/reporting/` and the dashboard also add `src/` to the import path themselves.
+The last command makes the `olist` and `phase3` packages in `src/` importable from any folder. Scripts under `src/experiments/`, `src/reporting/` and the dashboard also add `src/` to the import path themselves.
 
 ## Common commands
 
@@ -57,10 +57,13 @@ All commands run from the repository root.
 | Task | Command |
 | --- | --- |
 | Run all tests | `python -m unittest discover -s tests` |
-| Run the dashboard | `streamlit run deployment/app/app.py` |
+| Run the Olist dashboard (deployed app) | `bash deployment/olist_dashboard/run_local.sh` |
+| Run the Phase 1 dashboard | `streamlit run deployment/phase1_dashboard/app.py` |
+| Rebuild the dashboard's model store | `python -m phase3.registry` |
+| Build open-parcel rows | `python -m phase3.build_open_orders` |
 | Refit the delivery-time models | `python -m olist.eta` |
 | Refit the late-risk classifier | `python -m olist.handover_classifier` |
-| Save the deployment models | `python -m olist.export_models` |
+| Save the chosen models to `data/outputs/models/` | `python -m olist.export_models` |
 | Refresh report numbers and figures | `python src/reporting/final_evidence.py` |
 | Check the prepared table contract | `python src/quality/ge_validation.py` (needs `src/quality/requirements.txt`) |
 
