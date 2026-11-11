@@ -1,0 +1,3 @@
+base,orders,late,late_rate,late_gmv,late_freight,late_before_date,late_before_date_gmv
+model cohort,74039,5759,0.0777833304069477,855161.05,145574.63,5356.0,789941.22
+all delivered orders,74206,5762,0.07764870765167237,855456.9400000001,145653.38,,

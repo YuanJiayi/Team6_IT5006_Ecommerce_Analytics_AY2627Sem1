@@ -18,6 +18,7 @@ Code lives here; results and saved models are in [`data/outputs/experiments/rank
 | `11_daily_rerank/run.py` | Daily 9am re-ranking simulation, following `src/reporting/complete_daily_replay.py` |
 | `12_rerank_monthly_refits/run.py` | Daily re-ranking combined with monthly refits |
 | `13_deadline_comparison/run.py` | Closest to deadline against the final strategy: daily replay, shortfalls and test comparisons (uses 01, 10 and 12) |
+| `14_gmv_estimate/run.py` | Yearly item value (GMV) of late parcels the blend's review list would reach, scaled from the test catch rates to September 2017–August 2018 (uses 10) |
 | `15_weekly_intervals/run.py` | Test intervals from 2,000 resamples of whole weeks, for ranked lists and the daily replay (uses 12 and 13) |
 | `16_regression_comparator/run.py` | The regression ranking added to the shortfalls and weekly intervals (uses 01, 13 and 15) |
 | `17_regression_alpha1000/run.py` | The regression ranking rescored with the Phase 3 selection, ridge alpha=1000 (uses 01, 13, 15 and 16) |
@@ -39,6 +40,7 @@ Code lives here; results and saved models are in [`data/outputs/experiments/rank
 | Test intervals | 15, 17, 18 |
 | Review-list quality (Table 17) | 18 |
 | Class weights (Section 5.3, Table 18) and the classifier's training scores (Table 4) | 19 |
+| Presentation only: ~2,400 late parcels and ~R$0.46M a year reached while still rescuable (58% catch rate by value) | 14 |
 | PR-AUC by period and largest shortfalls (Table 19) | 13_deadline_comparison (rule, model, blend with monthly refits, closest to deadline) and 17 (regression ranking) |
 
 Run each script from the repository root, in the order above, for example:

@@ -208,6 +208,10 @@ Experiment 13 fills the remaining gaps for closest to deadline, an existing refe
 
 **Shortfalls.** Each ranking's shortfall behind the best of the rule, the Phase 2 model, the 50/50 with monthly refits and closest to deadline, across W1 to W5 and June to August 2018, as in experiment 08.
 
+## Experiment 14: value of late parcels reached
+
+Experiment 14 sizes the business case for the presentation. It adds no rankings, changes no scores and does not use the gates. Catch rates come from the test set: the share of late orders, and of their item value, that reach the top 10% of each purchase month under the 50/50 blend with monthly refits (experiment 10), split into orders already past their date at handover and orders still before it. These rates are applied to all delivered orders purchased from September 2017 to August 2018. The result is value reaching the review list, not value saved. The script stops unless the test counts reproduce experiment 10 (411 late orders caught, 213 of them still before their date).
+
 ## Experiment 15: weekly intervals
 
 Experiment 15 recomputes the test intervals quoted in the report to match the team's convention: 2,000 resamples (seed 42) of whole calendar weeks. It adds no rankings, changes no scores and does not use the gates.
