@@ -1,0 +1,10 @@
+{
+  "model": "logistic_c0.01",
+  "test_mean_predicted": 0.06867019316436945,
+  "test_actual_late_rate": 0.03494539781591264,
+  "test_predicted_to_actual": 1.9650711526053937,
+  "training_late_rate": 0.0710697104172497,
+  "validation_pooled_predicted_to_actual": 0.49873255235069053,
+  "test_deciles_overpredicted": 10,
+  "refit_max_abs_difference_from_saved_scores": 1.1102230246251565e-16
+}
